@@ -1,0 +1,19 @@
+.DS_Store
+.idea/
+.vscode/
+
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Java
+target/
+*.class
+
+# Logs and local env
+*.log
+.env
+.env.*
+!.env.example

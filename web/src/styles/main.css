@@ -1,0 +1,282 @@
+:root {
+  color: #172033;
+  background: #eef2f6;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.login-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 32px;
+  background:
+    linear-gradient(135deg, rgba(15, 105, 160, 0.18), rgba(30, 132, 73, 0.12)),
+    #edf2f7;
+}
+
+.login-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) 420px;
+  width: min(980px, 100%);
+  overflow: hidden;
+  border: 1px solid #d8e0ea;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(39, 55, 77, 0.16);
+}
+
+.login-copy {
+  display: flex;
+  min-height: 480px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px;
+  background:
+    linear-gradient(160deg, rgba(12, 74, 110, 0.86), rgba(24, 95, 74, 0.88)),
+    #0f4c5c;
+  color: #ffffff;
+}
+
+.brand-row,
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 8px;
+  background: #1d9a8a;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.login-copy h1 {
+  max-width: 420px;
+  margin: 32px 0 12px;
+  font-size: 40px;
+  line-height: 1.15;
+}
+
+.login-copy p {
+  max-width: 420px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 44px;
+}
+
+.login-form h2 {
+  margin: 0 0 28px;
+  font-size: 24px;
+}
+
+.login-submit {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.login-hint {
+  margin: 16px 0 0;
+  color: #687384;
+  font-size: 13px;
+}
+
+.admin-shell {
+  min-height: 100vh;
+}
+
+.admin-aside {
+  border-right: 1px solid #dbe3ed;
+  background: #ffffff;
+}
+
+.brand {
+  height: 72px;
+  padding: 0 20px;
+  border-bottom: 1px solid #e6ecf2;
+}
+
+.brand strong,
+.brand span {
+  display: block;
+}
+
+.brand span {
+  margin-top: 2px;
+  color: #758195;
+  font-size: 12px;
+}
+
+.admin-menu {
+  border-right: 0;
+  padding: 10px;
+}
+
+.admin-header {
+  display: flex;
+  height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #dbe3ed;
+  background: #ffffff;
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.admin-header p {
+  margin: 4px 0 0;
+  color: #748093;
+  font-size: 13px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.username {
+  color: #334155;
+  font-size: 14px;
+}
+
+.admin-main {
+  padding: 24px;
+  background: #eef2f6;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.metric-card,
+.workbench {
+  border: 1px solid #dbe3ed;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.metric-card {
+  padding: 20px;
+}
+
+.metric-card span {
+  color: #6d788a;
+  font-size: 13px;
+}
+
+.metric-card strong {
+  display: block;
+  margin-top: 10px;
+  color: #152033;
+  font-size: 28px;
+}
+
+.metric-card p {
+  min-height: 20px;
+  margin: 6px 0 0;
+  color: #758195;
+  font-size: 13px;
+}
+
+.workbench {
+  margin-top: 18px;
+  padding: 22px;
+}
+
+.workbench header {
+  margin-bottom: 18px;
+}
+
+.workbench h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.workbench p {
+  margin: 0;
+  color: #748093;
+}
+
+@media (max-width: 920px) {
+  .login-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .login-copy {
+    min-height: auto;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-aside {
+    display: none;
+  }
+
+  .admin-header {
+    height: auto;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .login-page {
+    padding: 18px;
+  }
+
+  .login-copy,
+  .login-form {
+    padding: 28px;
+  }
+
+  .login-copy h1 {
+    font-size: 30px;
+  }
+}
