@@ -15,6 +15,8 @@ POST /api/auth/login
   ↓
 AuthService 校验用户与密码
   ↓
+MyBatisUserRepository 读取用户、角色、权限
+  ↓
 Sa-Token 签发 Token
   ↓
 前端保存 tokenValue/tokenPrefix
@@ -30,9 +32,11 @@ SaPermissionProvider 提供角色与权限
 
 首版已经具备以下模型边界：
 
-- 用户：`UserProfile`
-- 角色：`roles`
-- 权限：`permissions`
+- 用户：`sys_user` / `UserProfile`
+- 角色：`sys_role` / `roles`
+- 权限：`sys_permission` / `permissions`
+- 用户角色关系：`sys_user_role`
+- 角色权限关系：`sys_role_permission`
 - 菜单：`MenuItem`
 - Sa-Token 权限适配：`SaPermissionProvider`
 
@@ -43,6 +47,8 @@ SaPermissionProvider 提供角色与权限
 密码：admin123
 角色：SUPER_ADMIN
 ```
+
+当前默认数据由 `SystemDataInitializer` 初始化，账号密码只用于本地开发验证。生产环境必须替换默认密码，并接入正式数据库和密码策略。
 
 ## 飞书扫码登录与 SSO 接入建议
 

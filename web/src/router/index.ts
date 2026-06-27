@@ -20,12 +20,13 @@ const router = createRouter({
         {
           path: 'dashboard',
           name: 'dashboard',
-          component: () => import('@/views/DashboardView.vue')
+          component: () => import('@/views/DashboardView.vue'),
+          meta: { title: '工作台' }
         },
         {
           path: 'system/user',
           name: 'system-user',
-          component: () => import('@/views/SystemPlaceholderView.vue'),
+          component: () => import('@/views/UserManagementView.vue'),
           meta: { title: '用户管理' }
         },
         {

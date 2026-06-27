@@ -12,6 +12,9 @@ const route = useRoute()
 const router = useRouter()
 
 const activePath = computed(() => route.path)
+const currentTitle = computed(() => String(route.meta.title || '工作台'))
+const menuTrail = computed(() => findMenuTrail(authStore.menus, route.path))
+const tabMenus = computed(() => flattenMenus(authStore.menus).slice(0, 6))
 
 function resolveIcon(name: string) {
   return Icons[name as keyof typeof Icons] || Icons.Grid
@@ -30,16 +33,30 @@ async function handleLogout() {
 function flattenMenus(menus: MenuItem[]) {
   return menus.flatMap((menu) => (menu.children.length ? menu.children : [menu]))
 }
+
+function findMenuTrail(menus: MenuItem[], path: string, parents: MenuItem[] = []): MenuItem[] {
+  for (const menu of menus) {
+    const currentTrail = [...parents, menu]
+    if (menu.path === path) {
+      return currentTrail
+    }
+    const childTrail = findMenuTrail(menu.children, path, currentTrail)
+    if (childTrail.length) {
+      return childTrail
+    }
+  }
+  return []
+}
 </script>
 
 <template>
   <el-container class="admin-shell">
     <el-aside class="admin-aside" width="248px">
-      <div class="brand">
+      <div class="admin-logo">
         <div class="brand-mark">O</div>
         <div>
-          <strong>ONES-ADMIN</strong>
-          <span>企业级管理平台</span>
+          <p class="brand-title">ONES-ADMIN</p>
+          <p class="brand-subtitle">Enterprise Console</p>
         </div>
       </div>
 
@@ -63,19 +80,59 @@ function flattenMenus(menus: MenuItem[]) {
       </el-menu>
     </el-aside>
 
-    <el-container>
+    <el-container class="admin-layout">
       <el-header class="admin-header">
-        <div>
-          <h1>{{ route.meta.title || '工作台' }}</h1>
-          <p>Sa-Token 登录态、菜单权限与前端路由已连通</p>
+        <div class="admin-toolbar">
+          <div class="toolbar-left">
+            <el-button :icon="Icons.Fold" text />
+            <el-breadcrumb separator="/">
+              <el-breadcrumb-item>首页</el-breadcrumb-item>
+              <el-breadcrumb-item v-for="menu in menuTrail" :key="menu.path">
+                {{ menu.title }}
+              </el-breadcrumb-item>
+              <el-breadcrumb-item v-if="!menuTrail.length">
+                {{ currentTitle }}
+              </el-breadcrumb-item>
+            </el-breadcrumb>
+          </div>
+
+          <div class="toolbar-right">
+            <el-button :icon="Icons.Search" text />
+            <el-button :icon="Icons.Refresh" text />
+            <el-button :icon="Icons.FullScreen" text />
+            <el-button :icon="Icons.Bell" text />
+            <el-dropdown trigger="click">
+              <span class="user-entry">
+                <el-avatar :src="authStore.user?.avatar" :size="28">
+                  {{ authStore.user?.displayName?.slice(0, 1) }}
+                </el-avatar>
+                <span class="username">{{ authStore.user?.displayName }}</span>
+                <el-icon><component :is="Icons.ArrowDown" /></el-icon>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item :icon="Icons.User">个人中心</el-dropdown-item>
+                  <el-dropdown-item :icon="Icons.Setting">系统设置</el-dropdown-item>
+                  <el-dropdown-item divided :icon="Icons.SwitchButton" @click="handleLogout">
+                    退出登录
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
         </div>
-        <div class="header-actions">
-          <el-tag type="success" effect="light">已登录</el-tag>
-          <el-avatar :src="authStore.user?.avatar" :size="36">
-            {{ authStore.user?.displayName?.slice(0, 1) }}
-          </el-avatar>
-          <span class="username">{{ authStore.user?.displayName }}</span>
-          <el-button :icon="Icons.SwitchButton" circle @click="handleLogout" />
+
+        <div class="admin-tabs">
+          <RouterLink
+            v-for="menu in tabMenus"
+            :key="menu.path"
+            class="admin-tab"
+            :class="{ 'is-active': activePath === menu.path }"
+            :to="menu.path"
+          >
+            <el-icon><component :is="resolveIcon(menu.icon)" /></el-icon>
+            <span>{{ menu.title }}</span>
+          </RouterLink>
         </div>
       </el-header>
 

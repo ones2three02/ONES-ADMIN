@@ -16,7 +16,13 @@ ONES-ADMIN 面向企业级后端管理系统，首要目标不是堆满功能，
 | Cool Admin | 模块化、插件化、CRUD 效率突出 | 框架特有约定较多 | 插件体系、快速 CRUD 思路 |
 | Art Design Pro | 视觉体验和交互完成度较高 | 企业后台工程纵深不如 Vben | UI 质感、页面细节 |
 
-推荐策略：以 Vben 的工程化作为主要参考，吸收 Cool Admin 的模块化/插件化/CRUD 思路，再借鉴 Art Design Pro 的视觉体验。首版先落地一个轻量但真实可运行的 Vue3 管理端，不直接复制任何一个框架。
+推荐策略：以 Vben 的工程化和 `web-ele` 视觉范式作为主要参考，吸收 Cool Admin 的模块化/插件化/CRUD 思路，再借鉴 Art Design Pro 的页面细节。首版先落地一个轻量但真实可运行的 Vue3 管理端，不直接复制任何一个框架。
+
+当前前端实现要求：
+
+- 布局、色彩 token、侧栏、顶栏、标签栏、工作台信息密度对齐 Vben Admin `apps/web-ele`。
+- 使用 Element Plus 作为控件体系，但不另起一套自定义后台审美。
+- 后续新增页面优先复用当前页面头、查询工具条、表格、弹窗表单模式。
 
 ## 后端选型
 
@@ -60,9 +66,12 @@ Vue3 管理端
 Spring Boot 后端
   ├─ AuthController
   ├─ AuthService
-  ├─ UserRepository
+  ├─ MyBatisUserRepository
+  ├─ UserManagementService
   ├─ SaPermissionProvider
   ├─ MenuController
+  ├─ UserController
+  ├─ RoleController
   └─ GlobalExceptionHandler
 
 Sa-Token
@@ -72,7 +81,7 @@ Sa-Token
   └─ 注解鉴权
 ```
 
-当前仓储使用内存实现，目的是让首版无数据库即可运行。接口边界已经独立，后续可以替换为 MyBatis-Plus 实现。
+当前用户、角色、权限已经接入 MyBatis-Plus + H2 内存库，默认账号由 `SystemDataInitializer` 初始化。H2 只作为本地验证基座，生产环境需要切换 MySQL/PostgreSQL，并补充数据库迁移工具。
 
 ## 演进路线
 

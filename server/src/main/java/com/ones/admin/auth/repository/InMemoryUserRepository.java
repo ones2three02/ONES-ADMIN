@@ -3,7 +3,6 @@ package com.ones.admin.auth.repository;
 import com.ones.admin.auth.model.AdminUser;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Map;
@@ -11,7 +10,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Repository
 public class InMemoryUserRepository implements UserRepository {
 
     private static final PasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
@@ -45,6 +43,7 @@ public class InMemoryUserRepository implements UserRepository {
                         "system:user:list",
                         "system:user:create",
                         "system:user:update",
+                        "system:user:delete",
                         "system:role:list",
                         "system:menu:list"
                 ),

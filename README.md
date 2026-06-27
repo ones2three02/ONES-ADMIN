@@ -1,11 +1,11 @@
 # ONES-ADMIN
 
-ONES-ADMIN 是一个企业级后台管理系统起步工程，首版采用 **Vue3 + Spring Boot + Sa-Token** 完成前后端登录闭环。
+ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
 ## 当前能力
 
-- 后端：Spring Boot 3.5.9、Sa-Token 1.45.0、统一响应、统一异常、登录认证、角色权限、动态菜单、Actuator、Swagger UI。
-- 前端：Vue3、Vite、TypeScript、Element Plus、Pinia、Vue Router、Axios 请求拦截、登录页、管理布局、仪表盘。
+- 后端：Spring Boot 3.5.9、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、H2、统一响应、统一异常、登录认证、角色权限、动态菜单、用户 CRUD、Actuator、Swagger UI。
+- 前端：Vue3、Vite、TypeScript、Element Plus、Pinia、Vue Router、Axios 请求拦截、Vben web-ele 风格登录页、管理布局、工作台、用户管理页。
 - 认证：`Authorization: Bearer <token>`，由 Sa-Token 签发与校验。
 - 演示账号：`admin / admin123`
 
@@ -16,7 +16,7 @@ ONES-ADMIN
 ├── server/                         # Spring Boot + Sa-Token 后端
 ├── web/                            # Vue3 + Vite 前端
 ├── docs/architecture/              # 架构与选型文档
-├── mvnw / mvnw.cmd / .mvn/         # Maven Wrapper
+├── server/mvnw / server/mvnw.cmd   # Maven Wrapper
 └── README.md
 ```
 
@@ -75,6 +75,11 @@ pnpm build
 | `GET` | `/api/auth/me` | 获取当前用户 |
 | `POST` | `/api/auth/logout` | 退出登录 |
 | `GET` | `/api/system/menus` | 获取当前用户菜单 |
+| `GET` | `/api/system/users` | 查询用户列表 |
+| `POST` | `/api/system/users` | 新增用户 |
+| `PUT` | `/api/system/users/{id}` | 编辑用户 |
+| `DELETE` | `/api/system/users/{id}` | 删除用户 |
+| `GET` | `/api/system/roles` | 查询角色列表 |
 | `GET` | `/api/health` | 应用健康检查 |
 
 ## 架构文档
@@ -84,8 +89,8 @@ pnpm build
 
 ## 后续路线
 
-1. 将当前内存用户仓储替换为 MyBatis-Plus + 数据库表。
+1. 将当前 H2 内存库切换为 MySQL/PostgreSQL，并补充 Flyway/Liquibase 迁移。
 2. 将 Sa-Token 会话存储切换到 Redis，支持分布式部署。
-3. 增加用户、角色、菜单、部门、岗位、字典、操作日志等企业后台基础模块。
+3. 完成角色、菜单、部门、岗位、字典、操作日志等企业后台基础模块。
 4. 增加飞书、企业微信、钉钉第三方登录适配层。
 5. 增加多租户、数据权限、代码生成、工作流与监控告警。
