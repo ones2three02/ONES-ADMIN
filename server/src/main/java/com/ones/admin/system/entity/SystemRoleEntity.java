@@ -13,6 +13,7 @@ public class SystemRoleEntity {
     private Long id;
     private String code;
     private String name;
+    private String remark;
     private Boolean enabled;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -39,6 +40,14 @@ public class SystemRoleEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
     }
 
     public Boolean getEnabled() {

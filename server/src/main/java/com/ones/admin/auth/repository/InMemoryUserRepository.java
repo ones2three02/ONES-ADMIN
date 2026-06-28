@@ -45,9 +45,21 @@ public class InMemoryUserRepository implements UserRepository {
                         "system:user:update",
                         "system:user:delete",
                         "system:role:list",
-                        "system:menu:list"
+                        "system:role:create",
+                        "system:role:update",
+                        "system:role:delete",
+                        "system:menu:list",
+                        "system:menu:create",
+                        "system:menu:update",
+                        "system:menu:delete",
+                        "system:dept:list",
+                        "system:dept:create",
+                        "system:dept:update",
+                        "system:dept:delete"
                 ),
-                true
+                true,
+                0,
+                null
         ));
     }
 

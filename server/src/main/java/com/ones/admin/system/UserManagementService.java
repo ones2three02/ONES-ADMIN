@@ -6,9 +6,11 @@ import com.ones.admin.system.dto.RoleResponse;
 import com.ones.admin.system.dto.UserCreateRequest;
 import com.ones.admin.system.dto.UserResponse;
 import com.ones.admin.system.dto.UserUpdateRequest;
+import com.ones.admin.system.entity.SystemDeptEntity;
 import com.ones.admin.system.entity.SystemRoleEntity;
 import com.ones.admin.system.entity.SystemUserEntity;
 import com.ones.admin.system.entity.SystemUserRoleEntity;
+import com.ones.admin.system.mapper.SystemDeptMapper;
 import com.ones.admin.system.mapper.SystemRoleMapper;
 import com.ones.admin.system.mapper.SystemUserMapper;
 import com.ones.admin.system.mapper.SystemUserRoleMapper;
@@ -28,15 +30,18 @@ public class UserManagementService {
     private static final PasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
 
     private final SystemUserMapper userMapper;
+    private final SystemDeptMapper deptMapper;
     private final SystemRoleMapper roleMapper;
     private final SystemUserRoleMapper userRoleMapper;
 
     public UserManagementService(
             SystemUserMapper userMapper,
+            SystemDeptMapper deptMapper,
             SystemRoleMapper roleMapper,
             SystemUserRoleMapper userRoleMapper
     ) {
         this.userMapper = userMapper;
+        this.deptMapper = deptMapper;
         this.roleMapper = roleMapper;
         this.userRoleMapper = userRoleMapper;
     }
@@ -66,35 +71,59 @@ public class UserManagementService {
     public UserResponse createUser(UserCreateRequest request) {
         String username = request.username().trim();
         assertUsernameAvailable(username);
+        List<String> roleCodes = normalizeRoleCodes(request.roleCodes());
+        assertRoleCodesNotEmpty(roleCodes);
 
         SystemUserEntity user = new SystemUserEntity();
         user.setUsername(username);
         user.setDisplayName(request.displayName().trim());
+        user.setDeptId(requireEnabledDept(request.deptId()));
+        user.setRemark(normalizeNullable(request.remark()));
         user.setAvatar("https://api.dicebear.com/9.x/initials/svg?seed=" + username);
         user.setPasswordHash(PASSWORD_ENCODER.encode(request.password()));
         user.setEnabled(request.enabled() == null || request.enabled());
+        user.setFailedLoginCount(0);
         userMapper.insert(user);
-        syncUserRoles(user.getId(), request.roleCodes());
+        syncUserRoles(user.getId(), roleCodes);
         return toResponse(userMapper.selectById(user.getId()));
     }
 
     @Transactional
     public UserResponse updateUser(Long id, UserUpdateRequest request) {
         SystemUserEntity user = getRequiredUser(id);
+        List<String> roleCodes = request.roleCodes() == null
+                ? roleMapper.selectRoleCodesByUserId(user.getId())
+                : normalizeRoleCodes(request.roleCodes());
+        assertRoleCodesNotEmpty(roleCodes);
+        if ("admin".equals(user.getUsername())) {
+            if (request.enabled() != null && !request.enabled()) {
+                throw new BusinessException("默认管理员不能停用");
+            }
+            if (!roleCodes.contains("SUPER_ADMIN")) {
+                throw new BusinessException("默认管理员必须保留超级管理员角色");
+            }
+        }
         user.setDisplayName(request.displayName().trim());
+        user.setDeptId(requireEnabledDept(request.deptId()));
+        user.setRemark(normalizeNullable(request.remark()));
         user.setEnabled(request.enabled() == null || request.enabled());
+        if (request.password() != null && !request.password().isBlank()) {
+            user.setPasswordHash(PASSWORD_ENCODER.encode(request.password()));
+            user.setFailedLoginCount(0);
+            user.setLockedUntil(null);
+        }
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
-        syncUserRoles(user.getId(), request.roleCodes());
+        syncUserRoles(user.getId(), roleCodes);
         return toResponse(userMapper.selectById(id));
     }
 
     @Transactional
     public void deleteUser(Long id) {
-        if (id == 1L) {
+        SystemUserEntity user = getRequiredUser(id);
+        if ("admin".equals(user.getUsername())) {
             throw new BusinessException("默认管理员不能删除");
         }
-        getRequiredUser(id);
         userRoleMapper.delete(new LambdaQueryWrapper<SystemUserRoleEntity>()
                 .eq(SystemUserRoleEntity::getUserId, id));
         userMapper.deleteById(id);
@@ -143,6 +172,30 @@ public class UserManagementService {
         return roles;
     }
 
+    private void assertRoleCodesNotEmpty(List<String> roleCodes) {
+        if (roleCodes == null || roleCodes.isEmpty()) {
+            throw new BusinessException("用户至少需要分配一个角色");
+        }
+    }
+
+    private Long requireEnabledDept(Long deptId) {
+        if (deptId == null) {
+            return null;
+        }
+        SystemDeptEntity dept = deptMapper.selectById(deptId);
+        if (dept == null || !Boolean.TRUE.equals(dept.getEnabled())) {
+            throw new BusinessException("部门不存在或已停用");
+        }
+        return deptId;
+    }
+
+    private String normalizeNullable(String value) {
+        if (value == null || value.trim().isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
     private List<String> normalizeRoleCodes(List<String> roleCodes) {
         if (roleCodes == null) {
             return List.of();
@@ -160,8 +213,13 @@ public class UserManagementService {
                 user.getId(),
                 user.getUsername(),
                 user.getDisplayName(),
+                user.getDeptId(),
                 user.getAvatar(),
+                user.getRemark(),
                 Boolean.TRUE.equals(user.getEnabled()),
+                user.getLastLoginAt(),
+                user.getLockedUntil(),
+                user.getCreatedAt(),
                 roleMapper.selectRoleCodesByUserId(user.getId())
         );
     }

@@ -12,22 +12,34 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthSecurityProperties securityProperties;
 
     @Autowired
-    public AuthService(UserRepository userRepository) {
-        this(userRepository, new BCryptPasswordEncoder());
+    public AuthService(UserRepository userRepository, AuthSecurityProperties securityProperties) {
+        this(userRepository, new BCryptPasswordEncoder(), securityProperties);
     }
 
     AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this(userRepository, passwordEncoder, new AuthSecurityProperties());
+    }
+
+    AuthService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            AuthSecurityProperties securityProperties
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.securityProperties = securityProperties;
     }
 
     public static AuthService createForTest() {
@@ -35,11 +47,23 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
-        AdminUser user = userRepository.findByUsername(request.username())
-                .filter(AdminUser::enabled)
-                .filter(candidate -> passwordEncoder.matches(request.password(), candidate.passwordHash()))
-                .orElseThrow(() -> new BusinessException("用户名或密码错误"));
+        Optional<AdminUser> userOptional = userRepository.findByUsername(request.username().trim())
+                .filter(AdminUser::enabled);
+        if (userOptional.isEmpty()) {
+            throw new BusinessException("用户名或密码错误");
+        }
 
+        AdminUser user = userOptional.get();
+        LocalDateTime now = LocalDateTime.now();
+        if (user.lockedUntil() != null && user.lockedUntil().isAfter(now)) {
+            throw new BusinessException("账号已被临时锁定，请稍后再试");
+        }
+        if (!passwordEncoder.matches(request.password(), user.passwordHash())) {
+            recordLoginFailure(user, now);
+            throw new BusinessException("用户名或密码错误");
+        }
+
+        userRepository.recordLoginSuccess(user.id());
         return new LoginResponse(null, toProfile(user), user.roles(), user.permissions());
     }
 
@@ -64,5 +88,14 @@ public class AuthService {
 
     private UserProfile toProfile(AdminUser user) {
         return new UserProfile(user.id(), user.username(), user.displayName(), user.avatar());
+    }
+
+    private void recordLoginFailure(AdminUser user, LocalDateTime now) {
+        int failedCount = user.failedLoginCount() == null ? 0 : user.failedLoginCount();
+        int nextFailedCount = failedCount + 1;
+        LocalDateTime lockedUntil = nextFailedCount >= securityProperties.getMaxFailedLoginCount()
+                ? now.plus(securityProperties.getLockDuration())
+                : null;
+        userRepository.recordLoginFailure(user.id(), nextFailedCount, lockedUntil);
     }
 }

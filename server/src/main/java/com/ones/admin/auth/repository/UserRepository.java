@@ -2,6 +2,7 @@ package com.ones.admin.auth.repository;
 
 import com.ones.admin.auth.model.AdminUser;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface UserRepository {
@@ -9,4 +10,10 @@ public interface UserRepository {
     Optional<AdminUser> findByUsername(String username);
 
     Optional<AdminUser> findById(Long id);
+
+    default void recordLoginSuccess(Long userId) {
+    }
+
+    default void recordLoginFailure(Long userId, int failedLoginCount, LocalDateTime lockedUntil) {
+    }
 }

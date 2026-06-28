@@ -1,5 +1,6 @@
 package com.ones.admin.auth.model;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record AdminUser(
@@ -10,6 +11,8 @@ public record AdminUser(
         String passwordHash,
         List<String> roles,
         List<String> permissions,
-        boolean enabled
+        boolean enabled,
+        Integer failedLoginCount,
+        LocalDateTime lockedUntil
 ) {
 }

@@ -9,6 +9,8 @@ public record UserCreateRequest(
         @NotBlank String username,
         @NotBlank String displayName,
         @NotBlank @Size(min = 6) String password,
+        Long deptId,
+        String remark,
         Boolean enabled,
         List<String> roleCodes
 ) {

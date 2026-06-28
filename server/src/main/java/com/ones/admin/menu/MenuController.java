@@ -1,8 +1,9 @@
 package com.ones.admin.menu;
 
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.menu.dto.MenuItem;
+import com.ones.admin.system.MenuManagementService;
+import com.ones.admin.system.dto.MenuRouteResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,15 +14,19 @@ import java.util.List;
 @RequestMapping("/api/system/menus")
 public class MenuController {
 
-    private final MenuService menuService;
+    private final MenuManagementService menuManagementService;
 
-    public MenuController(MenuService menuService) {
-        this.menuService = menuService;
+    public MenuController(MenuManagementService menuManagementService) {
+        this.menuManagementService = menuManagementService;
     }
 
     @GetMapping
-    @SaCheckPermission("system:menu:list")
     public ApiResult<List<MenuItem>> listMenus() {
-        return ApiResult.ok(menuService.getCurrentMenus());
+        return ApiResult.ok(menuManagementService.listCurrentMenuItems());
+    }
+
+    @GetMapping("/routes")
+    public ApiResult<List<MenuRouteResponse>> listRoutes() {
+        return ApiResult.ok(menuManagementService.listCurrentRoutes());
     }
 }

@@ -44,6 +44,8 @@ class UserControllerTest {
                 "operator",
                 "运营人员",
                 "operator123",
+                1L,
+                "测试用户",
                 true,
                 List.of("OPERATOR")
         ));
@@ -63,6 +65,9 @@ class UserControllerTest {
 
         String updateBody = objectMapper.writeValueAsString(new UserUpdateRequest(
                 "运营负责人",
+                "operator456",
+                1L,
+                "更新后的测试用户",
                 true,
                 List.of("OPERATOR")
         ));

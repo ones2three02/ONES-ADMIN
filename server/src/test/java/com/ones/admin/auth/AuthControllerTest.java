@@ -47,9 +47,25 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.username").value("admin"));
 
+        mockMvc.perform(get("/api/auth/roles").header("Authorization", "Bearer " + tokenValue))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0]").value("SUPER_ADMIN"));
+
+        mockMvc.perform(get("/api/auth/codes").header("Authorization", "Bearer " + tokenValue))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0]").value("dashboard:view"));
+
+        mockMvc.perform(post("/api/auth/refresh").header("Authorization", "Bearer " + tokenValue))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", not("")));
+
         mockMvc.perform(get("/api/system/menus").header("Authorization", "Bearer " + tokenValue))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].title").value("系统管理"))
-                .andExpect(jsonPath("$.data[0].children[0].path", containsString("/system/user")));
+                .andExpect(jsonPath("$.data[0].title").value("工作台"))
+                .andExpect(jsonPath("$.data[0].children[0].path", containsString("/dashboard/overview")));
+
+        mockMvc.perform(get("/api/system/menus/routes").header("Authorization", "Bearer " + tokenValue))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].component").value("BasicLayout"));
     }
 }

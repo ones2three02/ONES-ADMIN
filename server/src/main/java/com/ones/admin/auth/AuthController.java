@@ -13,9 +13,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
+    private static final long TOKEN_TIMEOUT_SECONDS = 86_400L;
 
     private final AuthService authService;
 
@@ -33,13 +37,34 @@ public class AuthController {
 
     @GetMapping("/me")
     public ApiResult<UserProfile> me() {
-        Long userId = Long.valueOf(String.valueOf(StpUtil.getLoginId()));
+        Long userId = currentUserId();
         return ApiResult.ok(authService.getRequiredProfile(userId));
+    }
+
+    @GetMapping("/roles")
+    public ApiResult<List<String>> roles() {
+        return ApiResult.ok(authService.getRoleList(currentUserId()));
+    }
+
+    @GetMapping("/codes")
+    public ApiResult<List<String>> codes() {
+        return ApiResult.ok(authService.getPermissionList(currentUserId()));
+    }
+
+    @PostMapping("/refresh")
+    public ApiResult<String> refresh() {
+        StpUtil.checkLogin();
+        StpUtil.renewTimeout(TOKEN_TIMEOUT_SECONDS);
+        return ApiResult.ok(StpUtil.getTokenValue());
     }
 
     @PostMapping("/logout")
     public ApiResult<Void> logout() {
         StpUtil.logout();
         return ApiResult.ok(null);
+    }
+
+    private Long currentUserId() {
+        return Long.valueOf(String.valueOf(StpUtil.getLoginId()));
     }
 }

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@vben/tsconfig/web-app.json",
+  "compilerOptions": {
+    "paths": {
+      "#/*": ["./src/*"]
+    }
+  },
+  "references": [{ "path": "./tsconfig.node.json" }],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "exclude": [
+    "src/api/examples/**",
+    "src/router/routes/modules/demos.ts",
+    "src/router/routes/modules/examples.ts",
+    "src/router/routes/modules/vben.ts",
+    "src/views/dashboard/analytics/**",
+    "src/views/dashboard/workspace/**",
+    "src/views/demos/**",
+    "src/views/examples/**"
+  ]
+}
