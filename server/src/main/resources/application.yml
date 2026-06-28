@@ -4,14 +4,37 @@ server:
 spring:
   application:
     name: ones-admin-server
+  config:
+    import:
+      - optional:classpath:application-local.yml
+      - optional:file:./config/application-local.yml
   datasource:
-    driver-class-name: org.h2.Driver
-    url: jdbc:h2:mem:ones-admin;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
-    username: sa
-    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${ONES_DB_URL:jdbc:mysql://localhost:3306/ones_admin?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true}
+    username: ${ONES_DB_USERNAME:ones_admin}
+    password: ${ONES_DB_PASSWORD:}
   sql:
     init:
       mode: always
+  data:
+    redis:
+      host: ${ONES_REDIS_HOST:localhost}
+      port: ${ONES_REDIS_PORT:6379}
+      password: ${ONES_REDIS_PASSWORD:}
+      database: ${ONES_REDIS_DATABASE:0}
+      timeout: 3s
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 0
+  rabbitmq:
+    host: ${ONES_RABBITMQ_HOST:localhost}
+    port: ${ONES_RABBITMQ_PORT:5672}
+    username: ${ONES_RABBITMQ_USERNAME:guest}
+    password: ${ONES_RABBITMQ_PASSWORD:guest}
+    virtual-host: ${ONES_RABBITMQ_VHOST:/}
+    connection-timeout: 3s
 
 mybatis-plus:
   configuration:

@@ -27,8 +27,17 @@ ONES-ADMIN
 - JDK 21
 - Node.js 20+
 - pnpm 10+
+- MySQL、Redis、RabbitMQ
 
 ### 启动后端
+
+后端默认从环境变量读取 MySQL、Redis、RabbitMQ 配置，并会额外加载本地忽略文件：
+
+```text
+server/config/application-local.yml
+```
+
+本地中间件连接信息记录在 `docs/local/middleware-credentials.md`，该目录已加入 `.gitignore`，不会提交到 Git。
 
 ```bash
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home

@@ -17,3 +17,8 @@ target/
 .env
 .env.*
 !.env.example
+
+# Local-only middleware credentials and overrides
+docs/local/
+server/src/main/resources/application-local.yml
+server/config/application-local.yml
