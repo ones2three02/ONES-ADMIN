@@ -30,5 +30,8 @@ sa-token:
   is-print: false
 
 ones:
+  security:
+    repeat-submit:
+      storage: memory
   file:
     upload-root: ${java.io.tmpdir}/ones-admin-test-uploads

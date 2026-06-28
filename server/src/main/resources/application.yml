@@ -61,6 +61,9 @@ ones:
     login:
       max-failed-login-count: ${ONES_LOGIN_MAX_FAILED_COUNT:5}
       lock-duration: ${ONES_LOGIN_LOCK_DURATION:15m}
+    repeat-submit:
+      enabled: ${ONES_REPEAT_SUBMIT_ENABLED:true}
+      storage: ${ONES_REPEAT_SUBMIT_STORAGE:redis}
   file:
     upload-root: ${ONES_FILE_UPLOAD_ROOT:uploads}
     public-url-prefix: ${ONES_FILE_PUBLIC_URL_PREFIX:/api/system/files}

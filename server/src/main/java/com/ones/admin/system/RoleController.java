@@ -1,6 +1,7 @@
 package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.ones.admin.common.repeatsubmit.RepeatSubmit;
 import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.system.dto.RoleManagementResponse;
 import com.ones.admin.system.dto.RoleResponse;
@@ -52,6 +53,7 @@ public class RoleController {
     @PostMapping("/role")
     @SaCheckPermission("system:role:create")
     @Operation(summary = "新增角色")
+    @RepeatSubmit
     public ApiResult<RoleManagementResponse> createRole(@Valid @RequestBody RoleSaveRequest request) {
         return ApiResult.ok(roleManagementService.create(request));
     }
@@ -59,6 +61,7 @@ public class RoleController {
     @PutMapping("/role/{id}")
     @SaCheckPermission("system:role:update")
     @Operation(summary = "编辑角色")
+    @RepeatSubmit
     public ApiResult<RoleManagementResponse> updateRole(
             @PathVariable Long id,
             @Valid @RequestBody RoleSaveRequest request
@@ -69,6 +72,7 @@ public class RoleController {
     @DeleteMapping("/role/{id}")
     @SaCheckPermission("system:role:delete")
     @Operation(summary = "删除角色")
+    @RepeatSubmit
     public ApiResult<Void> deleteRole(@PathVariable Long id) {
         roleManagementService.delete(id);
         return ApiResult.ok(null);

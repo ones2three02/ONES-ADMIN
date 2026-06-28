@@ -1,6 +1,7 @@
 package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.ones.admin.common.repeatsubmit.RepeatSubmit;
 import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.system.dto.UserCreateRequest;
 import com.ones.admin.system.dto.UserResponse;
@@ -40,6 +41,7 @@ public class UserController {
     @PostMapping
     @SaCheckPermission("system:user:create")
     @Operation(summary = "新增用户")
+    @RepeatSubmit
     public ApiResult<UserResponse> createUser(@Valid @RequestBody UserCreateRequest request) {
         return ApiResult.ok(userManagementService.createUser(request));
     }
@@ -47,6 +49,7 @@ public class UserController {
     @PutMapping("/{id}")
     @SaCheckPermission("system:user:update")
     @Operation(summary = "编辑用户")
+    @RepeatSubmit
     public ApiResult<UserResponse> updateUser(
             @PathVariable Long id,
             @Valid @RequestBody UserUpdateRequest request
@@ -57,6 +60,7 @@ public class UserController {
     @DeleteMapping("/{id}")
     @SaCheckPermission("system:user:delete")
     @Operation(summary = "删除用户")
+    @RepeatSubmit
     public ApiResult<Void> deleteUser(@PathVariable Long id) {
         userManagementService.deleteUser(id);
         return ApiResult.ok(null);

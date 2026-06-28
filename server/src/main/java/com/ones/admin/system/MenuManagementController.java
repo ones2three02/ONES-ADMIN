@@ -3,6 +3,7 @@ package com.ones.admin.system;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.ones.admin.common.code.CommonErrorCode;
 import com.ones.admin.common.exception.BusinessException;
+import com.ones.admin.common.repeatsubmit.RepeatSubmit;
 import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.system.dto.MenuResponse;
 import com.ones.admin.system.dto.MenuSaveRequest;
@@ -62,6 +63,7 @@ public class MenuManagementController {
     @PostMapping
     @SaCheckPermission("system:menu:create")
     @Operation(summary = "新增菜单")
+    @RepeatSubmit
     public ApiResult<MenuResponse> createMenu(@Valid @RequestBody MenuSaveRequest request) {
         return ApiResult.ok(menuManagementService.create(request));
     }
@@ -69,6 +71,7 @@ public class MenuManagementController {
     @PutMapping("/{id}")
     @SaCheckPermission("system:menu:update")
     @Operation(summary = "编辑菜单")
+    @RepeatSubmit
     public ApiResult<MenuResponse> updateMenu(
             @PathVariable Long id,
             @Valid @RequestBody MenuSaveRequest request
@@ -79,6 +82,7 @@ public class MenuManagementController {
     @DeleteMapping("/{id}")
     @SaCheckPermission("system:menu:delete")
     @Operation(summary = "删除菜单")
+    @RepeatSubmit
     public ApiResult<Void> deleteMenu(@PathVariable Long id) {
         menuManagementService.delete(id);
         return ApiResult.ok(null);

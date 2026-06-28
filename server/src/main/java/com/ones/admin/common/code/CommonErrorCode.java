@@ -8,6 +8,7 @@ public enum CommonErrorCode implements ErrorCode {
     FORBIDDEN(403, "没有权限访问该资源"),
     NOT_FOUND(404, "资源不存在"),
     BUSINESS_ERROR(4000, "业务处理失败"),
+    REPEAT_SUBMIT(4009, "请勿重复提交"),
     FILE_EMPTY(4101, "上传文件不能为空"),
     FILE_EXTENSION_NOT_ALLOWED(4102, "不支持的文件类型"),
     FILE_TOO_LARGE(4103, "上传文件大小超过限制"),

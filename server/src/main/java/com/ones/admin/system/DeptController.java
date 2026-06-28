@@ -1,6 +1,7 @@
 package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.ones.admin.common.repeatsubmit.RepeatSubmit;
 import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.system.dto.DeptResponse;
 import com.ones.admin.system.dto.DeptSaveRequest;
@@ -39,6 +40,7 @@ public class DeptController {
     @PostMapping
     @SaCheckPermission("system:dept:create")
     @Operation(summary = "新增部门")
+    @RepeatSubmit
     public ApiResult<DeptResponse> createDept(@Valid @RequestBody DeptSaveRequest request) {
         return ApiResult.ok(deptManagementService.create(request));
     }
@@ -46,6 +48,7 @@ public class DeptController {
     @PutMapping("/{id}")
     @SaCheckPermission("system:dept:update")
     @Operation(summary = "编辑部门")
+    @RepeatSubmit
     public ApiResult<DeptResponse> updateDept(
             @PathVariable Long id,
             @Valid @RequestBody DeptSaveRequest request
@@ -56,6 +59,7 @@ public class DeptController {
     @DeleteMapping("/{id}")
     @SaCheckPermission("system:dept:delete")
     @Operation(summary = "删除部门")
+    @RepeatSubmit
     public ApiResult<Void> deleteDept(@PathVariable Long id) {
         deptManagementService.delete(id);
         return ApiResult.ok(null);

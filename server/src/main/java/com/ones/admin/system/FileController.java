@@ -2,6 +2,7 @@ package com.ones.admin.system;
 
 import com.ones.admin.common.code.CommonErrorCode;
 import com.ones.admin.common.exception.BusinessException;
+import com.ones.admin.common.repeatsubmit.RepeatSubmit;
 import com.ones.admin.common.web.ApiResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -39,6 +40,7 @@ public class FileController {
 
     @PostMapping("/upload")
     @Operation(summary = "上传文件")
+    @RepeatSubmit
     public ApiResult<FileUploadResponse> upload(@RequestParam("file") MultipartFile file) throws IOException {
         if (file.isEmpty()) {
             throw new BusinessException(CommonErrorCode.FILE_EMPTY);
