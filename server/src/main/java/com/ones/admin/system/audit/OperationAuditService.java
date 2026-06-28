@@ -1,6 +1,9 @@
 package com.ones.admin.system.audit;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.ones.admin.common.web.PageResult;
+import com.ones.admin.system.dto.OperationLogQuery;
 import com.ones.admin.system.dto.OperationLogResponse;
 import com.ones.admin.system.entity.SystemOperationLogEntity;
 import com.ones.admin.system.mapper.SystemOperationLogMapper;
@@ -37,21 +40,50 @@ public class OperationAuditService {
         operationLogMapper.insert(log);
     }
 
-    public List<OperationLogResponse> listLatest(int limit) {
-        int safeLimit = clampLimit(limit);
-        return operationLogMapper.selectList(new LambdaQueryWrapper<SystemOperationLogEntity>()
-                        .orderByDesc(SystemOperationLogEntity::getId)
-                        .last("limit " + safeLimit))
+    public PageResult<OperationLogResponse> queryPage(OperationLogQuery query) {
+        IPage<SystemOperationLogEntity> page = operationLogMapper.selectPage(
+                query.toMyBatisPage(),
+                buildQueryWrapper(query)
+        );
+        List<OperationLogResponse> records = page.getRecords()
                 .stream()
                 .map(this::toResponse)
                 .toList();
+        return PageResult.of(page, records);
     }
 
-    private int clampLimit(int limit) {
-        if (limit <= 0) {
-            return 100;
+    private LambdaQueryWrapper<SystemOperationLogEntity> buildQueryWrapper(OperationLogQuery query) {
+        LambdaQueryWrapper<SystemOperationLogEntity> wrapper = new LambdaQueryWrapper<SystemOperationLogEntity>()
+                .orderByDesc(SystemOperationLogEntity::getId);
+        if (query.getUserId() != null) {
+            wrapper.eq(SystemOperationLogEntity::getUserId, query.getUserId());
         }
-        return Math.min(limit, 200);
+        if (hasText(query.getMethod())) {
+            wrapper.eq(SystemOperationLogEntity::getMethod, query.getMethod().trim().toUpperCase());
+        }
+        if (hasText(query.getPath())) {
+            wrapper.like(SystemOperationLogEntity::getPath, query.getPath().trim());
+        }
+        if (query.getSuccess() != null) {
+            wrapper.eq(SystemOperationLogEntity::getSuccess, query.getSuccess());
+        }
+        if (query.getResponseCode() != null) {
+            wrapper.eq(SystemOperationLogEntity::getResponseCode, query.getResponseCode());
+        }
+        if (hasText(query.getTraceId())) {
+            wrapper.eq(SystemOperationLogEntity::getTraceId, query.getTraceId().trim());
+        }
+        if (query.getStartTime() != null) {
+            wrapper.ge(SystemOperationLogEntity::getCreatedAt, query.getStartTime());
+        }
+        if (query.getEndTime() != null) {
+            wrapper.le(SystemOperationLogEntity::getCreatedAt, query.getEndTime());
+        }
+        return wrapper;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isBlank();
     }
 
     private OperationLogResponse toResponse(SystemOperationLogEntity log) {

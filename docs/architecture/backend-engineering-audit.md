@@ -5,17 +5,23 @@
 
 ## 1. 调研来源
 
-本轮重点参考了以下开源企业后台项目，调研渠道为 GitHub CLI，访问日期为 2026-06-29。
+本轮重点参考了以下开源企业后台项目，调研渠道为 agent-reach GitHub/dev 路由与 GitHub CLI，访问日期为 2026-06-29。
 
 | 项目 | 后端特征 | 可借鉴重点 |
 | --- | --- | --- |
 | [YunaiV/ruoyi-vue-pro](https://github.com/YunaiV/ruoyi-vue-pro) | Spring Boot、MyBatis-Plus、RBAC、多租户、工作流、第三方登录 | 权限体系、数据权限、SaaS 多租户、接口治理 |
 | [dromara/RuoYi-Vue-Plus](https://github.com/dromara/RuoYi-Vue-Plus) | Spring Boot、Sa-Token、MyBatis-Plus、SpringDoc、OSS | Sa-Token 落地方式、接口文档、文件存储 |
 | [jeecgboot/JeecgBoot](https://github.com/jeecgboot/JeecgBoot) | 低代码、Online 表单、权限、报表 | 低代码和企业支撑能力边界 |
-| [1024-lab/smart-admin](https://github.com/1024-lab/smart-admin) | Spring Boot 3、Sa-Token、MyBatis-Plus、三级等保、安全体系 | 错误码体系、接口文档、登录安全、操作日志、数据字典、数据变更记录 |
-| [cool-team-official/cool-admin-java](https://github.com/cool-team-official/cool-admin-java) | Spring Boot 3、MyBatis-Flex、模块化、插件化、自动初始化 | 模块化、插件化、统一 R/PageResult、文件配置、请求日志、代码生成 |
+| [1024-lab/smart-admin](https://github.com/1024-lab/smart-admin) | Spring Boot 3、Sa-Token、MyBatis-Plus、三级等保、安全体系；Java 17 版本采用 `sa-base`、`sa-admin` 多模块 | 错误码体系、接口文档、登录安全、操作日志、数据字典、数据变更记录、基础能力模块化 |
+| [cool-team-official/cool-admin-java](https://github.com/cool-team-official/cool-admin-java) | Spring Boot 3、MyBatis-Flex、`core` + `modules`、插件化、自动初始化 | 核心能力和业务模块分离、插件扩展思想、统一返回/分页、文件配置、请求日志、代码生成 |
 
 结论：ONES-ADMIN 当前不宜盲目切换 ORM 或引入插件化/低代码大框架，短期应优先补齐接口治理、安全边界、审计日志、文件治理、数据字典等企业后台底座。
+
+补充取舍：
+
+- Smart Admin 的价值在于“安全与规范”：登录安全、数据脱敏、数据变更记录、统一错误码、操作日志、系统参数、字典等能力适合作为 ONES-ADMIN 的企业级底座路线。
+- Cool Admin Java 的价值在于“模块化与扩展”：`core` 放通用底座，`modules` 放业务模块的划分方式值得借鉴；插件化、AI 代码生成、多租户暂不作为当前主线，避免底座阶段复杂度过高。
+- ONES-ADMIN 当前保持 Spring Boot 3 + Sa-Token + MyBatis-Plus，不跟随 Cool Admin Java 切换 MyBatis-Flex；后续只吸收它的模块边界和初始化治理思想。
 
 ## 2. 当前后端基线
 
@@ -27,14 +33,14 @@
 - 用户、角色、菜单、部门基础 RBAC。
 - 登录失败次数、临时锁定、最后登录时间，失败次数与锁定时长可配置。
 - 登录日志、系统写操作日志已具备后端记录和查询接口。
+- 已建立统一分页模型，审计日志查询支持分页与筛选。
 - 高风险写接口已接入防重复提交保护，正式环境默认使用 Redis 存储防重票据。
 - MySQL、Redis、RabbitMQ 配置通过环境变量注入，本地敏感配置不提交 Git。
 
 主要缺口：
 
 - 统一错误码刚起步，需要继续扩展错误码目录。
-- 列表接口暂未形成统一分页模型。
-- 审计日志已具备基础能力，但前端页面、筛选分页、保留策略仍待补齐。
+- 审计日志已具备基础能力，但前端页面、导出、保留策略仍待补齐。
 - 数据字典、系统参数、文件元数据、数据权限、多租户仍待规划。
 - 数据库迁移仍以 `schema.sql` 和启动补偿为主，中长期建议迁移到 Flyway/Liquibase。
 
@@ -67,6 +73,12 @@
   - 提供 `@RepeatSubmit` 注解，拦截短时间内同一用户、同一方法、同一参数的重复请求。
   - 用户、角色、菜单、部门、文件上传等写接口已接入。
   - 正式环境默认使用 Redis，测试环境使用内存票据。
+- 新增统一分页模型：
+  - 提供 `PageQuery`、`PageResult<T>`，统一 `pageNum`、`pageSize`、`total`、`pages`、`list`、`empty` 字段。
+  - 配置 MyBatis-Plus 分页插件，当前按 MySQL 方言运行。
+  - `pageSize` 最大限制为 200，超过限制会返回明确参数错误。
+  - 登录日志支持按用户名、成功状态、IP、时间范围分页筛选。
+  - 操作日志支持按用户、方法、路径、成功状态、响应码、TraceId、时间范围分页筛选。
 - 补充后端测试，覆盖登录、用户、文件上传、参数校验、TraceId、OpenAPI、登录日志、操作日志、防重复提交。
 
 ## 4. 后续优化路线
@@ -74,8 +86,8 @@
 ### 第一优先级：接口治理与安全
 
 - 扩展错误码目录：认证、权限、用户、角色、菜单、文件、系统等模块单独枚举。
-- 增加统一分页模型：`PageQuery`、`PageResult<T>`，并规范分页接口命名。
-- 为审计日志查询增加分页、筛选、导出、保留周期和清理策略。
+- 将统一分页模型逐步推广到用户、角色、菜单、部门、文件等列表接口，并规范分页接口命名。
+- 为审计日志查询增加前端页面、导出、保留周期和清理策略。
 - 为防重复提交增加后台配置页、按接口覆盖默认间隔、Redis 不可用告警。
 
 ### 第二优先级：企业支撑能力
@@ -85,6 +97,7 @@
 - 文件表：记录文件名、大小、类型、存储路径、上传人、上传时间。
 - 数据变更记录：关键表变更前后差异可追踪。
 - 数据权限：按部门、本人、本部门及子部门等范围控制数据可见性。
+- 模块边界：参考 Smart Admin 的基础模块拆分与 Cool Admin Java 的 `core/modules` 思路，把公共底座和业务模块逐步拆清。
 
 ### 第三优先级：架构演进
 

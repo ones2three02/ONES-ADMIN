@@ -3,6 +3,7 @@ package com.ones.admin.system;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ones.admin.auth.dto.LoginRequest;
 import com.ones.admin.common.code.CommonErrorCode;
+import com.ones.admin.common.web.TraceIdFilter;
 import com.ones.admin.system.dto.UserCreateRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,13 +44,19 @@ class AuditLogControllerTest {
         String token = login();
 
         mockMvc.perform(get("/api/system/audit/login-logs")
-                        .param("limit", "200")
+                        .param("pageNum", "1")
+                        .param("pageSize", "20")
+                        .param("username", failedUsername)
+                        .param("success", "false")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data[*].username", hasItem(failedUsername)))
-                .andExpect(jsonPath("$.data[*].success", hasItem(false)))
-                .andExpect(jsonPath("$.data[*].traceId", hasItem(notNullValue())));
+                .andExpect(jsonPath("$.data.pageNum").value(1))
+                .andExpect(jsonPath("$.data.pageSize").value(20))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[*].username", hasItem(failedUsername)))
+                .andExpect(jsonPath("$.data.list[*].success", hasItem(false)))
+                .andExpect(jsonPath("$.data.list[*].traceId", hasItem(notNullValue())));
     }
 
     @Test
@@ -66,21 +73,43 @@ class AuditLogControllerTest {
                 List.of("OPERATOR")
         ));
 
-        mockMvc.perform(post("/api/system/users")
+        String createTraceId = mockMvc.perform(post("/api/system/users")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createBody))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0));
+                .andExpect(jsonPath("$.code").value(0))
+                .andReturn()
+                .getResponse()
+                .getHeader(TraceIdFilter.TRACE_ID_HEADER);
 
         mockMvc.perform(get("/api/system/audit/operation-logs")
-                        .param("limit", "200")
+                        .param("pageNum", "1")
+                        .param("pageSize", "20")
+                        .param("path", "/api/system/users")
+                        .param("success", "true")
+                        .param("traceId", createTraceId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data[*].path", hasItem("/api/system/users")))
-                .andExpect(jsonPath("$.data[*].operation", hasItem("新增用户")))
-                .andExpect(jsonPath("$.data[*].permissionCode", hasItem("system:user:create")));
+                .andExpect(jsonPath("$.data.pageNum").value(1))
+                .andExpect(jsonPath("$.data.pageSize").value(20))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[*].path", hasItem("/api/system/users")))
+                .andExpect(jsonPath("$.data.list[*].operation", hasItem("新增用户")))
+                .andExpect(jsonPath("$.data.list[*].permissionCode", hasItem("system:user:create")));
+    }
+
+    @Test
+    void rejectInvalidAuditPageSize() throws Exception {
+        String token = login();
+
+        mockMvc.perform(get("/api/system/audit/login-logs")
+                        .param("pageSize", "201")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value("pageSize 每页数量不能超过 200"));
     }
 
     private String login() throws Exception {

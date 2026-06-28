@@ -1,6 +1,9 @@
 package com.ones.admin.system.audit;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.ones.admin.common.web.PageResult;
+import com.ones.admin.system.dto.LoginLogQuery;
 import com.ones.admin.system.dto.LoginLogResponse;
 import com.ones.admin.system.entity.SystemLoginLogEntity;
 import com.ones.admin.system.mapper.SystemLoginLogMapper;
@@ -26,14 +29,16 @@ public class LoginAuditService {
         record(username, null, false, failureReason, context);
     }
 
-    public List<LoginLogResponse> listLatest(int limit) {
-        int safeLimit = clampLimit(limit);
-        return loginLogMapper.selectList(new LambdaQueryWrapper<SystemLoginLogEntity>()
-                        .orderByDesc(SystemLoginLogEntity::getId)
-                        .last("limit " + safeLimit))
+    public PageResult<LoginLogResponse> queryPage(LoginLogQuery query) {
+        IPage<SystemLoginLogEntity> page = loginLogMapper.selectPage(
+                query.toMyBatisPage(),
+                buildQueryWrapper(query)
+        );
+        List<LoginLogResponse> records = page.getRecords()
                 .stream()
                 .map(this::toResponse)
                 .toList();
+        return PageResult.of(page, records);
     }
 
     private void record(
@@ -55,11 +60,29 @@ public class LoginAuditService {
         loginLogMapper.insert(log);
     }
 
-    private int clampLimit(int limit) {
-        if (limit <= 0) {
-            return 100;
+    private LambdaQueryWrapper<SystemLoginLogEntity> buildQueryWrapper(LoginLogQuery query) {
+        LambdaQueryWrapper<SystemLoginLogEntity> wrapper = new LambdaQueryWrapper<SystemLoginLogEntity>()
+                .orderByDesc(SystemLoginLogEntity::getId);
+        if (hasText(query.getUsername())) {
+            wrapper.like(SystemLoginLogEntity::getUsername, query.getUsername().trim());
         }
-        return Math.min(limit, 200);
+        if (query.getSuccess() != null) {
+            wrapper.eq(SystemLoginLogEntity::getSuccess, query.getSuccess());
+        }
+        if (hasText(query.getIp())) {
+            wrapper.like(SystemLoginLogEntity::getIp, query.getIp().trim());
+        }
+        if (query.getStartTime() != null) {
+            wrapper.ge(SystemLoginLogEntity::getCreatedAt, query.getStartTime());
+        }
+        if (query.getEndTime() != null) {
+            wrapper.le(SystemLoginLogEntity::getCreatedAt, query.getEndTime());
+        }
+        return wrapper;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isBlank();
     }
 
     private LoginLogResponse toResponse(SystemLoginLogEntity log) {
