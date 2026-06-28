@@ -5,9 +5,13 @@ import com.ones.admin.auth.dto.LoginRequest;
 import com.ones.admin.auth.dto.LoginResponse;
 import com.ones.admin.auth.dto.TokenInfo;
 import com.ones.admin.auth.dto.UserProfile;
+import com.ones.admin.common.exception.BusinessException;
 import com.ones.admin.common.web.ApiResult;
+import com.ones.admin.system.audit.AuditRequestContext;
+import com.ones.admin.system.audit.LoginAuditService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,18 +29,30 @@ public class AuthController {
     private static final long TOKEN_TIMEOUT_SECONDS = 86_400L;
 
     private final AuthService authService;
+    private final LoginAuditService loginAuditService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, LoginAuditService loginAuditService) {
         this.authService = authService;
+        this.loginAuditService = loginAuditService;
     }
 
     @PostMapping("/login")
     @Operation(summary = "账号密码登录")
-    public ApiResult<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        LoginResponse loginResponse = authService.login(request);
-        StpUtil.login(loginResponse.user().id());
-        TokenInfo tokenInfo = new TokenInfo(StpUtil.getTokenName(), StpUtil.getTokenValue(), "Bearer");
-        return ApiResult.ok(loginResponse.withToken(tokenInfo));
+    public ApiResult<LoginResponse> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest servletRequest
+    ) {
+        AuditRequestContext auditContext = AuditRequestContext.from(servletRequest);
+        try {
+            LoginResponse loginResponse = authService.login(request);
+            StpUtil.login(loginResponse.user().id());
+            loginAuditService.recordSuccess(request.username(), loginResponse.user().id(), auditContext);
+            TokenInfo tokenInfo = new TokenInfo(StpUtil.getTokenName(), StpUtil.getTokenValue(), "Bearer");
+            return ApiResult.ok(loginResponse.withToken(tokenInfo));
+        } catch (BusinessException exception) {
+            loginAuditService.recordFailure(request.username(), exception.getMessage(), auditContext);
+            throw exception;
+        }
     }
 
     @GetMapping("/me")

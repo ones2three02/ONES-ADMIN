@@ -1,5 +1,6 @@
 package com.ones.admin.common.web;
 
+import com.ones.admin.system.audit.AuditRequestContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,6 +32,7 @@ public class TraceIdFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         String traceId = resolveTraceId(request.getHeader(TRACE_ID_HEADER));
         MDC.put(TRACE_ID_MDC_KEY, traceId);
+        request.setAttribute(AuditRequestContext.TRACE_ID_ATTRIBUTE, traceId);
         response.setHeader(TRACE_ID_HEADER, traceId);
         try {
             filterChain.doFilter(request, response);

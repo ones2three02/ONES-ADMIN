@@ -78,3 +78,33 @@ create table if not exists sys_menu (
     constraint uk_sys_menu_name unique (name),
     constraint uk_sys_menu_path unique (path)
 );
+
+create table if not exists sys_login_log (
+    id bigint auto_increment primary key,
+    username varchar(64) not null,
+    user_id bigint,
+    success boolean not null default false,
+    failure_reason varchar(255),
+    ip varchar(64),
+    user_agent varchar(512),
+    trace_id varchar(64),
+    created_at timestamp not null default current_timestamp
+);
+
+create table if not exists sys_operation_log (
+    id bigint auto_increment primary key,
+    user_id bigint,
+    method varchar(16) not null,
+    path varchar(255) not null,
+    module varchar(128),
+    operation varchar(128),
+    permission_code varchar(255),
+    success boolean not null default true,
+    response_code int,
+    error_message varchar(512),
+    trace_id varchar(64),
+    ip varchar(64),
+    user_agent varchar(512),
+    duration_ms bigint,
+    created_at timestamp not null default current_timestamp
+);

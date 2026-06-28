@@ -80,7 +80,9 @@ public class SystemDataInitializer implements ApplicationRunner {
                 ensurePermission("system:dept:list", "部门查询"),
                 ensurePermission("system:dept:create", "部门新增"),
                 ensurePermission("system:dept:update", "部门编辑"),
-                ensurePermission("system:dept:delete", "部门删除")
+                ensurePermission("system:dept:delete", "部门删除"),
+                ensurePermission("system:audit:login-log", "登录日志查询"),
+                ensurePermission("system:audit:operation-log", "操作日志查询")
         );
 
         permissions.forEach(permission -> ensureRolePermission(superAdminRole.getId(), permission.getId()));
