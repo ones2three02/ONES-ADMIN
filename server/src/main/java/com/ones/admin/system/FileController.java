@@ -1,9 +1,15 @@
 package com.ones.admin.system;
 
+import com.ones.admin.common.code.CommonErrorCode;
+import com.ones.admin.common.exception.BusinessException;
 import com.ones.admin.common.web.ApiResult;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,30 +28,52 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/system/files")
+@Tag(name = "系统管理-文件")
 public class FileController {
 
-    private final Path uploadRoot = Path.of("uploads").toAbsolutePath().normalize();
+    private final FileStorageProperties fileStorageProperties;
+
+    public FileController(FileStorageProperties fileStorageProperties) {
+        this.fileStorageProperties = fileStorageProperties;
+    }
 
     @PostMapping("/upload")
+    @Operation(summary = "上传文件")
     public ApiResult<FileUploadResponse> upload(@RequestParam("file") MultipartFile file) throws IOException {
         if (file.isEmpty()) {
-            return ApiResult.fail(400, "上传文件不能为空");
+            throw new BusinessException(CommonErrorCode.FILE_EMPTY);
         }
+        if (file.getSize() > fileStorageProperties.getMaxSize().toBytes()) {
+            throw new BusinessException(CommonErrorCode.FILE_TOO_LARGE);
+        }
+        String extension = extensionOf(file.getOriginalFilename());
+        if (!isAllowedExtension(extension)) {
+            throw new BusinessException(CommonErrorCode.FILE_EXTENSION_NOT_ALLOWED);
+        }
+        Path uploadRoot = fileStorageProperties.normalizedUploadRoot();
         Files.createDirectories(uploadRoot);
-        String storedName = UUID.randomUUID() + extensionOf(file.getOriginalFilename());
+        String storedName = UUID.randomUUID() + "." + extension;
         Path target = uploadRoot.resolve(storedName).normalize();
+        if (!target.startsWith(uploadRoot)) {
+            throw new BusinessException(CommonErrorCode.PARAM_ERROR);
+        }
         file.transferTo(target);
-        return ApiResult.ok(new FileUploadResponse("/api/system/files/" + storedName));
+        return ApiResult.ok(new FileUploadResponse(publicUrl(storedName)));
     }
 
     @GetMapping("/{filename:.+}")
+    @Operation(summary = "访问文件")
     public ResponseEntity<Resource> download(@PathVariable String filename) throws MalformedURLException {
+        Path uploadRoot = fileStorageProperties.normalizedUploadRoot();
         Path file = uploadRoot.resolve(filename).normalize();
         if (!file.startsWith(uploadRoot) || !Files.exists(file)) {
             return ResponseEntity.notFound().build();
         }
         Resource resource = new UrlResource(file.toUri());
+        MediaType mediaType = MediaTypeFactory.getMediaType(resource)
+                .orElse(MediaType.APPLICATION_OCTET_STREAM);
         return ResponseEntity.ok()
+                .contentType(mediaType)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
     }
@@ -54,11 +82,27 @@ public class FileController {
         if (originalFilename == null) {
             return "";
         }
-        int dotIndex = originalFilename.lastIndexOf('.');
+        String filename = Path.of(originalFilename).getFileName().toString();
+        int dotIndex = filename.lastIndexOf('.');
         if (dotIndex < 0) {
             return "";
         }
-        return originalFilename.substring(dotIndex).toLowerCase(Locale.ROOT);
+        return filename.substring(dotIndex + 1).toLowerCase(Locale.ROOT);
+    }
+
+    private boolean isAllowedExtension(String extension) {
+        return fileStorageProperties.getAllowedExtensions()
+                .stream()
+                .map(value -> value.toLowerCase(Locale.ROOT))
+                .anyMatch(value -> value.equals(extension));
+    }
+
+    private String publicUrl(String storedName) {
+        String prefix = fileStorageProperties.getPublicUrlPrefix();
+        if (prefix.endsWith("/")) {
+            return prefix + storedName;
+        }
+        return prefix + "/" + storedName;
     }
 
     public record FileUploadResponse(String url) {

@@ -5,6 +5,8 @@ import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.system.dto.RoleManagementResponse;
 import com.ones.admin.system.dto.RoleResponse;
 import com.ones.admin.system.dto.RoleSaveRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +21,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/system")
+@Tag(name = "系统管理-角色")
 public class RoleController {
 
     private final UserManagementService userManagementService;
@@ -34,24 +37,28 @@ public class RoleController {
 
     @GetMapping("/roles")
     @SaCheckPermission("system:role:list")
+    @Operation(summary = "查询角色选项")
     public ApiResult<List<RoleResponse>> listRoles() {
         return ApiResult.ok(userManagementService.listRoles());
     }
 
     @GetMapping("/role/list")
     @SaCheckPermission("system:role:list")
+    @Operation(summary = "查询角色列表")
     public ApiResult<List<RoleManagementResponse>> listRoleManagementRows() {
         return ApiResult.ok(roleManagementService.listRoles());
     }
 
     @PostMapping("/role")
     @SaCheckPermission("system:role:create")
+    @Operation(summary = "新增角色")
     public ApiResult<RoleManagementResponse> createRole(@Valid @RequestBody RoleSaveRequest request) {
         return ApiResult.ok(roleManagementService.create(request));
     }
 
     @PutMapping("/role/{id}")
     @SaCheckPermission("system:role:update")
+    @Operation(summary = "编辑角色")
     public ApiResult<RoleManagementResponse> updateRole(
             @PathVariable Long id,
             @Valid @RequestBody RoleSaveRequest request
@@ -61,6 +68,7 @@ public class RoleController {
 
     @DeleteMapping("/role/{id}")
     @SaCheckPermission("system:role:delete")
+    @Operation(summary = "删除角色")
     public ApiResult<Void> deleteRole(@PathVariable Long id) {
         roleManagementService.delete(id);
         return ApiResult.ok(null);

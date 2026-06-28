@@ -1,9 +1,13 @@
 package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.ones.admin.common.code.CommonErrorCode;
+import com.ones.admin.common.exception.BusinessException;
 import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.system.dto.MenuResponse;
 import com.ones.admin.system.dto.MenuSaveRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +23,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/system/menu")
+@Tag(name = "系统管理-菜单")
 public class MenuManagementController {
 
     private final MenuManagementService menuManagementService;
@@ -29,12 +34,14 @@ public class MenuManagementController {
 
     @GetMapping("/list")
     @SaCheckPermission("system:menu:list")
+    @Operation(summary = "查询菜单树")
     public ApiResult<List<MenuResponse>> listMenus() {
         return ApiResult.ok(menuManagementService.listManagementTree());
     }
 
     @GetMapping("/name-exists")
     @SaCheckPermission("system:menu:list")
+    @Operation(summary = "校验菜单名称是否存在")
     public ApiResult<Boolean> isMenuNameExists(
             @RequestParam String name,
             @RequestParam(required = false) String id
@@ -44,6 +51,7 @@ public class MenuManagementController {
 
     @GetMapping("/path-exists")
     @SaCheckPermission("system:menu:list")
+    @Operation(summary = "校验菜单路径是否存在")
     public ApiResult<Boolean> isMenuPathExists(
             @RequestParam String path,
             @RequestParam(required = false) String id
@@ -53,12 +61,14 @@ public class MenuManagementController {
 
     @PostMapping
     @SaCheckPermission("system:menu:create")
+    @Operation(summary = "新增菜单")
     public ApiResult<MenuResponse> createMenu(@Valid @RequestBody MenuSaveRequest request) {
         return ApiResult.ok(menuManagementService.create(request));
     }
 
     @PutMapping("/{id}")
     @SaCheckPermission("system:menu:update")
+    @Operation(summary = "编辑菜单")
     public ApiResult<MenuResponse> updateMenu(
             @PathVariable Long id,
             @Valid @RequestBody MenuSaveRequest request
@@ -68,6 +78,7 @@ public class MenuManagementController {
 
     @DeleteMapping("/{id}")
     @SaCheckPermission("system:menu:delete")
+    @Operation(summary = "删除菜单")
     public ApiResult<Void> deleteMenu(@PathVariable Long id) {
         menuManagementService.delete(id);
         return ApiResult.ok(null);
@@ -77,6 +88,10 @@ public class MenuManagementController {
         if (id == null || id.isBlank() || "0".equals(id)) {
             return null;
         }
-        return Long.valueOf(id);
+        try {
+            return Long.valueOf(id);
+        } catch (NumberFormatException exception) {
+            throw new BusinessException(CommonErrorCode.PARAM_ERROR, "id 参数不正确");
+        }
     }
 }

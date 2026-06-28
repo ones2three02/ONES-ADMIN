@@ -35,6 +35,10 @@ spring:
     password: ${ONES_RABBITMQ_PASSWORD:guest}
     virtual-host: ${ONES_RABBITMQ_VHOST:/}
     connection-timeout: 3s
+  servlet:
+    multipart:
+      max-file-size: ${ONES_FILE_MAX_SIZE:20MB}
+      max-request-size: ${ONES_FILE_MAX_SIZE:20MB}
 
 mybatis-plus:
   configuration:
@@ -57,12 +61,34 @@ ones:
     login:
       max-failed-login-count: ${ONES_LOGIN_MAX_FAILED_COUNT:5}
       lock-duration: ${ONES_LOGIN_LOCK_DURATION:15m}
+  file:
+    upload-root: ${ONES_FILE_UPLOAD_ROOT:uploads}
+    public-url-prefix: ${ONES_FILE_PUBLIC_URL_PREFIX:/api/system/files}
+    max-size: ${ONES_FILE_MAX_SIZE:20MB}
+    allowed-extensions:
+      - jpg
+      - jpeg
+      - png
+      - gif
+      - webp
+      - pdf
+      - doc
+      - docx
+      - xls
+      - xlsx
+      - txt
+      - csv
+      - zip
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+
+logging:
+  pattern:
+    level: "%5p [%X{traceId}]"
 
 springdoc:
   swagger-ui:

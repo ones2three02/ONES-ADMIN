@@ -4,6 +4,8 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.system.dto.DeptResponse;
 import com.ones.admin.system.dto.DeptSaveRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +20,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/system/dept")
+@Tag(name = "系统管理-部门")
 public class DeptController {
 
     private final DeptManagementService deptManagementService;
@@ -28,18 +31,21 @@ public class DeptController {
 
     @GetMapping("/list")
     @SaCheckPermission("system:dept:list")
+    @Operation(summary = "查询部门树")
     public ApiResult<List<DeptResponse>> listDeptTree() {
         return ApiResult.ok(deptManagementService.listTree());
     }
 
     @PostMapping
     @SaCheckPermission("system:dept:create")
+    @Operation(summary = "新增部门")
     public ApiResult<DeptResponse> createDept(@Valid @RequestBody DeptSaveRequest request) {
         return ApiResult.ok(deptManagementService.create(request));
     }
 
     @PutMapping("/{id}")
     @SaCheckPermission("system:dept:update")
+    @Operation(summary = "编辑部门")
     public ApiResult<DeptResponse> updateDept(
             @PathVariable Long id,
             @Valid @RequestBody DeptSaveRequest request
@@ -49,6 +55,7 @@ public class DeptController {
 
     @DeleteMapping("/{id}")
     @SaCheckPermission("system:dept:delete")
+    @Operation(summary = "删除部门")
     public ApiResult<Void> deleteDept(@PathVariable Long id) {
         deptManagementService.delete(id);
         return ApiResult.ok(null);
