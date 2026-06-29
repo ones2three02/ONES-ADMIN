@@ -38,6 +38,7 @@
 - 已建立统一分页模型，审计日志查询支持分页与筛选。
 - 已建立运行时接口资源清单，可扫描后端真实 `/api/**` 路由、方法、模块、摘要、权限点和写操作标识。
 - 接口资源清单已提供稳定接口标识 `apiKey`、处理器定位 `handler` 和废弃状态 `deprecated`，便于接口管理页、审计排障和 Jenkins 报告直接定位到 Controller 方法。
+- 已提供接口资源 CSV 导出接口，便于审计留档、接口变更对比和 Jenkins 产物归档。
 - 已建立接口治理质量门禁，可输出权限缺口、系统写接口无权限、接口文档元数据缺失等违规项。
 - 已建立接口权限注册一致性检查，可识别代码权限点是否写入 `sys_permission`，以及是否挂载到 `sys_menu.auth_code` 供角色授权。
 - 已建立权限码命名规范检查，当前统一使用小写冒号分段格式：`^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$`。
@@ -81,6 +82,7 @@
   - 返回请求方法、路径、所属模块、接口摘要、权限点、权限码是否规范、权限模式、认证级别、是否需要权限、权限点是否注册、权限点是否可授权、是否写操作。
   - 返回稳定接口标识 `apiKey`、处理器定位 `handler`、废弃状态 `deprecated`，用于接口排障、变更审计和生命周期治理。
   - 支持分页和按方法、路径、模块、权限点、处理器、认证级别、写操作、权限缺口、废弃状态筛选。
+  - 提供 `/api/system/api-resources/export` 接口资源 CSV 导出，字段覆盖接口标识、处理器、权限点、权限状态、认证级别、废弃状态和访问策略。
   - 提供 `/api/system/api-resources/summary` 治理汇总接口，返回接口总数、写操作数、权限缺口数、访问策略数、废弃接口数、认证级别分布和模块分布。
   - 提供 `/api/system/api-resources/governance` 接口治理质量门禁，返回是否通过、错误数、警告数、权限码正则和违规明细。
   - 自动区分 `PUBLIC`、`LOGIN`、`PERMISSION` 三类接口认证级别。
@@ -150,6 +152,7 @@
   - `cd server && ./mvnw test`
   - 检查 Flyway 迁移测试通过，确保 `flyway_schema_history` 有迁移记录
   - 登录测试账号后调用 `/api/system/api-resources/governance`，要求 `passed=true` 且 `errorCount=0`
+  - 可调用 `/api/system/api-resources/export` 导出 CSV 作为构建产物，便于接口清单留档和版本差异比对
   - 权限码命名统一遵循 `/api/system/api-resources/governance` 返回的 `permissionCodePattern`
   - 前端后续可接 `pnpm build`
 - 合入 `main` 前必须确保后端测试通过、前端构建通过、数据库迁移说明完整。

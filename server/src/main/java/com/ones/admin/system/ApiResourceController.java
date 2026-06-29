@@ -10,9 +10,14 @@ import com.ones.admin.system.dto.ApiResourceSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/system/api-resources")
@@ -44,5 +49,15 @@ public class ApiResourceController {
     @Operation(summary = "查询接口治理质量门禁")
     public ApiResult<ApiResourceGovernanceResponse> checkApiResourceGovernance() {
         return ApiResult.ok(apiResourceService.checkGovernance());
+    }
+
+    @GetMapping("/export")
+    @SaCheckPermission("system:api:list")
+    @Operation(summary = "导出接口资源清单")
+    public ResponseEntity<String> exportApiResources() {
+        return ResponseEntity.ok()
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"ones-api-resources.csv\"")
+                .body(apiResourceService.exportCsv());
     }
 }

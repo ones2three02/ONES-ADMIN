@@ -37,6 +37,9 @@ public class ApiResourceService {
     private static final String PERMISSION_CODE_PATTERN_TEXT =
             "^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$";
     private static final Pattern PERMISSION_CODE_PATTERN = Pattern.compile(PERMISSION_CODE_PATTERN_TEXT);
+    private static final String CSV_HEADER = "apiKey,method,path,handler,module,summary,authType,permissionCodes,"
+            + "permissionMode,requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
+            + "writeOperation,deprecated,accessPolicyExplicit,accessPolicyReason";
 
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
     private final SystemPermissionMapper permissionMapper;
@@ -88,6 +91,12 @@ public class ApiResourceService {
                 authTypes,
                 modules
         );
+    }
+
+    public String exportCsv() {
+        StringBuilder csv = new StringBuilder(CSV_HEADER).append('\n');
+        listApiResources().forEach(resource -> appendCsvRow(csv, resource));
+        return csv.toString();
     }
 
     public ApiResourceGovernanceResponse checkGovernance() {
@@ -176,6 +185,49 @@ public class ApiResourceService {
             }
         }
         return responses;
+    }
+
+    private void appendCsvRow(StringBuilder csv, ApiResourceResponse resource) {
+        csv.append(csvValue(resource.apiKey())).append(',')
+                .append(csvValue(resource.method())).append(',')
+                .append(csvValue(resource.path())).append(',')
+                .append(csvValue(resource.handler())).append(',')
+                .append(csvValue(resource.module())).append(',')
+                .append(csvValue(resource.summary())).append(',')
+                .append(csvValue(resource.authType())).append(',')
+                .append(csvValue(String.join("|", resource.permissionCodes()))).append(',')
+                .append(csvValue(resource.permissionMode())).append(',')
+                .append(resource.requiresPermission()).append(',')
+                .append(resource.permissionRegistered()).append(',')
+                .append(resource.permissionAssignable()).append(',')
+                .append(resource.permissionMissing()).append(',')
+                .append(resource.writeOperation()).append(',')
+                .append(resource.deprecated()).append(',')
+                .append(resource.accessPolicyExplicit()).append(',')
+                .append(csvValue(resource.accessPolicyReason()))
+                .append('\n');
+    }
+
+    private String csvValue(String value) {
+        if (value == null) {
+            return "";
+        }
+        String safeValue = escapeCsvFormula(value);
+        if (safeValue.contains(",") || safeValue.contains("\"") || safeValue.contains("\n") || safeValue.contains("\r")) {
+            return "\"" + safeValue.replace("\"", "\"\"") + "\"";
+        }
+        return safeValue;
+    }
+
+    private String escapeCsvFormula(String value) {
+        if (value.isEmpty()) {
+            return value;
+        }
+        char first = value.charAt(0);
+        if (first == '=' || first == '+' || first == '-' || first == '@' || first == '\t') {
+            return "'" + value;
+        }
+        return value;
     }
 
     private Set<String> paths(RequestMappingInfo info) {

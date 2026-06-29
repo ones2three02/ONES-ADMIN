@@ -12,12 +12,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -215,6 +218,35 @@ class ApiResourceControllerTest {
     }
 
     @Test
+    void exportApiResourcesAsCsv() throws Exception {
+        String token = login("admin", "admin123");
+
+        String response = mockMvc.perform(get("/api/system/api-resources/export")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", containsString("text/csv")))
+                .andExpect(header().string("Content-Disposition", containsString("ones-api-resources.csv")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(response).startsWith(
+                "apiKey,method,path,handler,module,summary,authType,permissionCodes,permissionMode,"
+                        + "requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
+                        + "writeOperation,deprecated,accessPolicyExplicit,accessPolicyReason\n"
+        );
+        assertThat(response).contains(
+                "GET /api/system/users,GET,/api/system/users,"
+                        + "com.ones.admin.system.UserController#listUsers"
+        );
+        assertThat(response).contains("system:user:list");
+        assertThat(response).contains(
+                "GET /api/system/api-resources/export,GET,/api/system/api-resources/export,"
+                        + "com.ones.admin.system.ApiResourceController#exportApiResources"
+        );
+    }
+
+    @Test
     void rejectUserWithoutApiResourcePermission() throws Exception {
         String adminToken = login("admin", "admin123");
         String username = "api_operator_" + System.nanoTime();
@@ -242,6 +274,11 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
 
         mockMvc.perform(get("/api/system/api-resources/governance")
+                        .header("Authorization", "Bearer " + operatorToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+
+        mockMvc.perform(get("/api/system/api-resources/export")
                         .header("Authorization", "Bearer " + operatorToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));

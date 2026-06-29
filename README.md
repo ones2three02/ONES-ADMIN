@@ -2,7 +2,7 @@
 
 ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
-当前产品版本：`v0.0.11`
+当前产品版本：`v0.0.12`
 
 ## 当前能力
 
@@ -93,6 +93,7 @@ pnpm build
 | `PUT` | `/api/system/users/{id}` | 编辑用户 |
 | `DELETE` | `/api/system/users/{id}` | 删除用户 |
 | `GET` | `/api/system/roles` | 查询角色列表 |
+| `GET` | `/api/system/api-resources/export` | 导出接口资源 CSV 清单 |
 | `GET` | `/api/health` | 应用健康检查 |
 
 ## 架构文档
