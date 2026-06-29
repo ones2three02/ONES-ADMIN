@@ -247,6 +247,47 @@ class ApiResourceControllerTest {
     }
 
     @Test
+    void generateApiResourceManifest() throws Exception {
+        String token = login("admin", "admin123");
+
+        String firstResponse = mockMvc.perform(get("/api/system/api-resources/manifest")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.13"))
+                .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
+                .andExpect(jsonPath("$.data.total").value(41))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String secondResponse = mockMvc.perform(get("/api/system/api-resources/manifest")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode firstManifest = objectMapper.readTree(firstResponse).path("data");
+        JsonNode secondManifest = objectMapper.readTree(secondResponse).path("data");
+        assertThat(firstManifest.path("checksum").asText()).matches("^[a-f0-9]{64}$");
+        assertThat(secondManifest.path("checksum").asText()).isEqualTo(firstManifest.path("checksum").asText());
+        assertThat(firstManifest.path("resources").size()).isEqualTo(firstManifest.path("total").asInt());
+
+        JsonNode userList = findResource(firstManifest.path("resources"), "GET", "/api/system/users");
+        assertThat(userList.path("apiKey").asText()).isEqualTo("GET /api/system/users");
+        assertThat(userList.path("handler").asText()).isEqualTo("com.ones.admin.system.UserController#listUsers");
+        assertThat(userList.path("authType").asText()).isEqualTo("PERMISSION");
+        assertThat(permissionCodes(userList)).containsExactly("system:user:list");
+
+        JsonNode manifest = findResource(firstManifest.path("resources"), "GET", "/api/system/api-resources/manifest");
+        assertThat(manifest.path("handler").asText())
+                .isEqualTo("com.ones.admin.system.ApiResourceController#generateApiResourceManifest");
+        assertThat(permissionCodes(manifest)).containsExactly("system:api:list");
+        assertThat(manifest.path("writeOperation").asBoolean()).isFalse();
+    }
+
+    @Test
     void rejectUserWithoutApiResourcePermission() throws Exception {
         String adminToken = login("admin", "admin123");
         String username = "api_operator_" + System.nanoTime();
@@ -279,6 +320,11 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
 
         mockMvc.perform(get("/api/system/api-resources/export")
+                        .header("Authorization", "Bearer " + operatorToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+
+        mockMvc.perform(get("/api/system/api-resources/manifest")
                         .header("Authorization", "Bearer " + operatorToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));

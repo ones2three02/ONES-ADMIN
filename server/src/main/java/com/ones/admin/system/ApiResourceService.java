@@ -7,6 +7,7 @@ import com.ones.admin.common.web.ApiAuthType;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.config.SaTokenConfig;
 import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
+import com.ones.admin.system.dto.ApiResourceManifestResponse;
 import com.ones.admin.system.dto.ApiResourceQuery;
 import com.ones.admin.system.dto.ApiResourceResponse;
 import com.ones.admin.system.dto.ApiResourceSummaryResponse;
@@ -14,6 +15,7 @@ import com.ones.admin.system.mapper.SystemMenuMapper;
 import com.ones.admin.system.mapper.SystemPermissionMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.AntPathMatcher;
@@ -22,8 +24,12 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +42,7 @@ public class ApiResourceService {
 
     private static final String PERMISSION_CODE_PATTERN_TEXT =
             "^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$";
+    private static final String CHECKSUM_ALGORITHM = "SHA-256";
     private static final Pattern PERMISSION_CODE_PATTERN = Pattern.compile(PERMISSION_CODE_PATTERN_TEXT);
     private static final String CSV_HEADER = "apiKey,method,path,handler,module,summary,authType,permissionCodes,"
             + "permissionMode,requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
@@ -44,16 +51,19 @@ public class ApiResourceService {
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
     private final SystemPermissionMapper permissionMapper;
     private final SystemMenuMapper menuMapper;
+    private final String applicationVersion;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     public ApiResourceService(
             RequestMappingHandlerMapping requestMappingHandlerMapping,
             SystemPermissionMapper permissionMapper,
-            SystemMenuMapper menuMapper
+            SystemMenuMapper menuMapper,
+            @Value("${ones.version:v0.0.13}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
         this.menuMapper = menuMapper;
+        this.applicationVersion = applicationVersion;
     }
 
     public PageResult<ApiResourceResponse> queryPage(ApiResourceQuery query) {
@@ -90,6 +100,19 @@ public class ApiResourceService {
                 resources.stream().filter(ApiResourceResponse::deprecated).count(),
                 authTypes,
                 modules
+        );
+    }
+
+    public ApiResourceManifestResponse generateManifest() {
+        List<ApiResourceManifestResponse.Resource> resources = listApiResources().stream()
+                .map(this::toManifestResource)
+                .toList();
+        return new ApiResourceManifestResponse(
+                applicationVersion,
+                CHECKSUM_ALGORITHM,
+                checksum(resources),
+                resources.size(),
+                resources
         );
     }
 
@@ -185,6 +208,51 @@ public class ApiResourceService {
             }
         }
         return responses;
+    }
+
+    private ApiResourceManifestResponse.Resource toManifestResource(ApiResourceResponse resource) {
+        return new ApiResourceManifestResponse.Resource(
+                resource.apiKey(),
+                resource.method(),
+                resource.path(),
+                resource.handler(),
+                resource.authType(),
+                resource.permissionCodes(),
+                resource.permissionMode(),
+                resource.writeOperation(),
+                resource.deprecated()
+        );
+    }
+
+    private String checksum(List<ApiResourceManifestResponse.Resource> resources) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance(CHECKSUM_ALGORITHM);
+            for (ApiResourceManifestResponse.Resource resource : resources) {
+                digest.update(canonicalManifestLine(resource).getBytes(StandardCharsets.UTF_8));
+                digest.update((byte) '\n');
+            }
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("接口资源 Manifest 指纹算法不可用：" + CHECKSUM_ALGORITHM, exception);
+        }
+    }
+
+    private String canonicalManifestLine(ApiResourceManifestResponse.Resource resource) {
+        return String.join("\u001F",
+                nullToEmpty(resource.apiKey()),
+                nullToEmpty(resource.method()),
+                nullToEmpty(resource.path()),
+                nullToEmpty(resource.handler()),
+                nullToEmpty(resource.authType()),
+                String.join("|", resource.permissionCodes()),
+                nullToEmpty(resource.permissionMode()),
+                String.valueOf(resource.writeOperation()),
+                String.valueOf(resource.deprecated())
+        );
+    }
+
+    private String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     private void appendCsvRow(StringBuilder csv, ApiResourceResponse resource) {

@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
+import com.ones.admin.system.dto.ApiResourceManifestResponse;
 import com.ones.admin.system.dto.ApiResourceQuery;
 import com.ones.admin.system.dto.ApiResourceResponse;
 import com.ones.admin.system.dto.ApiResourceSummaryResponse;
@@ -49,6 +50,13 @@ public class ApiResourceController {
     @Operation(summary = "查询接口治理质量门禁")
     public ApiResult<ApiResourceGovernanceResponse> checkApiResourceGovernance() {
         return ApiResult.ok(apiResourceService.checkGovernance());
+    }
+
+    @GetMapping("/manifest")
+    @SaCheckPermission("system:api:list")
+    @Operation(summary = "生成接口资源 Manifest")
+    public ApiResult<ApiResourceManifestResponse> generateApiResourceManifest() {
+        return ApiResult.ok(apiResourceService.generateManifest());
     }
 
     @GetMapping("/export")

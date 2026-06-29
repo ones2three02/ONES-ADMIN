@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.13 - 2026-06-29
+
+- 新增接口资源 Manifest 接口 `/api/system/api-resources/manifest`，输出稳定 JSON 接口清单。
+- Manifest 返回应用版本、资源总数、`SHA-256` 指纹和关键接口元数据，便于 Jenkins 做接口契约留档与版本差异比对。
+- Manifest 资源项覆盖 `apiKey`、请求方法、路径、处理器、认证级别、权限点、权限模式、写操作和废弃状态。
+- Manifest 沿用 `system:api:list` 权限控制，普通运营用户无法越权读取接口契约清单。
+- README 首版接口表新增接口资源 Manifest 入口。
+
 ## v0.0.12 - 2026-06-29
 
 - 新增接口资源 CSV 导出接口 `/api/system/api-resources/export`，用于审计、Jenkins 附件和权限巡检留档。
