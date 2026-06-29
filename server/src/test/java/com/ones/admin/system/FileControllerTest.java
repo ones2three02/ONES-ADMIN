@@ -57,10 +57,10 @@ class FileControllerTest {
         );
 
         mockMvc.perform(multipart("/api/system/files/upload")
-                        .file(file)
-                        .header("Authorization", "Bearer " + login()))
+                .file(file)
+                .header("Authorization", "Bearer " + login()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(CommonErrorCode.FILE_EXTENSION_NOT_ALLOWED.code()));
+                .andExpect(jsonPath("$.code").value(SystemErrorCode.FILE_EXTENSION_NOT_ALLOWED.code()));
     }
 
     @Test
@@ -73,10 +73,10 @@ class FileControllerTest {
         );
 
         mockMvc.perform(multipart("/api/system/files/upload")
-                        .file(file)
-                        .header("Authorization", "Bearer " + login()))
+                .file(file)
+                .header("Authorization", "Bearer " + login()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(CommonErrorCode.FILE_EMPTY.code()));
+                .andExpect(jsonPath("$.code").value(SystemErrorCode.FILE_EMPTY.code()));
     }
 
     @Test

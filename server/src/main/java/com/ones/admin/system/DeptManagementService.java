@@ -78,12 +78,12 @@ public class DeptManagementService {
         Long childCount = deptMapper.selectCount(new LambdaQueryWrapper<SystemDeptEntity>()
                 .eq(SystemDeptEntity::getParentId, id));
         if (childCount > 0) {
-            throw new BusinessException("存在下级部门，不能删除");
+            throw new BusinessException(SystemErrorCode.DEPT_CHILD_EXISTS);
         }
         Long userCount = userMapper.selectCount(new LambdaQueryWrapper<SystemUserEntity>()
                 .eq(SystemUserEntity::getDeptId, id));
         if (userCount > 0) {
-            throw new BusinessException("部门下存在用户，不能删除");
+            throw new BusinessException(SystemErrorCode.DEPT_USER_EXISTS);
         }
         deptMapper.deleteById(id);
     }
@@ -91,7 +91,7 @@ public class DeptManagementService {
     private SystemDeptEntity getRequiredDept(Long id) {
         SystemDeptEntity dept = deptMapper.selectById(id);
         if (dept == null) {
-            throw new BusinessException(404, "部门不存在");
+            throw new BusinessException(SystemErrorCode.DEPT_NOT_FOUND);
         }
         return dept;
     }
@@ -101,7 +101,7 @@ public class DeptManagementService {
             return;
         }
         if (deptMapper.selectById(parentId) == null) {
-            throw new BusinessException("上级部门不存在");
+            throw new BusinessException(SystemErrorCode.DEPT_PARENT_NOT_FOUND);
         }
     }
 
@@ -109,11 +109,11 @@ public class DeptManagementService {
         Long cursor = parentId;
         while (cursor != null) {
             if (Objects.equals(cursor, currentId)) {
-                throw new BusinessException("上级部门不能选择自己或自己的下级");
+                throw new BusinessException(SystemErrorCode.DEPT_PARENT_CANNOT_BE_DESCENDANT);
             }
             SystemDeptEntity parent = deptMapper.selectById(cursor);
             if (parent == null) {
-                throw new BusinessException("上级部门不存在");
+                throw new BusinessException(SystemErrorCode.DEPT_PARENT_NOT_FOUND);
             }
             cursor = parent.getParentId();
         }

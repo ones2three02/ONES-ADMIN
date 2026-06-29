@@ -1,6 +1,7 @@
 package com.ones.admin.system;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ones.admin.auth.AuthErrorCode;
 import com.ones.admin.auth.dto.LoginRequest;
 import com.ones.admin.common.code.CommonErrorCode;
 import com.ones.admin.common.web.TraceIdFilter;
@@ -36,10 +37,10 @@ class AuditLogControllerTest {
         String failedUsername = "ghost-audit";
         String failedBody = objectMapper.writeValueAsString(new LoginRequest(failedUsername, "wrong-password"));
         mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(failedBody))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(failedBody))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(CommonErrorCode.BUSINESS_ERROR.code()));
+                .andExpect(jsonPath("$.code").value(AuthErrorCode.INVALID_CREDENTIALS.code()));
 
         String token = login();
 

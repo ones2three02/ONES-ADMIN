@@ -5,6 +5,7 @@ import cn.dev33.satoken.exception.NotPermissionException;
 import cn.dev33.satoken.exception.NotRoleException;
 import com.ones.admin.common.code.CommonErrorCode;
 import com.ones.admin.common.web.ApiResult;
+import com.ones.admin.system.SystemErrorCode;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,7 +97,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiResult<Void>> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException exception) {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                .body(ApiResult.fail(CommonErrorCode.FILE_TOO_LARGE));
+                .body(ApiResult.fail(SystemErrorCode.FILE_TOO_LARGE));
     }
 
     @ExceptionHandler(Exception.class)

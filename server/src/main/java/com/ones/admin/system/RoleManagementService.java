@@ -78,7 +78,7 @@ public class RoleManagementService {
         if (request.code() != null && !request.code().trim().isBlank()) {
             String code = normalizeCode(request.code());
             if (superAdmin && !"SUPER_ADMIN".equals(code)) {
-                throw new BusinessException("超级管理员角色编码不能修改");
+                throw new BusinessException(SystemErrorCode.SUPER_ADMIN_CODE_LOCKED);
             }
             assertCodeAvailable(code, id);
             role.setCode(code);
@@ -91,7 +91,7 @@ public class RoleManagementService {
         }
         if (request.status() != null) {
             if ("SUPER_ADMIN".equals(role.getCode()) && request.status() == 0) {
-                throw new BusinessException("超级管理员角色不能停用");
+                throw new BusinessException(SystemErrorCode.SUPER_ADMIN_CANNOT_DISABLE);
             }
             role.setEnabled(request.status() == 1);
         }
@@ -99,7 +99,7 @@ public class RoleManagementService {
         roleMapper.updateById(role);
         if (request.permissions() != null) {
             if (superAdmin) {
-                throw new BusinessException("超级管理员权限不能修改");
+                throw new BusinessException(SystemErrorCode.SUPER_ADMIN_PERMISSION_LOCKED);
             }
             syncRolePermissions(role.getId(), request.permissions());
         }
@@ -110,12 +110,12 @@ public class RoleManagementService {
     public void delete(Long id) {
         SystemRoleEntity role = getRequiredRole(id);
         if ("SUPER_ADMIN".equals(role.getCode())) {
-            throw new BusinessException("超级管理员角色不能删除");
+            throw new BusinessException(SystemErrorCode.SUPER_ADMIN_CANNOT_DELETE);
         }
         Long userCount = userRoleMapper.selectCount(new LambdaQueryWrapper<SystemUserRoleEntity>()
                 .eq(SystemUserRoleEntity::getRoleId, id));
         if (userCount > 0) {
-            throw new BusinessException("角色已分配给用户，不能删除");
+            throw new BusinessException(SystemErrorCode.ROLE_ASSIGNED_TO_USER);
         }
         rolePermissionMapper.delete(new LambdaQueryWrapper<SystemRolePermissionEntity>()
                 .eq(SystemRolePermissionEntity::getRoleId, id));
@@ -141,7 +141,7 @@ public class RoleManagementService {
         List<SystemMenuEntity> menus = menuMapper.selectList(new LambdaQueryWrapper<SystemMenuEntity>()
                 .in(SystemMenuEntity::getId, normalizedMenuIds));
         if (menus.size() != normalizedMenuIds.size()) {
-            throw new BusinessException("菜单权限不存在");
+            throw new BusinessException(SystemErrorCode.ROLE_MENU_PERMISSION_NOT_FOUND);
         }
         Set<String> insertedCodes = new HashSet<>();
         for (SystemMenuEntity menu : menus) {
@@ -176,7 +176,7 @@ public class RoleManagementService {
     private SystemRoleEntity getRequiredRole(Long id) {
         SystemRoleEntity role = roleMapper.selectById(id);
         if (role == null) {
-            throw new BusinessException(404, "角色不存在");
+            throw new BusinessException(SystemErrorCode.ROLE_NOT_FOUND);
         }
         return role;
     }
@@ -189,20 +189,20 @@ public class RoleManagementService {
         }
         Long count = roleMapper.selectCount(wrapper);
         if (count > 0) {
-            throw new BusinessException("角色编码已存在");
+            throw new BusinessException(SystemErrorCode.ROLE_CODE_EXISTS);
         }
     }
 
     private String requireCode(String code) {
         if (code == null || code.trim().isBlank()) {
-            throw new BusinessException("角色编码不能为空");
+            throw new BusinessException(SystemErrorCode.ROLE_CODE_REQUIRED);
         }
         return normalizeCode(code);
     }
 
     private String requireName(String name) {
         if (name == null || name.trim().isBlank()) {
-            throw new BusinessException("角色名称不能为空");
+            throw new BusinessException(SystemErrorCode.ROLE_NAME_REQUIRED);
         }
         return name.trim();
     }

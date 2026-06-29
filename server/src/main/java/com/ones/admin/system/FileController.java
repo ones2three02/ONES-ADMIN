@@ -1,7 +1,6 @@
 package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
-import com.ones.admin.common.code.CommonErrorCode;
 import com.ones.admin.common.exception.BusinessException;
 import com.ones.admin.common.repeatsubmit.RepeatSubmit;
 import com.ones.admin.common.web.ApiAccessPolicy;
@@ -47,21 +46,21 @@ public class FileController {
     @RepeatSubmit
     public ApiResult<FileUploadResponse> upload(@RequestParam("file") MultipartFile file) throws IOException {
         if (file.isEmpty()) {
-            throw new BusinessException(CommonErrorCode.FILE_EMPTY);
+            throw new BusinessException(SystemErrorCode.FILE_EMPTY);
         }
         if (file.getSize() > fileStorageProperties.getMaxSize().toBytes()) {
-            throw new BusinessException(CommonErrorCode.FILE_TOO_LARGE);
+            throw new BusinessException(SystemErrorCode.FILE_TOO_LARGE);
         }
         String extension = extensionOf(file.getOriginalFilename());
         if (!isAllowedExtension(extension)) {
-            throw new BusinessException(CommonErrorCode.FILE_EXTENSION_NOT_ALLOWED);
+            throw new BusinessException(SystemErrorCode.FILE_EXTENSION_NOT_ALLOWED);
         }
         Path uploadRoot = fileStorageProperties.normalizedUploadRoot();
         Files.createDirectories(uploadRoot);
         String storedName = UUID.randomUUID() + "." + extension;
         Path target = uploadRoot.resolve(storedName).normalize();
         if (!target.startsWith(uploadRoot)) {
-            throw new BusinessException(CommonErrorCode.PARAM_ERROR);
+            throw new BusinessException(SystemErrorCode.FILE_STORAGE_PATH_INVALID);
         }
         file.transferTo(target);
         return ApiResult.ok(new FileUploadResponse(publicUrl(storedName)));

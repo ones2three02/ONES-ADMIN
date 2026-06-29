@@ -50,17 +50,17 @@ public class AuthService {
         Optional<AdminUser> userOptional = userRepository.findByUsername(request.username().trim())
                 .filter(AdminUser::enabled);
         if (userOptional.isEmpty()) {
-            throw new BusinessException("用户名或密码错误");
+            throw new BusinessException(AuthErrorCode.INVALID_CREDENTIALS);
         }
 
         AdminUser user = userOptional.get();
         LocalDateTime now = LocalDateTime.now();
         if (user.lockedUntil() != null && user.lockedUntil().isAfter(now)) {
-            throw new BusinessException("账号已被临时锁定，请稍后再试");
+            throw new BusinessException(AuthErrorCode.ACCOUNT_LOCKED);
         }
         if (!passwordEncoder.matches(request.password(), user.passwordHash())) {
             recordLoginFailure(user, now);
-            throw new BusinessException("用户名或密码错误");
+            throw new BusinessException(AuthErrorCode.INVALID_CREDENTIALS);
         }
 
         userRepository.recordLoginSuccess(user.id());
@@ -71,7 +71,7 @@ public class AuthService {
         return userRepository.findById(userId)
                 .filter(AdminUser::enabled)
                 .map(this::toProfile)
-                .orElseThrow(() -> new BusinessException(404, "用户不存在或已停用"));
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_AVAILABLE));
     }
 
     public List<String> getRoleList(Long userId) {
