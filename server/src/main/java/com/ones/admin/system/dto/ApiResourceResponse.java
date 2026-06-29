@@ -22,6 +22,7 @@ public record ApiResourceResponse(
         boolean permissionMissing,
         boolean writeOperation,
         String apiKey,
+        String operationId,
         String handler,
         String owner,
         String sinceVersion,

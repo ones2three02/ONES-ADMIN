@@ -55,6 +55,7 @@ class ApiResourceControllerTest {
         JsonNode resources = objectMapper.readTree(response).at("/data/list");
         JsonNode userListResource = findResource(resources, "GET", "/api/system/users");
         assertThat(userListResource.path("apiKey").asText()).isEqualTo("GET /api/system/users");
+        assertThat(userListResource.path("operationId").asText()).isEqualTo("UserController_listUsers");
         assertThat(userListResource.path("handler").asText())
                 .isEqualTo("com.ones.admin.system.UserController#listUsers");
         assertThat(userListResource.path("deprecated").asBoolean()).isFalse();
@@ -79,6 +80,7 @@ class ApiResourceControllerTest {
         assertThat(permissionCodes(userListResource)).containsExactly("system:user:list");
 
         JsonNode userCreateResource = findResource(resources, "POST", "/api/system/users");
+        assertThat(userCreateResource.path("operationId").asText()).isEqualTo("UserController_createUser");
         assertThat(userCreateResource.path("summary").asText()).isEqualTo("新增用户");
         assertThat(userCreateResource.path("writeOperation").asBoolean()).isTrue();
         assertThat(userCreateResource.path("riskLevel").asText()).isEqualTo("HIGH");
@@ -243,18 +245,19 @@ class ApiResourceControllerTest {
                 .getContentAsString(StandardCharsets.UTF_8);
 
         assertThat(response).startsWith(
-                "apiKey,method,path,handler,module,summary,authType,permissionCodes,permissionMode,"
+                "apiKey,operationId,method,path,handler,module,summary,authType,permissionCodes,permissionMode,"
                         + "requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
                         + "writeOperation,deprecated,owner,sinceVersion,lifecycle,riskLevel,"
                         + "accessPolicyExplicit,accessPolicyReason\n"
         );
         assertThat(response).contains(
-                "GET /api/system/users,GET,/api/system/users,"
+                "GET /api/system/users,UserController_listUsers,GET,/api/system/users,"
                         + "com.ones.admin.system.UserController#listUsers"
         );
         assertThat(response).contains("system:user:list");
         assertThat(response).contains(
-                "GET /api/system/api-resources/export,GET,/api/system/api-resources/export,"
+                "GET /api/system/api-resources/export,ApiResourceController_exportApiResources,"
+                        + "GET,/api/system/api-resources/export,"
                         + "com.ones.admin.system.ApiResourceController#exportApiResources"
         );
     }
@@ -267,7 +270,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.16"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.17"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(43))
                 .andReturn()
@@ -289,6 +292,7 @@ class ApiResourceControllerTest {
 
         JsonNode userList = findResource(firstManifest.path("resources"), "GET", "/api/system/users");
         assertThat(userList.path("apiKey").asText()).isEqualTo("GET /api/system/users");
+        assertThat(userList.path("operationId").asText()).isEqualTo("UserController_listUsers");
         assertThat(userList.path("handler").asText()).isEqualTo("com.ones.admin.system.UserController#listUsers");
         assertThat(userList.path("authType").asText()).isEqualTo("PERMISSION");
         assertThat(userList.path("owner").asText()).isEqualTo("系统平台组");
@@ -323,7 +327,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.16"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.17"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))
@@ -342,7 +346,7 @@ class ApiResourceControllerTest {
         JsonNode modified = findChange(changes, "MODIFIED", "GET /api/system/users");
         assertThat(modified.path("severity").asText()).isEqualTo("ERROR");
         assertThat(modified.path("breakingChange").asBoolean()).isTrue();
-        assertThat(fieldNames(modified)).containsExactly("authType", "permissionCodes");
+        assertThat(fieldNames(modified)).containsExactly("operationId", "authType", "permissionCodes");
     }
 
     @Test
@@ -469,6 +473,7 @@ class ApiResourceControllerTest {
             }
             if ("GET".equals(resourceNode.path("method").asText())
                     && "/api/system/users".equals(resourceNode.path("path").asText())) {
+                resourceNode.put("operationId", "LegacyUserController_listUsers");
                 resourceNode.put("authType", "LOGIN");
                 resourceNode.set("permissionCodes", objectMapper.createArrayNode());
             }
@@ -476,6 +481,7 @@ class ApiResourceControllerTest {
         }
         previousResources.addObject()
                 .put("apiKey", "GET /api/legacy/removed")
+                .put("operationId", "LegacyController_removed")
                 .put("method", "GET")
                 .put("path", "/api/legacy/removed")
                 .put("handler", "com.ones.admin.LegacyController#removed")

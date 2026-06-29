@@ -14,6 +14,14 @@
 | [jeecgboot/JeecgBoot](https://github.com/jeecgboot/JeecgBoot) | 低代码、Online 表单、权限、报表 | 低代码和企业支撑能力边界 |
 | [1024-lab/smart-admin](https://github.com/1024-lab/smart-admin) | Spring Boot 3、Sa-Token、MyBatis-Plus、三级等保、安全体系；Java 17 版本采用 `sa-base`、`sa-admin` 多模块 | 错误码体系、接口文档、登录安全、操作日志、数据字典、数据变更记录、基础能力模块化 |
 | [cool-team-official/cool-admin-java](https://github.com/cool-team-official/cool-admin-java) | Spring Boot 3、MyBatis-Flex、`core` + `modules`、插件化、自动初始化 | 核心能力和业务模块分离、插件扩展思想、统一返回/分页、文件配置、请求日志、代码生成 |
+| [backstage/backstage](https://github.com/backstage/backstage) | 开发者门户、软件目录、API Catalog、Owner 与生命周期治理 | API 资产目录、负责人、生命周期、稳定接口身份 |
+| [gravitee-io/gravitee-api-management](https://github.com/gravitee-io/gravitee-api-management) | Java 开源 API Management | API 生命周期、发布治理、订阅与网关策略 |
+| [apache/apisix](https://github.com/apache/apisix) | 云原生 API Gateway | 网关策略、路由治理、插件化能力边界 |
+| [apiman/apiman](https://github.com/apiman/apiman) | Java API Management，可扩展策略插件 | API 管理策略、扩展点和治理边界 |
+| [TykTechnologies/tyk](https://github.com/TykTechnologies/tyk) | Go API Gateway，支持 REST、GraphQL、TCP、gRPC | API 网关、鉴权、流量治理思路 |
+| [pb33f/openapi-changes](https://github.com/pb33f/openapi-changes) | OpenAPI 破坏性变更检测 CLI | CI/CD 契约变更报告、破坏性变更识别 |
+| [oasdiff/oasdiff](https://github.com/oasdiff/oasdiff) | OpenAPI Diff 与 Breaking Changes | Manifest Diff 与发布门禁设计 |
+| [OpenAPITools/openapi-diff](https://github.com/OpenAPITools/openapi-diff) | Java OpenAPI 差异比较工具 | Java 生态契约差异检测 |
 
 结论：ONES-ADMIN 当前不宜盲目切换 ORM 或引入插件化/低代码大框架，短期应优先补齐接口治理、安全边界、审计日志、文件治理、数据字典等企业后台底座。
 
@@ -23,6 +31,7 @@
 - Cool Admin Java 的价值在于“模块化与扩展”：`core` 放通用底座，`modules` 放业务模块的划分方式值得借鉴；插件化、AI 代码生成、多租户暂不作为当前主线，避免底座阶段复杂度过高。
 - RuoYi/Yudao 的价值在于“框架化治理”：API 访问日志、错误日志、操作日志、安全框架、数据权限等能力拆成 starter 的方式值得后续模块化时参考。
 - 本轮接口管理吸收了三类做法：Smart Admin 的接口文档标签规范、Cool Admin Java 的 OpenAPI 自定义资源思路、RuoYi/Yudao 的 API 访问日志可定位 Controller 方法思路。
+- API Catalog 类项目强调稳定接口身份、负责人和生命周期；API Gateway/API Management 类项目强调发布准入、策略和流量治理；OpenAPI Diff 类项目强调 CI 中识别破坏性变更。
 - ONES-ADMIN 当前保持 Spring Boot 3 + Sa-Token + MyBatis-Plus，不跟随 Cool Admin Java 切换 MyBatis-Flex；后续只吸收它的模块边界和初始化治理思想。
 
 ## 2. 当前后端基线
@@ -37,12 +46,13 @@
 - 登录日志、系统写操作日志已具备后端记录和查询接口。
 - 已建立统一分页模型，审计日志查询支持分页与筛选。
 - 已建立运行时接口资源清单，可扫描后端真实 `/api/**` 路由、方法、模块、摘要、权限点和写操作标识。
-- 接口资源清单已提供稳定接口标识 `apiKey`、处理器定位 `handler` 和废弃状态 `deprecated`，便于接口管理页、审计排障和 Jenkins 报告直接定位到 Controller 方法。
+- 接口资源清单已提供稳定接口标识 `apiKey`、稳定操作标识 `operationId`、处理器定位 `handler` 和废弃状态 `deprecated`，便于接口管理页、API Catalog、客户端生成、审计排障和 Jenkins 报告直接定位到 Controller 方法。
 - 接口资源清单已补充接口负责人、引入版本、生命周期、风险级别元数据，便于接口归属、下线计划、风险审计和 Jenkins 报告分组。
 - 已提供接口资源 CSV 导出接口，便于审计留档、接口变更对比和 Jenkins 产物归档。
 - 已提供接口资源 Manifest，输出稳定 JSON 清单和 `SHA-256` 指纹，便于接口契约归档和版本间变更比对。
 - 已提供接口资源 Manifest Diff，可对比上一版本 Manifest 和当前运行时 Manifest，输出新增、删除、修改和破坏性变更统计。
 - 已提供接口资源 Manifest 发布门禁，可综合接口治理错误、破坏性接口变更和人工确认原因输出发布准入结果。
+- 已将 `operationId` 纳入接口清单、CSV、Manifest、Manifest 指纹和 Manifest Diff，接口操作标识变化按破坏性变更处理。
 - 已建立接口治理质量门禁，可输出权限缺口、系统写接口无权限、接口文档元数据缺失等违规项。
 - 已建立接口权限注册一致性检查，可识别代码权限点是否写入 `sys_permission`，以及是否挂载到 `sys_menu.auth_code` 供角色授权。
 - 已建立权限码命名规范检查，当前统一使用小写冒号分段格式：`^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$`。
@@ -84,14 +94,14 @@
 - 新增接口资源管理后端能力：
   - 提供 `/api/system/api-resources` 接口，按运行时 Spring MVC 路由生成 API 资源清单。
   - 返回请求方法、路径、所属模块、接口摘要、权限点、权限码是否规范、权限模式、认证级别、是否需要权限、权限点是否注册、权限点是否可授权、是否写操作。
-  - 返回稳定接口标识 `apiKey`、处理器定位 `handler`、废弃状态 `deprecated`，用于接口排障、变更审计和生命周期治理。
+  - 返回稳定接口标识 `apiKey`、稳定操作标识 `operationId`、处理器定位 `handler`、废弃状态 `deprecated`，用于接口排障、变更审计、API Catalog 和生命周期治理。
   - 返回接口负责人 `owner`、引入版本 `sinceVersion`、生命周期 `lifecycle`、风险级别 `riskLevel`，用于接口资产归属和风险分级管理。
   - 支持分页和按方法、路径、模块、权限点、处理器、认证级别、写操作、权限缺口、废弃状态筛选。
   - 支持按负责人、生命周期和风险级别筛选接口资源。
-  - 提供 `/api/system/api-resources/export` 接口资源 CSV 导出，字段覆盖接口标识、处理器、权限点、权限状态、认证级别、废弃状态和访问策略。
-  - 提供 `/api/system/api-resources/manifest` 接口资源 Manifest，字段覆盖应用版本、资源总数、`SHA-256` 指纹和关键接口元数据。
+  - 提供 `/api/system/api-resources/export` 接口资源 CSV 导出，字段覆盖接口标识、操作标识、处理器、权限点、权限状态、认证级别、废弃状态和访问策略。
+  - 提供 `/api/system/api-resources/manifest` 接口资源 Manifest，字段覆盖应用版本、资源总数、`SHA-256` 指纹、`operationId` 和关键接口元数据。
   - 提供 `/api/system/api-resources/manifest/diff` 接口资源 Manifest Diff，支持比对上一版本 Manifest 与当前运行时 Manifest。
-  - Manifest Diff 会识别新增、删除、修改接口资源；删除接口、认证级别、权限码、权限模式、写操作属性变化按破坏性变更处理。
+  - Manifest Diff 会识别新增、删除、修改接口资源；删除接口、`operationId`、认证级别、权限码、权限模式、写操作属性变化按破坏性变更处理。
   - 提供 `/api/system/api-resources/manifest/gate` 接口资源 Manifest 发布门禁，输出 `passed`、`status`、阻断原因、治理计数和差异明细。
   - Manifest Gate 对接口治理错误直接阻断；对破坏性接口契约变更默认阻断，显式允许并填写人工确认原因后返回 `MANUAL_APPROVED`。
   - 提供 `/api/system/api-resources/summary` 治理汇总接口，返回接口总数、写操作数、权限缺口数、访问策略数、废弃接口数、认证级别分布和模块分布。

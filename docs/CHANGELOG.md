@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.17 - 2026-06-29
+
+- 接口资源清单新增稳定 `operationId` 字段，默认采用 `ControllerSimpleName_methodName`，优先兼容 `@Operation.operationId` 显式配置。
+- 接口资源 CSV 导出和 Manifest 均纳入 `operationId`，便于 API Catalog、客户端生成和 Jenkins 产物归档。
+- Manifest 指纹计算纳入 `operationId`，接口身份变化会触发契约变更。
+- Manifest Diff 将 `operationId` 变化识别为破坏性变更，避免客户端生成、接口目录和自动化调用引用失效。
+- 后端工程化审计补充 Backstage、Gravitee、APISIX、Tyk、apiman、openapi-changes 等接口管理项目调研结论。
+
 ## v0.0.16 - 2026-06-29
 
 - 新增接口资源 Manifest 发布门禁接口 `/api/system/api-resources/manifest/gate`。

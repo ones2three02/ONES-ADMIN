@@ -12,6 +12,7 @@ public record ApiResourceManifestResponse(
 
     public record Resource(
             String apiKey,
+            String operationId,
             String method,
             String path,
             String handler,

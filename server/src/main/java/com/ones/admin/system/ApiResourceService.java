@@ -52,7 +52,7 @@ public class ApiResourceService {
             "^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$";
     private static final String CHECKSUM_ALGORITHM = "SHA-256";
     private static final Pattern PERMISSION_CODE_PATTERN = Pattern.compile(PERMISSION_CODE_PATTERN_TEXT);
-    private static final String CSV_HEADER = "apiKey,method,path,handler,module,summary,authType,permissionCodes,"
+    private static final String CSV_HEADER = "apiKey,operationId,method,path,handler,module,summary,authType,permissionCodes,"
             + "permissionMode,requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
             + "writeOperation,deprecated,owner,sinceVersion,lifecycle,riskLevel,"
             + "accessPolicyExplicit,accessPolicyReason";
@@ -67,7 +67,7 @@ public class ApiResourceService {
             RequestMappingHandlerMapping requestMappingHandlerMapping,
             SystemPermissionMapper permissionMapper,
             SystemMenuMapper menuMapper,
-            @Value("${ones.version:v0.0.16}") String applicationVersion
+            @Value("${ones.version:v0.0.17}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -319,6 +319,7 @@ public class ApiResourceService {
             ApiResourceManifestResponse.Resource current
     ) {
         List<ApiResourceManifestDiffResponse.FieldChange> changes = new ArrayList<>();
+        addFieldChange(changes, "operationId", previous.operationId(), current.operationId());
         addFieldChange(changes, "handler", previous.handler(), current.handler());
         addFieldChange(changes, "authType", previous.authType(), current.authType());
         addFieldChange(changes, "permissionCodes",
@@ -363,6 +364,7 @@ public class ApiResourceService {
 
     private boolean isBreakingField(String fieldName) {
         return "authType".equals(fieldName)
+                || "operationId".equals(fieldName)
                 || "permissionCodes".equals(fieldName)
                 || "permissionMode".equals(fieldName)
                 || "writeOperation".equals(fieldName);
@@ -461,6 +463,7 @@ public class ApiResourceService {
                         permissionMissing,
                         isWriteOperation(method),
                         apiKey(method, path),
+                        operationId(handlerMethod),
                         handlerName(handlerMethod),
                         resourceMetadata.owner(),
                         resourceMetadata.sinceVersion(),
@@ -476,6 +479,7 @@ public class ApiResourceService {
     private ApiResourceManifestResponse.Resource toManifestResource(ApiResourceResponse resource) {
         return new ApiResourceManifestResponse.Resource(
                 resource.apiKey(),
+                resource.operationId(),
                 resource.method(),
                 resource.path(),
                 resource.handler(),
@@ -507,6 +511,7 @@ public class ApiResourceService {
     private String canonicalManifestLine(ApiResourceManifestResponse.Resource resource) {
         return String.join("\u001F",
                 nullToEmpty(resource.apiKey()),
+                nullToEmpty(resource.operationId()),
                 nullToEmpty(resource.method()),
                 nullToEmpty(resource.path()),
                 nullToEmpty(resource.handler()),
@@ -528,6 +533,7 @@ public class ApiResourceService {
 
     private void appendCsvRow(StringBuilder csv, ApiResourceResponse resource) {
         csv.append(csvValue(resource.apiKey())).append(',')
+                .append(csvValue(resource.operationId())).append(',')
                 .append(csvValue(resource.method())).append(',')
                 .append(csvValue(resource.path())).append(',')
                 .append(csvValue(resource.handler())).append(',')
@@ -606,6 +612,14 @@ public class ApiResourceService {
 
     private String handlerName(HandlerMethod handlerMethod) {
         return handlerMethod.getBeanType().getName() + "#" + handlerMethod.getMethod().getName();
+    }
+
+    private String operationId(HandlerMethod handlerMethod) {
+        Operation operation = AnnotationUtils.findAnnotation(handlerMethod.getMethod(), Operation.class);
+        if (operation != null && hasText(operation.operationId())) {
+            return operation.operationId().trim();
+        }
+        return handlerMethod.getBeanType().getSimpleName() + "_" + handlerMethod.getMethod().getName();
     }
 
     private String apiKey(String method, String path) {
