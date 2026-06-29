@@ -169,6 +169,26 @@ class ApiResourceControllerTest {
     }
 
     @Test
+    void checkApiResourceGovernance() throws Exception {
+        String token = login("admin", "admin123");
+
+        String governanceResponse = mockMvc.perform(get("/api/system/api-resources/governance")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.passed").value(true))
+                .andExpect(jsonPath("$.data.errorCount").value(0))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode governance = objectMapper.readTree(governanceResponse).path("data");
+        assertThat(governance.path("total").asLong()).isGreaterThan(0);
+        assertThat(governance.path("violationCount").asLong())
+                .isEqualTo(governance.path("warningCount").asLong());
+    }
+
+    @Test
     void rejectUserWithoutApiResourcePermission() throws Exception {
         String adminToken = login("admin", "admin123");
         String username = "api_operator_" + System.nanoTime();
@@ -191,6 +211,11 @@ class ApiResourceControllerTest {
 
         String operatorToken = login(username, "operator123");
         mockMvc.perform(get("/api/system/api-resources")
+                        .header("Authorization", "Bearer " + operatorToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+
+        mockMvc.perform(get("/api/system/api-resources/governance")
                         .header("Authorization", "Bearer " + operatorToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));

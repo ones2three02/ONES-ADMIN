@@ -6,6 +6,7 @@ import com.ones.admin.common.web.ApiAccessPolicy;
 import com.ones.admin.common.web.ApiAuthType;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.config.SaTokenConfig;
+import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
 import com.ones.admin.system.dto.ApiResourceQuery;
 import com.ones.admin.system.dto.ApiResourceResponse;
 import com.ones.admin.system.dto.ApiResourceSummaryResponse;
@@ -70,6 +71,23 @@ public class ApiResourceService {
                 resources.stream().filter(ApiResourceResponse::accessPolicyExplicit).count(),
                 authTypes,
                 modules
+        );
+    }
+
+    public ApiResourceGovernanceResponse checkGovernance() {
+        List<ApiResourceResponse> resources = listApiResources();
+        List<ApiResourceGovernanceResponse.Violation> violations = resources.stream()
+                .flatMap(resource -> governanceViolations(resource).stream())
+                .toList();
+        long errorCount = countSeverity(violations, "ERROR");
+        long warningCount = countSeverity(violations, "WARN");
+        return new ApiResourceGovernanceResponse(
+                errorCount == 0,
+                resources.size(),
+                violations.size(),
+                errorCount,
+                warningCount,
+                violations
         );
     }
 
@@ -221,6 +239,68 @@ public class ApiResourceService {
                 || "PUT".equals(method)
                 || "PATCH".equals(method)
                 || "DELETE".equals(method);
+    }
+
+    private List<ApiResourceGovernanceResponse.Violation> governanceViolations(ApiResourceResponse resource) {
+        List<ApiResourceGovernanceResponse.Violation> violations = new ArrayList<>();
+        if (resource.permissionMissing()) {
+            violations.add(toViolation(
+                    resource,
+                    "API_PERMISSION_MISSING",
+                    "ERROR",
+                    "系统接口缺少权限点或显式访问策略"
+            ));
+        }
+        if (resource.path().startsWith("/api/system/")
+                && resource.writeOperation()
+                && !resource.requiresPermission()) {
+            violations.add(toViolation(
+                    resource,
+                    "SYSTEM_WRITE_API_WITHOUT_PERMISSION",
+                    "ERROR",
+                    "系统写接口必须配置权限点"
+            ));
+        }
+        if (!hasText(resource.module())) {
+            violations.add(toViolation(
+                    resource,
+                    "MISSING_MODULE_TAG",
+                    "WARN",
+                    "接口缺少 OpenAPI 模块标签"
+            ));
+        }
+        if (!hasText(resource.summary())) {
+            violations.add(toViolation(
+                    resource,
+                    "MISSING_OPERATION_SUMMARY",
+                    "WARN",
+                    "接口缺少 OpenAPI 摘要"
+            ));
+        }
+        return violations;
+    }
+
+    private ApiResourceGovernanceResponse.Violation toViolation(
+            ApiResourceResponse resource,
+            String ruleCode,
+            String severity,
+            String message
+    ) {
+        return new ApiResourceGovernanceResponse.Violation(
+                ruleCode,
+                severity,
+                resource.method(),
+                resource.path(),
+                resource.module(),
+                resource.summary(),
+                message
+        );
+    }
+
+    private long countSeverity(List<ApiResourceGovernanceResponse.Violation> violations, String severity) {
+        return violations.stream()
+                .filter(violation -> severity.equals(violation.severity()))
+                .count();
     }
 
     private boolean matches(ApiResourceQuery query, ApiResourceResponse resource) {

@@ -3,6 +3,7 @@ package com.ones.admin.system;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.common.web.PageResult;
+import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
 import com.ones.admin.system.dto.ApiResourceQuery;
 import com.ones.admin.system.dto.ApiResourceResponse;
 import com.ones.admin.system.dto.ApiResourceSummaryResponse;
@@ -36,5 +37,12 @@ public class ApiResourceController {
     @Operation(summary = "查询接口资源汇总")
     public ApiResult<ApiResourceSummaryResponse> summarizeApiResources() {
         return ApiResult.ok(apiResourceService.summarize());
+    }
+
+    @GetMapping("/governance")
+    @SaCheckPermission("system:api:list")
+    @Operation(summary = "查询接口治理质量门禁")
+    public ApiResult<ApiResourceGovernanceResponse> checkApiResourceGovernance() {
+        return ApiResult.ok(apiResourceService.checkGovernance());
     }
 }
