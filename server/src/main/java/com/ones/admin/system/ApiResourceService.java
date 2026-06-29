@@ -2,6 +2,8 @@ package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaMode;
+import com.ones.admin.common.web.ApiAccessPolicy;
+import com.ones.admin.common.web.ApiAuthType;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.config.SaTokenConfig;
 import com.ones.admin.system.dto.ApiResourceQuery;
@@ -55,13 +57,14 @@ public class ApiResourceService {
     private List<ApiResourceResponse> toResponses(RequestMappingInfo info, HandlerMethod handlerMethod) {
         List<ApiResourceResponse> responses = new ArrayList<>();
         PermissionMetadata permissionMetadata = permissionMetadata(handlerMethod);
+        AccessPolicyMetadata accessPolicyMetadata = accessPolicyMetadata(handlerMethod);
         for (String path : paths(info)) {
             if (!path.startsWith("/api/")) {
                 continue;
             }
             for (String method : methods(info)) {
-                String authType = authType(path, permissionMetadata);
-                boolean permissionMissing = isPermissionMissing(path, authType);
+                ApiAuthType authType = authType(path, permissionMetadata, accessPolicyMetadata);
+                boolean permissionMissing = isPermissionMissing(path, authType, accessPolicyMetadata);
                 responses.add(new ApiResourceResponse(
                         method,
                         path,
@@ -69,7 +72,9 @@ public class ApiResourceService {
                         operationSummary(handlerMethod),
                         permissionMetadata.codes(),
                         permissionMetadata.mode(),
-                        authType,
+                        authType.name(),
+                        accessPolicyMetadata.explicit(),
+                        accessPolicyMetadata.reason(),
                         !permissionMetadata.codes().isEmpty(),
                         permissionMissing,
                         isWriteOperation(method)
@@ -119,6 +124,17 @@ public class ApiResourceService {
         return new PermissionMetadata(List.copyOf(codes), permissionMode(classPermission, methodPermission));
     }
 
+    private AccessPolicyMetadata accessPolicyMetadata(HandlerMethod handlerMethod) {
+        ApiAccessPolicy classPolicy = AnnotationUtils.findAnnotation(handlerMethod.getBeanType(), ApiAccessPolicy.class);
+        ApiAccessPolicy methodPolicy = AnnotationUtils.findAnnotation(handlerMethod.getMethod(), ApiAccessPolicy.class);
+        ApiAccessPolicy policy = methodPolicy == null ? classPolicy : methodPolicy;
+        if (policy == null) {
+            return new AccessPolicyMetadata(null, false, null);
+        }
+        String reason = policy.reason().isBlank() ? null : policy.reason();
+        return new AccessPolicyMetadata(policy.value(), true, reason);
+    }
+
     private void addPermissionCodes(Set<String> codes, SaCheckPermission permission) {
         if (permission == null) {
             return;
@@ -139,11 +155,21 @@ public class ApiResourceService {
         return mode == SaMode.AND ? "AND" : "OR";
     }
 
-    private String authType(String path, PermissionMetadata permissionMetadata) {
+    private ApiAuthType authType(
+            String path,
+            PermissionMetadata permissionMetadata,
+            AccessPolicyMetadata accessPolicyMetadata
+    ) {
         if (isPublicPath(path)) {
-            return "PUBLIC";
+            return ApiAuthType.PUBLIC;
         }
-        return permissionMetadata.codes().isEmpty() ? "LOGIN" : "PERMISSION";
+        if (!permissionMetadata.codes().isEmpty()) {
+            return ApiAuthType.PERMISSION;
+        }
+        if (accessPolicyMetadata.type() != null) {
+            return accessPolicyMetadata.type();
+        }
+        return ApiAuthType.LOGIN;
     }
 
     private boolean isPublicPath(String path) {
@@ -151,8 +177,14 @@ public class ApiResourceService {
                 .anyMatch(pattern -> pathMatcher.match(pattern, path));
     }
 
-    private boolean isPermissionMissing(String path, String authType) {
-        return "LOGIN".equals(authType) && path.startsWith("/api/system/");
+    private boolean isPermissionMissing(
+            String path,
+            ApiAuthType authType,
+            AccessPolicyMetadata accessPolicyMetadata
+    ) {
+        return authType == ApiAuthType.LOGIN
+                && path.startsWith("/api/system/")
+                && !accessPolicyMetadata.explicit();
     }
 
     private boolean isWriteOperation(String method) {
@@ -194,5 +226,8 @@ public class ApiResourceService {
     }
 
     private record PermissionMetadata(List<String> codes, String mode) {
+    }
+
+    private record AccessPolicyMetadata(ApiAuthType type, boolean explicit, String reason) {
     }
 }

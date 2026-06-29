@@ -1,8 +1,11 @@
 package com.ones.admin.system;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.ones.admin.common.code.CommonErrorCode;
 import com.ones.admin.common.exception.BusinessException;
 import com.ones.admin.common.repeatsubmit.RepeatSubmit;
+import com.ones.admin.common.web.ApiAccessPolicy;
+import com.ones.admin.common.web.ApiAuthType;
 import com.ones.admin.common.web.ApiResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -39,6 +42,7 @@ public class FileController {
     }
 
     @PostMapping("/upload")
+    @SaCheckPermission("system:file:upload")
     @Operation(summary = "上传文件")
     @RepeatSubmit
     public ApiResult<FileUploadResponse> upload(@RequestParam("file") MultipartFile file) throws IOException {
@@ -65,6 +69,7 @@ public class FileController {
 
     @GetMapping("/{filename:.+}")
     @Operation(summary = "访问文件")
+    @ApiAccessPolicy(value = ApiAuthType.LOGIN, reason = "文件访问依赖登录态保护，文件级授权后续随文件元数据表补齐")
     public ResponseEntity<Resource> download(@PathVariable String filename) throws MalformedURLException {
         Path uploadRoot = fileStorageProperties.normalizedUploadRoot();
         Path file = uploadRoot.resolve(filename).normalize();

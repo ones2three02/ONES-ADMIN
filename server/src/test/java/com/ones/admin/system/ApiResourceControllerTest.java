@@ -53,6 +53,7 @@ class ApiResourceControllerTest {
         assertThat(userListResource.path("summary").asText()).isEqualTo("查询用户列表");
         assertThat(userListResource.path("permissionMode").asText()).isEqualTo("AND");
         assertThat(userListResource.path("authType").asText()).isEqualTo("PERMISSION");
+        assertThat(userListResource.path("accessPolicyExplicit").asBoolean()).isFalse();
         assertThat(userListResource.path("requiresPermission").asBoolean()).isTrue();
         assertThat(userListResource.path("permissionMissing").asBoolean()).isFalse();
         assertThat(userListResource.path("writeOperation").asBoolean()).isFalse();
@@ -79,10 +80,10 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.list[0].authType").value("PUBLIC"))
                 .andExpect(jsonPath("$.data.list[0].permissionMissing").value(false));
 
-        String missingResponse = mockMvc.perform(get("/api/system/api-resources")
+        String loginOnlyResponse = mockMvc.perform(get("/api/system/api-resources")
                         .param("pageNum", "1")
                         .param("pageSize", "20")
-                        .param("permissionMissing", "true")
+                        .param("authType", "LOGIN")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
@@ -90,10 +91,22 @@ class ApiResourceControllerTest {
                 .getResponse()
                 .getContentAsString();
 
-        JsonNode missingResources = objectMapper.readTree(missingResponse).at("/data/list");
-        JsonNode currentMenuResource = findResource(missingResources, "GET", "/api/system/menus");
+        JsonNode loginOnlyResources = objectMapper.readTree(loginOnlyResponse).at("/data/list");
+        JsonNode currentMenuResource = findResource(loginOnlyResources, "GET", "/api/system/menus");
         assertThat(currentMenuResource.path("authType").asText()).isEqualTo("LOGIN");
-        assertThat(currentMenuResource.path("permissionMissing").asBoolean()).isTrue();
+        assertThat(currentMenuResource.path("accessPolicyExplicit").asBoolean()).isTrue();
+        assertThat(currentMenuResource.path("permissionMissing").asBoolean()).isFalse();
+        assertThat(currentMenuResource.path("accessPolicyReason").asText()).contains("当前用户菜单");
+
+        mockMvc.perform(get("/api/system/api-resources")
+                        .param("pageNum", "1")
+                        .param("pageSize", "20")
+                        .param("permissionMissing", "true")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(0))
+                .andExpect(jsonPath("$.data.empty").value(true));
     }
 
     @Test
@@ -110,6 +123,17 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.total").value(1))
                 .andExpect(jsonPath("$.data.list[0].method").value("POST"))
                 .andExpect(jsonPath("$.data.list[0].path").value("/api/system/users"));
+
+        mockMvc.perform(get("/api/system/api-resources")
+                        .param("pageNum", "1")
+                        .param("pageSize", "20")
+                        .param("permissionCode", "system:file:upload")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].method").value("POST"))
+                .andExpect(jsonPath("$.data.list[0].path").value("/api/system/files/upload"));
     }
 
     @Test

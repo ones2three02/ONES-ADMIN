@@ -10,6 +10,8 @@ public record ApiResourceResponse(
         List<String> permissionCodes,
         String permissionMode,
         String authType,
+        boolean accessPolicyExplicit,
+        String accessPolicyReason,
         boolean requiresPermission,
         boolean permissionMissing,
         boolean writeOperation
