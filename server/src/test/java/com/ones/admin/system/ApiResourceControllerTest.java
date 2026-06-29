@@ -55,6 +55,10 @@ class ApiResourceControllerTest {
         assertThat(userListResource.path("authType").asText()).isEqualTo("PERMISSION");
         assertThat(userListResource.path("accessPolicyExplicit").asBoolean()).isFalse();
         assertThat(userListResource.path("requiresPermission").asBoolean()).isTrue();
+        assertThat(userListResource.path("permissionRegistered").asBoolean()).isTrue();
+        assertThat(userListResource.path("unregisteredPermissionCodes").isEmpty()).isTrue();
+        assertThat(userListResource.path("permissionAssignable").asBoolean()).isTrue();
+        assertThat(userListResource.path("unassignablePermissionCodes").isEmpty()).isTrue();
         assertThat(userListResource.path("permissionMissing").asBoolean()).isFalse();
         assertThat(userListResource.path("writeOperation").asBoolean()).isFalse();
         assertThat(permissionCodes(userListResource)).containsExactly("system:user:list");
@@ -178,6 +182,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.passed").value(true))
                 .andExpect(jsonPath("$.data.errorCount").value(0))
+                .andExpect(jsonPath("$.data.warningCount").value(0))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();

@@ -10,6 +10,8 @@ import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
 import com.ones.admin.system.dto.ApiResourceQuery;
 import com.ones.admin.system.dto.ApiResourceResponse;
 import com.ones.admin.system.dto.ApiResourceSummaryResponse;
+import com.ones.admin.system.mapper.SystemMenuMapper;
+import com.ones.admin.system.mapper.SystemPermissionMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -32,10 +34,18 @@ import java.util.stream.Collectors;
 public class ApiResourceService {
 
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
+    private final SystemPermissionMapper permissionMapper;
+    private final SystemMenuMapper menuMapper;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-    public ApiResourceService(RequestMappingHandlerMapping requestMappingHandlerMapping) {
+    public ApiResourceService(
+            RequestMappingHandlerMapping requestMappingHandlerMapping,
+            SystemPermissionMapper permissionMapper,
+            SystemMenuMapper menuMapper
+    ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
+        this.permissionMapper = permissionMapper;
+        this.menuMapper = menuMapper;
     }
 
     public PageResult<ApiResourceResponse> queryPage(ApiResourceQuery query) {
@@ -92,19 +102,39 @@ public class ApiResourceService {
     }
 
     public List<ApiResourceResponse> listApiResources() {
+        Set<String> registeredPermissionCodes = new LinkedHashSet<>(permissionMapper.selectAllCodes());
+        Set<String> assignablePermissionCodes = new LinkedHashSet<>(menuMapper.selectAssignablePermissionCodes());
         return requestMappingHandlerMapping.getHandlerMethods()
                 .entrySet()
                 .stream()
-                .flatMap(entry -> toResponses(entry.getKey(), entry.getValue()).stream())
+                .flatMap(entry -> toResponses(
+                        entry.getKey(),
+                        entry.getValue(),
+                        registeredPermissionCodes,
+                        assignablePermissionCodes
+                ).stream())
                 .sorted(Comparator.comparing(ApiResourceResponse::path)
                         .thenComparing(ApiResourceResponse::method))
                 .toList();
     }
 
-    private List<ApiResourceResponse> toResponses(RequestMappingInfo info, HandlerMethod handlerMethod) {
+    private List<ApiResourceResponse> toResponses(
+            RequestMappingInfo info,
+            HandlerMethod handlerMethod,
+            Set<String> registeredPermissionCodes,
+            Set<String> assignablePermissionCodes
+    ) {
         List<ApiResourceResponse> responses = new ArrayList<>();
         PermissionMetadata permissionMetadata = permissionMetadata(handlerMethod);
         AccessPolicyMetadata accessPolicyMetadata = accessPolicyMetadata(handlerMethod);
+        List<String> unregisteredPermissionCodes = missingPermissionCodes(
+                permissionMetadata.codes(),
+                registeredPermissionCodes
+        );
+        List<String> unassignablePermissionCodes = missingPermissionCodes(
+                permissionMetadata.codes(),
+                assignablePermissionCodes
+        );
         for (String path : paths(info)) {
             if (!path.startsWith("/api/")) {
                 continue;
@@ -123,6 +153,10 @@ public class ApiResourceService {
                         accessPolicyMetadata.explicit(),
                         accessPolicyMetadata.reason(),
                         !permissionMetadata.codes().isEmpty(),
+                        unregisteredPermissionCodes.isEmpty(),
+                        unregisteredPermissionCodes,
+                        unassignablePermissionCodes.isEmpty(),
+                        unassignablePermissionCodes,
                         permissionMissing,
                         isWriteOperation(method)
                 ));
@@ -251,6 +285,14 @@ public class ApiResourceService {
                     "系统接口缺少权限点或显式访问策略"
             ));
         }
+        if (!resource.unregisteredPermissionCodes().isEmpty()) {
+            violations.add(toViolation(
+                    resource,
+                    "PERMISSION_CODE_UNREGISTERED",
+                    "ERROR",
+                    "接口权限点未在系统权限表注册：" + String.join(",", resource.unregisteredPermissionCodes())
+            ));
+        }
         if (resource.path().startsWith("/api/system/")
                 && resource.writeOperation()
                 && !resource.requiresPermission()) {
@@ -259,6 +301,14 @@ public class ApiResourceService {
                     "SYSTEM_WRITE_API_WITHOUT_PERMISSION",
                     "ERROR",
                     "系统写接口必须配置权限点"
+            ));
+        }
+        if (!resource.unassignablePermissionCodes().isEmpty()) {
+            violations.add(toViolation(
+                    resource,
+                    "PERMISSION_CODE_UNASSIGNABLE",
+                    "WARN",
+                    "接口权限点未挂载到菜单权限树，角色页面无法授权：" + String.join(",", resource.unassignablePermissionCodes())
             ));
         }
         if (!hasText(resource.module())) {
@@ -324,6 +374,12 @@ public class ApiResourceService {
     private boolean permissionContainsIfPresent(String expected, List<String> actual) {
         return !hasText(expected) || actual.stream()
                 .anyMatch(permission -> permission.toLowerCase().contains(expected.trim().toLowerCase()));
+    }
+
+    private List<String> missingPermissionCodes(List<String> permissionCodes, Set<String> existingCodes) {
+        return permissionCodes.stream()
+                .filter(permission -> !existingCodes.contains(permission))
+                .toList();
     }
 
     private boolean equalsIfPresent(Boolean expected, boolean actual) {

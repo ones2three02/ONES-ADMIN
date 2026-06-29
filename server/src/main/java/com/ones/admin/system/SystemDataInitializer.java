@@ -253,6 +253,15 @@ public class SystemDataInitializer implements ApplicationRunner {
                 null, null, "system:dept:update", "carbon:edit", "button", 42);
         ensureMenu(dept.getId(), "SystemDeptDelete", "删除部门", "/system/dept#delete",
                 null, null, "system:dept:delete", "carbon:trash-can", "button", 43);
+
+        ensureMenu(system.getId(), "SystemAuditLoginLog", "登录日志查询", "/system#audit-login-log",
+                null, null, "system:audit:login-log", "lucide:shield-check", "button", 50);
+        ensureMenu(system.getId(), "SystemAuditOperationLog", "操作日志查询", "/system#audit-operation-log",
+                null, null, "system:audit:operation-log", "lucide:scroll-text", "button", 51);
+        ensureMenu(system.getId(), "SystemApiResourceList", "接口资源查询", "/system#api-resource-list",
+                null, null, "system:api:list", "lucide:network", "button", 52);
+        ensureMenu(system.getId(), "SystemFileUpload", "文件上传", "/system#file-upload",
+                null, null, "system:file:upload", "lucide:upload", "button", 53);
     }
 
     private SystemMenuEntity ensureMenu(

@@ -13,6 +13,10 @@ public record ApiResourceResponse(
         boolean accessPolicyExplicit,
         String accessPolicyReason,
         boolean requiresPermission,
+        boolean permissionRegistered,
+        List<String> unregisteredPermissionCodes,
+        boolean permissionAssignable,
+        List<String> unassignablePermissionCodes,
         boolean permissionMissing,
         boolean writeOperation
 ) {

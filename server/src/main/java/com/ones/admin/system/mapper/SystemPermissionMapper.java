@@ -9,6 +9,13 @@ import java.util.List;
 public interface SystemPermissionMapper extends BaseMapper<SystemPermissionEntity> {
 
     @Select("""
+            select p.code
+            from sys_permission p
+            order by p.code asc
+            """)
+    List<String> selectAllCodes();
+
+    @Select("""
             select distinct p.code
             from sys_permission p
             inner join sys_role_permission rp on rp.permission_id = p.id
