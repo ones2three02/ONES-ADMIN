@@ -23,6 +23,10 @@ public record ApiResourceResponse(
         boolean writeOperation,
         String apiKey,
         String handler,
+        String owner,
+        String sinceVersion,
+        String lifecycle,
+        String riskLevel,
         boolean deprecated
 ) {
 }

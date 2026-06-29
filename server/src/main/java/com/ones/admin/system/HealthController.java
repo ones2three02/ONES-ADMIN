@@ -1,6 +1,9 @@
 package com.ones.admin.system;
 
+import com.ones.admin.common.web.ApiLifecycleStatus;
+import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
+import com.ones.admin.common.web.ApiRiskLevel;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,6 +15,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/health")
 @Tag(name = "系统健康")
+@ApiResourceMetadata(
+        owner = "运维平台组",
+        sinceVersion = "v0.0.1",
+        lifecycle = ApiLifecycleStatus.ACTIVE,
+        riskLevel = ApiRiskLevel.LOW
+)
 public class HealthController {
 
     @GetMapping

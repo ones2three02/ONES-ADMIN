@@ -10,6 +10,9 @@ public class ApiResourceQuery extends PageQuery {
     private String permissionCode;
     private String handler;
     private String authType;
+    private String owner;
+    private String lifecycle;
+    private String riskLevel;
     private Boolean writeOperation;
     private Boolean permissionMissing;
     private Boolean deprecated;
@@ -60,6 +63,30 @@ public class ApiResourceQuery extends PageQuery {
 
     public void setAuthType(String authType) {
         this.authType = authType;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    public String getLifecycle() {
+        return lifecycle;
+    }
+
+    public void setLifecycle(String lifecycle) {
+        this.lifecycle = lifecycle;
+    }
+
+    public String getRiskLevel() {
+        return riskLevel;
+    }
+
+    public void setRiskLevel(String riskLevel) {
+        this.riskLevel = riskLevel;
     }
 
     public Boolean getWriteOperation() {

@@ -2,7 +2,10 @@ package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.ones.admin.common.repeatsubmit.RepeatSubmit;
+import com.ones.admin.common.web.ApiLifecycleStatus;
+import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
+import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.system.dto.RoleManagementResponse;
 import com.ones.admin.system.dto.RoleResponse;
 import com.ones.admin.system.dto.RoleSaveRequest;
@@ -23,6 +26,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/system")
 @Tag(name = "系统管理-角色")
+@ApiResourceMetadata(
+        owner = "系统平台组",
+        sinceVersion = "v0.0.1",
+        lifecycle = ApiLifecycleStatus.ACTIVE,
+        riskLevel = ApiRiskLevel.MEDIUM
+)
 public class RoleController {
 
     private final UserManagementService userManagementService;
@@ -54,6 +63,7 @@ public class RoleController {
     @SaCheckPermission("system:role:create")
     @Operation(summary = "新增角色")
     @RepeatSubmit
+    @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<RoleManagementResponse> createRole(@Valid @RequestBody RoleSaveRequest request) {
         return ApiResult.ok(roleManagementService.create(request));
     }
@@ -62,6 +72,7 @@ public class RoleController {
     @SaCheckPermission("system:role:update")
     @Operation(summary = "编辑角色")
     @RepeatSubmit
+    @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<RoleManagementResponse> updateRole(
             @PathVariable Long id,
             @Valid @RequestBody RoleSaveRequest request
@@ -73,6 +84,7 @@ public class RoleController {
     @SaCheckPermission("system:role:delete")
     @Operation(summary = "删除角色")
     @RepeatSubmit
+    @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<Void> deleteRole(@PathVariable Long id) {
         roleManagementService.delete(id);
         return ApiResult.ok(null);

@@ -2,7 +2,10 @@ package com.ones.admin.menu;
 
 import com.ones.admin.common.web.ApiAccessPolicy;
 import com.ones.admin.common.web.ApiAuthType;
+import com.ones.admin.common.web.ApiLifecycleStatus;
+import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
+import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.menu.dto.MenuItem;
 import com.ones.admin.system.MenuManagementService;
 import com.ones.admin.system.dto.MenuRouteResponse;
@@ -18,6 +21,12 @@ import java.util.List;
 @RequestMapping("/api/system/menus")
 @Tag(name = "系统管理-当前菜单")
 @ApiAccessPolicy(value = ApiAuthType.LOGIN, reason = "当前用户菜单和动态路由由登录态上下文生成，不需要额外按钮权限")
+@ApiResourceMetadata(
+        owner = "前端平台组",
+        sinceVersion = "v0.0.1",
+        lifecycle = ApiLifecycleStatus.ACTIVE,
+        riskLevel = ApiRiskLevel.MEDIUM
+)
 public class MenuController {
 
     private final MenuManagementService menuManagementService;

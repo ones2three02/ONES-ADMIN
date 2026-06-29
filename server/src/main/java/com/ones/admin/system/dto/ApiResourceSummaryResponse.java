@@ -9,11 +9,25 @@ public record ApiResourceSummaryResponse(
         long explicitAccessPolicyCount,
         long deprecatedCount,
         List<AuthTypeStat> authTypes,
+        List<LifecycleStat> lifecycles,
+        List<RiskLevelStat> riskLevels,
         List<ModuleStat> modules
 ) {
 
     public record AuthTypeStat(
             String authType,
+            long count
+    ) {
+    }
+
+    public record LifecycleStat(
+            String lifecycle,
+            long count
+    ) {
+    }
+
+    public record RiskLevelStat(
+            String riskLevel,
             long count
     ) {
     }

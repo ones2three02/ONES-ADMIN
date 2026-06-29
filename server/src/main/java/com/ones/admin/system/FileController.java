@@ -5,7 +5,10 @@ import com.ones.admin.common.exception.BusinessException;
 import com.ones.admin.common.repeatsubmit.RepeatSubmit;
 import com.ones.admin.common.web.ApiAccessPolicy;
 import com.ones.admin.common.web.ApiAuthType;
+import com.ones.admin.common.web.ApiLifecycleStatus;
+import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
+import com.ones.admin.common.web.ApiRiskLevel;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.Resource;
@@ -32,6 +35,12 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/system/files")
 @Tag(name = "系统管理-文件")
+@ApiResourceMetadata(
+        owner = "系统平台组",
+        sinceVersion = "v0.0.3",
+        lifecycle = ApiLifecycleStatus.ACTIVE,
+        riskLevel = ApiRiskLevel.MEDIUM
+)
 public class FileController {
 
     private final FileStorageProperties fileStorageProperties;
@@ -44,6 +53,7 @@ public class FileController {
     @SaCheckPermission("system:file:upload")
     @Operation(summary = "上传文件")
     @RepeatSubmit
+    @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<FileUploadResponse> upload(@RequestParam("file") MultipartFile file) throws IOException {
         if (file.isEmpty()) {
             throw new BusinessException(SystemErrorCode.FILE_EMPTY);

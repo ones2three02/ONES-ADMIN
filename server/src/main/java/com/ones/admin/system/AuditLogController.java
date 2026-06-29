@@ -1,7 +1,10 @@
 package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.ones.admin.common.web.ApiLifecycleStatus;
+import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
+import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.system.audit.LoginAuditService;
 import com.ones.admin.system.audit.OperationAuditService;
@@ -21,6 +24,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/system/audit")
 @Tag(name = "系统管理-审计日志")
 @Validated
+@ApiResourceMetadata(
+        owner = "审计与安全组",
+        sinceVersion = "v0.0.4",
+        lifecycle = ApiLifecycleStatus.ACTIVE,
+        riskLevel = ApiRiskLevel.MEDIUM
+)
 public class AuditLogController {
 
     private final LoginAuditService loginAuditService;

@@ -1,7 +1,10 @@
 package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.ones.admin.common.web.ApiLifecycleStatus;
+import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
+import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
 import com.ones.admin.system.dto.ApiResourceManifestResponse;
@@ -23,6 +26,12 @@ import java.nio.charset.StandardCharsets;
 @RestController
 @RequestMapping("/api/system/api-resources")
 @Tag(name = "系统管理-接口资源")
+@ApiResourceMetadata(
+        owner = "架构治理组",
+        sinceVersion = "v0.0.7",
+        lifecycle = ApiLifecycleStatus.ACTIVE,
+        riskLevel = ApiRiskLevel.MEDIUM
+)
 public class ApiResourceController {
 
     private final ApiResourceService apiResourceService;

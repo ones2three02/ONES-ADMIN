@@ -2,7 +2,10 @@ package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.ones.admin.common.repeatsubmit.RepeatSubmit;
+import com.ones.admin.common.web.ApiLifecycleStatus;
+import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
+import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.system.dto.UserCreateRequest;
 import com.ones.admin.system.dto.UserResponse;
 import com.ones.admin.system.dto.UserUpdateRequest;
@@ -23,6 +26,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/system/users")
 @Tag(name = "系统管理-用户")
+@ApiResourceMetadata(
+        owner = "系统平台组",
+        sinceVersion = "v0.0.1",
+        lifecycle = ApiLifecycleStatus.ACTIVE,
+        riskLevel = ApiRiskLevel.MEDIUM
+)
 public class UserController {
 
     private final UserManagementService userManagementService;
@@ -42,6 +51,7 @@ public class UserController {
     @SaCheckPermission("system:user:create")
     @Operation(summary = "新增用户")
     @RepeatSubmit
+    @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<UserResponse> createUser(@Valid @RequestBody UserCreateRequest request) {
         return ApiResult.ok(userManagementService.createUser(request));
     }
@@ -50,6 +60,7 @@ public class UserController {
     @SaCheckPermission("system:user:update")
     @Operation(summary = "编辑用户")
     @RepeatSubmit
+    @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<UserResponse> updateUser(
             @PathVariable Long id,
             @Valid @RequestBody UserUpdateRequest request
@@ -61,6 +72,7 @@ public class UserController {
     @SaCheckPermission("system:user:delete")
     @Operation(summary = "删除用户")
     @RepeatSubmit
+    @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<Void> deleteUser(@PathVariable Long id) {
         userManagementService.deleteUser(id);
         return ApiResult.ok(null);

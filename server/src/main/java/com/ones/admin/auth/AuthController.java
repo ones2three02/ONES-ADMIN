@@ -6,7 +6,10 @@ import com.ones.admin.auth.dto.LoginResponse;
 import com.ones.admin.auth.dto.TokenInfo;
 import com.ones.admin.auth.dto.UserProfile;
 import com.ones.admin.common.exception.BusinessException;
+import com.ones.admin.common.web.ApiLifecycleStatus;
+import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
+import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.system.audit.AuditRequestContext;
 import com.ones.admin.system.audit.LoginAuditService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +27,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "认证中心")
+@ApiResourceMetadata(
+        owner = "认证与安全组",
+        sinceVersion = "v0.0.1",
+        lifecycle = ApiLifecycleStatus.ACTIVE,
+        riskLevel = ApiRiskLevel.HIGH
+)
 public class AuthController {
 
     private static final long TOKEN_TIMEOUT_SECONDS = 86_400L;

@@ -56,6 +56,10 @@ class ApiResourceControllerTest {
         assertThat(userListResource.path("handler").asText())
                 .isEqualTo("com.ones.admin.system.UserController#listUsers");
         assertThat(userListResource.path("deprecated").asBoolean()).isFalse();
+        assertThat(userListResource.path("owner").asText()).isEqualTo("系统平台组");
+        assertThat(userListResource.path("sinceVersion").asText()).isEqualTo("v0.0.1");
+        assertThat(userListResource.path("lifecycle").asText()).isEqualTo("ACTIVE");
+        assertThat(userListResource.path("riskLevel").asText()).isEqualTo("MEDIUM");
         assertThat(userListResource.path("module").asText()).isEqualTo("系统管理-用户");
         assertThat(userListResource.path("summary").asText()).isEqualTo("查询用户列表");
         assertThat(userListResource.path("permissionMode").asText()).isEqualTo("AND");
@@ -75,6 +79,7 @@ class ApiResourceControllerTest {
         JsonNode userCreateResource = findResource(resources, "POST", "/api/system/users");
         assertThat(userCreateResource.path("summary").asText()).isEqualTo("新增用户");
         assertThat(userCreateResource.path("writeOperation").asBoolean()).isTrue();
+        assertThat(userCreateResource.path("riskLevel").asText()).isEqualTo("HIGH");
         assertThat(permissionCodes(userCreateResource)).containsExactly("system:user:create");
     }
 
@@ -126,6 +131,9 @@ class ApiResourceControllerTest {
                         .param("pageSize", "20")
                         .param("handler", "UserController#listUsers")
                         .param("deprecated", "false")
+                        .param("owner", "系统平台")
+                        .param("lifecycle", "ACTIVE")
+                        .param("riskLevel", "MEDIUM")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
@@ -191,6 +199,8 @@ class ApiResourceControllerTest {
         assertThat(summary.path("writeOperationCount").asLong()).isGreaterThan(0);
         assertThat(summary.path("explicitAccessPolicyCount").asLong()).isGreaterThan(0);
         assertThat(findAuthTypeCount(summary, "PERMISSION")).isGreaterThan(0);
+        assertThat(findLifecycleCount(summary, "ACTIVE")).isEqualTo(listTotal);
+        assertThat(findRiskLevelCount(summary, "HIGH")).isGreaterThan(0);
         assertThat(findModule(summary, "系统管理-接口资源").path("permissionCount").asLong()).isGreaterThan(0);
     }
 
@@ -233,7 +243,8 @@ class ApiResourceControllerTest {
         assertThat(response).startsWith(
                 "apiKey,method,path,handler,module,summary,authType,permissionCodes,permissionMode,"
                         + "requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
-                        + "writeOperation,deprecated,accessPolicyExplicit,accessPolicyReason\n"
+                        + "writeOperation,deprecated,owner,sinceVersion,lifecycle,riskLevel,"
+                        + "accessPolicyExplicit,accessPolicyReason\n"
         );
         assertThat(response).contains(
                 "GET /api/system/users,GET,/api/system/users,"
@@ -254,7 +265,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.13"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.14"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(41))
                 .andReturn()
@@ -278,6 +289,10 @@ class ApiResourceControllerTest {
         assertThat(userList.path("apiKey").asText()).isEqualTo("GET /api/system/users");
         assertThat(userList.path("handler").asText()).isEqualTo("com.ones.admin.system.UserController#listUsers");
         assertThat(userList.path("authType").asText()).isEqualTo("PERMISSION");
+        assertThat(userList.path("owner").asText()).isEqualTo("系统平台组");
+        assertThat(userList.path("sinceVersion").asText()).isEqualTo("v0.0.1");
+        assertThat(userList.path("lifecycle").asText()).isEqualTo("ACTIVE");
+        assertThat(userList.path("riskLevel").asText()).isEqualTo("MEDIUM");
         assertThat(permissionCodes(userList)).containsExactly("system:user:list");
 
         JsonNode manifest = findResource(firstManifest.path("resources"), "GET", "/api/system/api-resources/manifest");
@@ -358,6 +373,24 @@ class ApiResourceControllerTest {
                 .filter(node -> module.equals(node.path("module").asText()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("未找到模块：" + module));
+    }
+
+    private long findLifecycleCount(JsonNode summary, String lifecycle) {
+        return StreamSupport.stream(summary.path("lifecycles").spliterator(), false)
+                .filter(node -> lifecycle.equals(node.path("lifecycle").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到生命周期：" + lifecycle))
+                .path("count")
+                .asLong();
+    }
+
+    private long findRiskLevelCount(JsonNode summary, String riskLevel) {
+        return StreamSupport.stream(summary.path("riskLevels").spliterator(), false)
+                .filter(node -> riskLevel.equals(node.path("riskLevel").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到风险级别：" + riskLevel))
+                .path("count")
+                .asLong();
     }
 
     private String login(String username, String password) throws Exception {

@@ -4,7 +4,10 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.ones.admin.common.code.CommonErrorCode;
 import com.ones.admin.common.exception.BusinessException;
 import com.ones.admin.common.repeatsubmit.RepeatSubmit;
+import com.ones.admin.common.web.ApiLifecycleStatus;
+import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
+import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.system.dto.MenuResponse;
 import com.ones.admin.system.dto.MenuSaveRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +28,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/system/menu")
 @Tag(name = "系统管理-菜单")
+@ApiResourceMetadata(
+        owner = "系统平台组",
+        sinceVersion = "v0.0.1",
+        lifecycle = ApiLifecycleStatus.ACTIVE,
+        riskLevel = ApiRiskLevel.MEDIUM
+)
 public class MenuManagementController {
 
     private final MenuManagementService menuManagementService;
@@ -64,6 +73,7 @@ public class MenuManagementController {
     @SaCheckPermission("system:menu:create")
     @Operation(summary = "新增菜单")
     @RepeatSubmit
+    @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<MenuResponse> createMenu(@Valid @RequestBody MenuSaveRequest request) {
         return ApiResult.ok(menuManagementService.create(request));
     }
@@ -72,6 +82,7 @@ public class MenuManagementController {
     @SaCheckPermission("system:menu:update")
     @Operation(summary = "编辑菜单")
     @RepeatSubmit
+    @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<MenuResponse> updateMenu(
             @PathVariable Long id,
             @Valid @RequestBody MenuSaveRequest request
@@ -83,6 +94,7 @@ public class MenuManagementController {
     @SaCheckPermission("system:menu:delete")
     @Operation(summary = "删除菜单")
     @RepeatSubmit
+    @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<Void> deleteMenu(@PathVariable Long id) {
         menuManagementService.delete(id);
         return ApiResult.ok(null);

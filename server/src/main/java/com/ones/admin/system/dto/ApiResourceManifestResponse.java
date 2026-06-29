@@ -19,6 +19,10 @@ public record ApiResourceManifestResponse(
             List<String> permissionCodes,
             String permissionMode,
             boolean writeOperation,
+            String owner,
+            String sinceVersion,
+            String lifecycle,
+            String riskLevel,
             boolean deprecated
     ) {
     }

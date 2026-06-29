@@ -3,7 +3,10 @@ package com.ones.admin.system;
 import cn.dev33.satoken.stp.StpUtil;
 import com.ones.admin.common.code.CommonErrorCode;
 import com.ones.admin.common.exception.BusinessException;
+import com.ones.admin.common.web.ApiLifecycleStatus;
+import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
+import com.ones.admin.common.web.ApiRiskLevel;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,6 +26,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/timezone")
 @Tag(name = "系统管理-时区")
+@ApiResourceMetadata(
+        owner = "基础体验组",
+        sinceVersion = "v0.0.1",
+        lifecycle = ApiLifecycleStatus.ACTIVE,
+        riskLevel = ApiRiskLevel.LOW
+)
 public class TimezoneController {
 
     private static final String TIMEZONE_KEY = "timezone";

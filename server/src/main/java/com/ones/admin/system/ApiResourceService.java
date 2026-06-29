@@ -4,6 +4,9 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaMode;
 import com.ones.admin.common.web.ApiAccessPolicy;
 import com.ones.admin.common.web.ApiAuthType;
+import com.ones.admin.common.web.ApiLifecycleStatus;
+import com.ones.admin.common.web.ApiResourceMetadata;
+import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.config.SaTokenConfig;
 import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
@@ -46,7 +49,8 @@ public class ApiResourceService {
     private static final Pattern PERMISSION_CODE_PATTERN = Pattern.compile(PERMISSION_CODE_PATTERN_TEXT);
     private static final String CSV_HEADER = "apiKey,method,path,handler,module,summary,authType,permissionCodes,"
             + "permissionMode,requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
-            + "writeOperation,deprecated,accessPolicyExplicit,accessPolicyReason";
+            + "writeOperation,deprecated,owner,sinceVersion,lifecycle,riskLevel,"
+            + "accessPolicyExplicit,accessPolicyReason";
 
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
     private final SystemPermissionMapper permissionMapper;
@@ -58,7 +62,7 @@ public class ApiResourceService {
             RequestMappingHandlerMapping requestMappingHandlerMapping,
             SystemPermissionMapper permissionMapper,
             SystemMenuMapper menuMapper,
-            @Value("${ones.version:v0.0.13}") String applicationVersion
+            @Value("${ones.version:v0.0.14}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -85,6 +89,26 @@ public class ApiResourceService {
                 .sorted(Map.Entry.comparingByKey())
                 .map(entry -> new ApiResourceSummaryResponse.AuthTypeStat(entry.getKey(), entry.getValue()))
                 .toList();
+        List<ApiResourceSummaryResponse.LifecycleStat> lifecycles = resources.stream()
+                .collect(Collectors.groupingBy(
+                        resource -> blankToDefault(resource.lifecycle(), "UNSPECIFIED"),
+                        Collectors.counting()
+                ))
+                .entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new ApiResourceSummaryResponse.LifecycleStat(entry.getKey(), entry.getValue()))
+                .toList();
+        List<ApiResourceSummaryResponse.RiskLevelStat> riskLevels = resources.stream()
+                .collect(Collectors.groupingBy(
+                        resource -> blankToDefault(resource.riskLevel(), "UNSPECIFIED"),
+                        Collectors.counting()
+                ))
+                .entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new ApiResourceSummaryResponse.RiskLevelStat(entry.getKey(), entry.getValue()))
+                .toList();
         List<ApiResourceSummaryResponse.ModuleStat> modules = resources.stream()
                 .collect(Collectors.groupingBy(resource -> blankToDefault(resource.module(), "未分组")))
                 .entrySet()
@@ -99,6 +123,8 @@ public class ApiResourceService {
                 resources.stream().filter(ApiResourceResponse::accessPolicyExplicit).count(),
                 resources.stream().filter(ApiResourceResponse::deprecated).count(),
                 authTypes,
+                lifecycles,
+                riskLevels,
                 modules
         );
     }
@@ -166,6 +192,7 @@ public class ApiResourceService {
         List<ApiResourceResponse> responses = new ArrayList<>();
         PermissionMetadata permissionMetadata = permissionMetadata(handlerMethod);
         AccessPolicyMetadata accessPolicyMetadata = accessPolicyMetadata(handlerMethod);
+        ResourceMetadata resourceMetadata = resourceMetadata(handlerMethod);
         List<String> unregisteredPermissionCodes = missingPermissionCodes(
                 permissionMetadata.codes(),
                 registeredPermissionCodes
@@ -203,6 +230,10 @@ public class ApiResourceService {
                         isWriteOperation(method),
                         apiKey(method, path),
                         handlerName(handlerMethod),
+                        resourceMetadata.owner(),
+                        resourceMetadata.sinceVersion(),
+                        resourceMetadata.lifecycle(),
+                        resourceMetadata.riskLevel(),
                         deprecated(handlerMethod)
                 ));
             }
@@ -220,6 +251,10 @@ public class ApiResourceService {
                 resource.permissionCodes(),
                 resource.permissionMode(),
                 resource.writeOperation(),
+                resource.owner(),
+                resource.sinceVersion(),
+                resource.lifecycle(),
+                resource.riskLevel(),
                 resource.deprecated()
         );
     }
@@ -247,6 +282,10 @@ public class ApiResourceService {
                 String.join("|", resource.permissionCodes()),
                 nullToEmpty(resource.permissionMode()),
                 String.valueOf(resource.writeOperation()),
+                nullToEmpty(resource.owner()),
+                nullToEmpty(resource.sinceVersion()),
+                nullToEmpty(resource.lifecycle()),
+                nullToEmpty(resource.riskLevel()),
                 String.valueOf(resource.deprecated())
         );
     }
@@ -271,6 +310,10 @@ public class ApiResourceService {
                 .append(resource.permissionMissing()).append(',')
                 .append(resource.writeOperation()).append(',')
                 .append(resource.deprecated()).append(',')
+                .append(csvValue(resource.owner())).append(',')
+                .append(csvValue(resource.sinceVersion())).append(',')
+                .append(csvValue(resource.lifecycle())).append(',')
+                .append(csvValue(resource.riskLevel())).append(',')
                 .append(resource.accessPolicyExplicit()).append(',')
                 .append(csvValue(resource.accessPolicyReason()))
                 .append('\n');
@@ -342,6 +385,67 @@ public class ApiResourceService {
         return (operation != null && operation.deprecated())
                 || AnnotationUtils.findAnnotation(handlerMethod.getMethod(), Deprecated.class) != null
                 || AnnotationUtils.findAnnotation(handlerMethod.getBeanType(), Deprecated.class) != null;
+    }
+
+    private ResourceMetadata resourceMetadata(HandlerMethod handlerMethod) {
+        ApiResourceMetadata classMetadata =
+                AnnotationUtils.findAnnotation(handlerMethod.getBeanType(), ApiResourceMetadata.class);
+        ApiResourceMetadata methodMetadata =
+                AnnotationUtils.findAnnotation(handlerMethod.getMethod(), ApiResourceMetadata.class);
+        return new ResourceMetadata(
+                firstText(methodMetadata == null ? null : methodMetadata.owner(),
+                        classMetadata == null ? null : classMetadata.owner()),
+                firstText(methodMetadata == null ? null : methodMetadata.sinceVersion(),
+                        classMetadata == null ? null : classMetadata.sinceVersion()),
+                lifecycleName(methodMetadata, classMetadata),
+                riskLevelName(methodMetadata, classMetadata)
+        );
+    }
+
+    private String lifecycleName(ApiResourceMetadata methodMetadata, ApiResourceMetadata classMetadata) {
+        ApiLifecycleStatus lifecycle = firstLifecycle(
+                methodMetadata == null ? null : methodMetadata.lifecycle(),
+                classMetadata == null ? null : classMetadata.lifecycle()
+        );
+        return lifecycle == null ? null : lifecycle.name();
+    }
+
+    private String riskLevelName(ApiResourceMetadata methodMetadata, ApiResourceMetadata classMetadata) {
+        ApiRiskLevel riskLevel = firstRiskLevel(
+                methodMetadata == null ? null : methodMetadata.riskLevel(),
+                classMetadata == null ? null : classMetadata.riskLevel()
+        );
+        return riskLevel == null ? null : riskLevel.name();
+    }
+
+    private ApiLifecycleStatus firstLifecycle(ApiLifecycleStatus first, ApiLifecycleStatus second) {
+        if (first != null && first != ApiLifecycleStatus.UNSPECIFIED) {
+            return first;
+        }
+        if (second != null && second != ApiLifecycleStatus.UNSPECIFIED) {
+            return second;
+        }
+        return null;
+    }
+
+    private ApiRiskLevel firstRiskLevel(ApiRiskLevel first, ApiRiskLevel second) {
+        if (first != null && first != ApiRiskLevel.UNSPECIFIED) {
+            return first;
+        }
+        if (second != null && second != ApiRiskLevel.UNSPECIFIED) {
+            return second;
+        }
+        return null;
+    }
+
+    private String firstText(String first, String second) {
+        if (hasText(first)) {
+            return first.trim();
+        }
+        if (hasText(second)) {
+            return second.trim();
+        }
+        return null;
     }
 
     private PermissionMetadata permissionMetadata(HandlerMethod handlerMethod) {
@@ -475,6 +579,38 @@ public class ApiResourceService {
                     "接口已标记废弃，需确认迁移说明和下线计划"
             ));
         }
+        if (!hasText(resource.owner())) {
+            violations.add(toViolation(
+                    resource,
+                    "MISSING_API_OWNER",
+                    "WARN",
+                    "接口缺少负责人元数据"
+            ));
+        }
+        if (!hasText(resource.sinceVersion())) {
+            violations.add(toViolation(
+                    resource,
+                    "MISSING_API_SINCE_VERSION",
+                    "WARN",
+                    "接口缺少引入版本元数据"
+            ));
+        }
+        if (!hasText(resource.lifecycle())) {
+            violations.add(toViolation(
+                    resource,
+                    "MISSING_API_LIFECYCLE",
+                    "WARN",
+                    "接口缺少生命周期元数据"
+            ));
+        }
+        if (!hasText(resource.riskLevel())) {
+            violations.add(toViolation(
+                    resource,
+                    "MISSING_API_RISK_LEVEL",
+                    "WARN",
+                    "接口缺少风险级别元数据"
+            ));
+        }
         if (!hasText(resource.module())) {
             violations.add(toViolation(
                     resource,
@@ -524,6 +660,9 @@ public class ApiResourceService {
                 && permissionContainsIfPresent(query.getPermissionCode(), resource.permissionCodes())
                 && containsIfPresent(query.getHandler(), resource.handler())
                 && equalsIgnoreCaseIfPresent(query.getAuthType(), resource.authType())
+                && containsIfPresent(query.getOwner(), resource.owner())
+                && equalsIgnoreCaseIfPresent(query.getLifecycle(), resource.lifecycle())
+                && equalsIgnoreCaseIfPresent(query.getRiskLevel(), resource.riskLevel())
                 && equalsIfPresent(query.getWriteOperation(), resource.writeOperation())
                 && equalsIfPresent(query.getPermissionMissing(), resource.permissionMissing())
                 && equalsIfPresent(query.getDeprecated(), resource.deprecated());
@@ -588,5 +727,13 @@ public class ApiResourceService {
     }
 
     private record AccessPolicyMetadata(ApiAuthType type, boolean explicit, String reason) {
+    }
+
+    private record ResourceMetadata(
+            String owner,
+            String sinceVersion,
+            String lifecycle,
+            String riskLevel
+    ) {
     }
 }
