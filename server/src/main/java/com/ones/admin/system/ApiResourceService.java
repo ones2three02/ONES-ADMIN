@@ -84,6 +84,7 @@ public class ApiResourceService {
                 resources.stream().filter(ApiResourceResponse::writeOperation).count(),
                 resources.stream().filter(ApiResourceResponse::permissionMissing).count(),
                 resources.stream().filter(ApiResourceResponse::accessPolicyExplicit).count(),
+                resources.stream().filter(ApiResourceResponse::deprecated).count(),
                 authTypes,
                 modules
         );
@@ -167,7 +168,10 @@ public class ApiResourceService {
                         unassignablePermissionCodes.isEmpty(),
                         unassignablePermissionCodes,
                         permissionMissing,
-                        isWriteOperation(method)
+                        isWriteOperation(method),
+                        apiKey(method, path),
+                        handlerName(handlerMethod),
+                        deprecated(handlerMethod)
                 ));
             }
         }
@@ -203,6 +207,21 @@ public class ApiResourceService {
     private String operationSummary(HandlerMethod handlerMethod) {
         Operation operation = AnnotationUtils.findAnnotation(handlerMethod.getMethod(), Operation.class);
         return operation == null ? handlerMethod.getMethod().getName() : operation.summary();
+    }
+
+    private String handlerName(HandlerMethod handlerMethod) {
+        return handlerMethod.getBeanType().getName() + "#" + handlerMethod.getMethod().getName();
+    }
+
+    private String apiKey(String method, String path) {
+        return method + " " + path;
+    }
+
+    private boolean deprecated(HandlerMethod handlerMethod) {
+        Operation operation = AnnotationUtils.findAnnotation(handlerMethod.getMethod(), Operation.class);
+        return (operation != null && operation.deprecated())
+                || AnnotationUtils.findAnnotation(handlerMethod.getMethod(), Deprecated.class) != null
+                || AnnotationUtils.findAnnotation(handlerMethod.getBeanType(), Deprecated.class) != null;
     }
 
     private PermissionMetadata permissionMetadata(HandlerMethod handlerMethod) {
@@ -328,6 +347,14 @@ public class ApiResourceService {
                     "接口权限点未挂载到菜单权限树，角色页面无法授权：" + String.join(",", resource.unassignablePermissionCodes())
             ));
         }
+        if (resource.deprecated()) {
+            violations.add(toViolation(
+                    resource,
+                    "DEPRECATED_API",
+                    "WARN",
+                    "接口已标记废弃，需确认迁移说明和下线计划"
+            ));
+        }
         if (!hasText(resource.module())) {
             violations.add(toViolation(
                     resource,
@@ -375,9 +402,11 @@ public class ApiResourceService {
                 && containsIfPresent(query.getPath(), resource.path())
                 && containsIfPresent(query.getModule(), resource.module())
                 && permissionContainsIfPresent(query.getPermissionCode(), resource.permissionCodes())
+                && containsIfPresent(query.getHandler(), resource.handler())
                 && equalsIgnoreCaseIfPresent(query.getAuthType(), resource.authType())
                 && equalsIfPresent(query.getWriteOperation(), resource.writeOperation())
-                && equalsIfPresent(query.getPermissionMissing(), resource.permissionMissing());
+                && equalsIfPresent(query.getPermissionMissing(), resource.permissionMissing())
+                && equalsIfPresent(query.getDeprecated(), resource.deprecated());
     }
 
     private boolean equalsIgnoreCaseIfPresent(String expected, String actual) {

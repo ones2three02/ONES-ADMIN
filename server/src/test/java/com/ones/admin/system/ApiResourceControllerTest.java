@@ -49,6 +49,10 @@ class ApiResourceControllerTest {
 
         JsonNode resources = objectMapper.readTree(response).at("/data/list");
         JsonNode userListResource = findResource(resources, "GET", "/api/system/users");
+        assertThat(userListResource.path("apiKey").asText()).isEqualTo("GET /api/system/users");
+        assertThat(userListResource.path("handler").asText())
+                .isEqualTo("com.ones.admin.system.UserController#listUsers");
+        assertThat(userListResource.path("deprecated").asBoolean()).isFalse();
         assertThat(userListResource.path("module").asText()).isEqualTo("系统管理-用户");
         assertThat(userListResource.path("summary").asText()).isEqualTo("查询用户列表");
         assertThat(userListResource.path("permissionMode").asText()).isEqualTo("AND");
@@ -113,6 +117,18 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.total").value(0))
                 .andExpect(jsonPath("$.data.empty").value(true));
+
+        mockMvc.perform(get("/api/system/api-resources")
+                        .param("pageNum", "1")
+                        .param("pageSize", "20")
+                        .param("handler", "UserController#listUsers")
+                        .param("deprecated", "false")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].apiKey").value("GET /api/system/users"))
+                .andExpect(jsonPath("$.data.list[0].deprecated").value(false));
     }
 
     @Test
@@ -162,6 +178,7 @@ class ApiResourceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.permissionMissingCount").value(0))
+                .andExpect(jsonPath("$.data.deprecatedCount").value(0))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();

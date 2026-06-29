@@ -20,6 +20,9 @@ public record ApiResourceResponse(
         boolean permissionAssignable,
         List<String> unassignablePermissionCodes,
         boolean permissionMissing,
-        boolean writeOperation
+        boolean writeOperation,
+        String apiKey,
+        String handler,
+        boolean deprecated
 ) {
 }

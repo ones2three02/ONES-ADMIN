@@ -7,6 +7,7 @@ public record ApiResourceSummaryResponse(
         long writeOperationCount,
         long permissionMissingCount,
         long explicitAccessPolicyCount,
+        long deprecatedCount,
         List<AuthTypeStat> authTypes,
         List<ModuleStat> modules
 ) {

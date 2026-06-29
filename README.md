@@ -2,7 +2,7 @@
 
 ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
-当前产品版本：`v0.0.10`
+当前产品版本：`v0.0.11`
 
 ## 当前能力
 
@@ -29,8 +29,8 @@ ONES-ADMIN
 ### 环境要求
 
 - JDK 21
-- Node.js 20+
-- pnpm 10+
+- Node.js 22.18+ 或 24+
+- pnpm 11+
 - MySQL、Redis、RabbitMQ
 
 ### 启动后端

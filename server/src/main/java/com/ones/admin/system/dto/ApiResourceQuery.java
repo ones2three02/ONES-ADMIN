@@ -8,9 +8,11 @@ public class ApiResourceQuery extends PageQuery {
     private String path;
     private String module;
     private String permissionCode;
+    private String handler;
     private String authType;
     private Boolean writeOperation;
     private Boolean permissionMissing;
+    private Boolean deprecated;
 
     public String getMethod() {
         return method;
@@ -44,6 +46,14 @@ public class ApiResourceQuery extends PageQuery {
         this.permissionCode = permissionCode;
     }
 
+    public String getHandler() {
+        return handler;
+    }
+
+    public void setHandler(String handler) {
+        this.handler = handler;
+    }
+
     public String getAuthType() {
         return authType;
     }
@@ -66,5 +76,13 @@ public class ApiResourceQuery extends PageQuery {
 
     public void setPermissionMissing(Boolean permissionMissing) {
         this.permissionMissing = permissionMissing;
+    }
+
+    public Boolean getDeprecated() {
+        return deprecated;
+    }
+
+    public void setDeprecated(Boolean deprecated) {
+        this.deprecated = deprecated;
     }
 }

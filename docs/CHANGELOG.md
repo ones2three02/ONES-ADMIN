@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.11 - 2026-06-29
+
+- 增强接口资源清单，新增稳定接口标识 `apiKey`、处理器定位 `handler` 和接口废弃状态 `deprecated`。
+- 接口资源查询新增按 `handler`、`deprecated` 筛选，便于接口管理页和 Jenkins 巡检定位 Controller 方法。
+- 接口资源汇总新增 `deprecatedCount`，接口治理门禁对废弃接口预留 `DEPRECATED_API` 警告规则。
+- 后端工程化审计补充 Smart Admin、Cool Admin Java、RuoYi/Yudao 的接口管理借鉴点。
+- 修正 README 前端运行环境要求为 Node.js 22.18+ 或 24+、pnpm 11+。
+
 ## v0.0.10 - 2026-06-29
 
 - 新增数据库迁移治理规范文档 `docs/architecture/database-migration-governance.md`。
