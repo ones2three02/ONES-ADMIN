@@ -36,19 +36,25 @@ class ApiResourceControllerTest {
         String token = login("admin", "admin123");
 
         String response = mockMvc.perform(get("/api/system/api-resources")
+                        .param("pageNum", "1")
+                        .param("pageSize", "100")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.pageNum").value(1))
+                .andExpect(jsonPath("$.data.pageSize").value(100))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
-        JsonNode resources = objectMapper.readTree(response).path("data");
+        JsonNode resources = objectMapper.readTree(response).at("/data/list");
         JsonNode userListResource = findResource(resources, "GET", "/api/system/users");
         assertThat(userListResource.path("module").asText()).isEqualTo("系统管理-用户");
         assertThat(userListResource.path("summary").asText()).isEqualTo("查询用户列表");
         assertThat(userListResource.path("permissionMode").asText()).isEqualTo("AND");
+        assertThat(userListResource.path("authType").asText()).isEqualTo("PERMISSION");
         assertThat(userListResource.path("requiresPermission").asBoolean()).isTrue();
+        assertThat(userListResource.path("permissionMissing").asBoolean()).isFalse();
         assertThat(userListResource.path("writeOperation").asBoolean()).isFalse();
         assertThat(permissionCodes(userListResource)).containsExactly("system:user:list");
 
@@ -56,6 +62,54 @@ class ApiResourceControllerTest {
         assertThat(userCreateResource.path("summary").asText()).isEqualTo("新增用户");
         assertThat(userCreateResource.path("writeOperation").asBoolean()).isTrue();
         assertThat(permissionCodes(userCreateResource)).containsExactly("system:user:create");
+    }
+
+    @Test
+    void filterApiResourcesByAuthTypeAndPermissionMissing() throws Exception {
+        String token = login("admin", "admin123");
+
+        mockMvc.perform(get("/api/system/api-resources")
+                        .param("pageNum", "1")
+                        .param("pageSize", "20")
+                        .param("authType", "PUBLIC")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.list[0].path").value("/api/auth/login"))
+                .andExpect(jsonPath("$.data.list[0].authType").value("PUBLIC"))
+                .andExpect(jsonPath("$.data.list[0].permissionMissing").value(false));
+
+        String missingResponse = mockMvc.perform(get("/api/system/api-resources")
+                        .param("pageNum", "1")
+                        .param("pageSize", "20")
+                        .param("permissionMissing", "true")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode missingResources = objectMapper.readTree(missingResponse).at("/data/list");
+        JsonNode currentMenuResource = findResource(missingResources, "GET", "/api/system/menus");
+        assertThat(currentMenuResource.path("authType").asText()).isEqualTo("LOGIN");
+        assertThat(currentMenuResource.path("permissionMissing").asBoolean()).isTrue();
+    }
+
+    @Test
+    void filterApiResourcesByPermissionCode() throws Exception {
+        String token = login("admin", "admin123");
+
+        mockMvc.perform(get("/api/system/api-resources")
+                        .param("pageNum", "1")
+                        .param("pageSize", "20")
+                        .param("permissionCode", "system:user:create")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].method").value("POST"))
+                .andExpect(jsonPath("$.data.list[0].path").value("/api/system/users"));
     }
 
     @Test

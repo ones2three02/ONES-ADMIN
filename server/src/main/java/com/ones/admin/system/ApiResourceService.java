@@ -2,11 +2,15 @@ package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaMode;
+import com.ones.admin.common.web.PageResult;
+import com.ones.admin.config.SaTokenConfig;
+import com.ones.admin.system.dto.ApiResourceQuery;
 import com.ones.admin.system.dto.ApiResourceResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
@@ -22,9 +26,20 @@ import java.util.Set;
 public class ApiResourceService {
 
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     public ApiResourceService(RequestMappingHandlerMapping requestMappingHandlerMapping) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
+    }
+
+    public PageResult<ApiResourceResponse> queryPage(ApiResourceQuery query) {
+        List<ApiResourceResponse> records = listApiResources()
+                .stream()
+                .filter(resource -> matches(query, resource))
+                .toList();
+        int fromIndex = (int) Math.min((query.getPageNum() - 1) * query.getPageSize(), records.size());
+        int toIndex = (int) Math.min(fromIndex + query.getPageSize(), records.size());
+        return PageResult.of(query.getPageNum(), query.getPageSize(), records.size(), records.subList(fromIndex, toIndex));
     }
 
     public List<ApiResourceResponse> listApiResources() {
@@ -45,6 +60,8 @@ public class ApiResourceService {
                 continue;
             }
             for (String method : methods(info)) {
+                String authType = authType(path, permissionMetadata);
+                boolean permissionMissing = isPermissionMissing(path, authType);
                 responses.add(new ApiResourceResponse(
                         method,
                         path,
@@ -52,7 +69,9 @@ public class ApiResourceService {
                         operationSummary(handlerMethod),
                         permissionMetadata.codes(),
                         permissionMetadata.mode(),
+                        authType,
                         !permissionMetadata.codes().isEmpty(),
+                        permissionMissing,
                         isWriteOperation(method)
                 ));
             }
@@ -120,11 +139,58 @@ public class ApiResourceService {
         return mode == SaMode.AND ? "AND" : "OR";
     }
 
+    private String authType(String path, PermissionMetadata permissionMetadata) {
+        if (isPublicPath(path)) {
+            return "PUBLIC";
+        }
+        return permissionMetadata.codes().isEmpty() ? "LOGIN" : "PERMISSION";
+    }
+
+    private boolean isPublicPath(String path) {
+        return SaTokenConfig.LOGIN_EXCLUDE_PATH_PATTERNS.stream()
+                .anyMatch(pattern -> pathMatcher.match(pattern, path));
+    }
+
+    private boolean isPermissionMissing(String path, String authType) {
+        return "LOGIN".equals(authType) && path.startsWith("/api/system/");
+    }
+
     private boolean isWriteOperation(String method) {
         return "POST".equals(method)
                 || "PUT".equals(method)
                 || "PATCH".equals(method)
                 || "DELETE".equals(method);
+    }
+
+    private boolean matches(ApiResourceQuery query, ApiResourceResponse resource) {
+        return equalsIgnoreCaseIfPresent(query.getMethod(), resource.method())
+                && containsIfPresent(query.getPath(), resource.path())
+                && containsIfPresent(query.getModule(), resource.module())
+                && permissionContainsIfPresent(query.getPermissionCode(), resource.permissionCodes())
+                && equalsIgnoreCaseIfPresent(query.getAuthType(), resource.authType())
+                && equalsIfPresent(query.getWriteOperation(), resource.writeOperation())
+                && equalsIfPresent(query.getPermissionMissing(), resource.permissionMissing());
+    }
+
+    private boolean equalsIgnoreCaseIfPresent(String expected, String actual) {
+        return !hasText(expected) || (actual != null && actual.equalsIgnoreCase(expected.trim()));
+    }
+
+    private boolean containsIfPresent(String expected, String actual) {
+        return !hasText(expected) || (actual != null && actual.toLowerCase().contains(expected.trim().toLowerCase()));
+    }
+
+    private boolean permissionContainsIfPresent(String expected, List<String> actual) {
+        return !hasText(expected) || actual.stream()
+                .anyMatch(permission -> permission.toLowerCase().contains(expected.trim().toLowerCase()));
+    }
+
+    private boolean equalsIfPresent(Boolean expected, boolean actual) {
+        return expected == null || expected == actual;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isBlank();
     }
 
     private record PermissionMetadata(List<String> codes, String mode) {

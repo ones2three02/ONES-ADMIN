@@ -23,4 +23,16 @@ public record PageResult<T>(
                 list == null || list.isEmpty()
         );
     }
+
+    public static <T> PageResult<T> of(long pageNum, long pageSize, long total, List<T> list) {
+        long pages = pageSize <= 0 ? 0 : (total + pageSize - 1) / pageSize;
+        return new PageResult<>(
+                pageNum,
+                pageSize,
+                total,
+                pages,
+                list,
+                list == null || list.isEmpty()
+        );
+    }
 }
