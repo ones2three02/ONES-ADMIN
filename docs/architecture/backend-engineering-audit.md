@@ -39,6 +39,7 @@
 - 已建立接口权限注册一致性检查，可识别代码权限点是否写入 `sys_permission`，以及是否挂载到 `sys_menu.auth_code` 供角色授权。
 - 已建立权限码命名规范检查，当前统一使用小写冒号分段格式：`^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$`。
 - 已建立模块化错误码体系，通用、认证、系统模块错误码分层维护，并通过测试校验跨模块错误码唯一性。
+- 已接入 Flyway 数据库迁移治理，基线表结构位于 `server/src/main/resources/db/migration/V1__init_schema.sql`。
 - 高风险写接口已接入防重复提交保护，正式环境默认使用 Redis 存储防重票据。
 - MySQL、Redis、RabbitMQ 配置通过环境变量注入，本地敏感配置不提交 Git。
 
@@ -47,13 +48,19 @@
 - 错误码模块化已起步，后续需要继续细分第三方登录、数据权限、系统参数、数据字典等新模块号段。
 - 审计日志已具备基础能力，但前端页面、导出、保留策略仍待补齐。
 - 数据字典、系统参数、文件元数据、数据权限、多租户仍待规划。
-- 数据库迁移仍以 `schema.sql` 和启动补偿为主，中长期建议迁移到 Flyway/Liquibase。
+- Flyway 已接入基线迁移，后续仍需为每次表结构变更补充增量脚本、影响范围和回滚说明。
 
 ## 3. 本轮已落地优化
 
 - 新增统一错误码接口 `ErrorCode`，并按通用、认证、系统模块拆分 `CommonErrorCode`、`AuthErrorCode`、`SystemErrorCode`。
 - 新增错误码治理测试，校验跨模块错误码唯一性，并约束认证模块 `4200-4299`、系统模块 `4100-4399` 号段。
 - 保持现有 `ApiResult<T>` 的 `code/message/data` 响应结构，新增基于错误码的失败响应方法。
+- 新增 Flyway 数据库迁移治理：
+  - 迁移脚本统一放在 `classpath:db/migration`，按 `V版本号__说明.sql` 命名。
+  - 基线脚本 `V1__init_schema.sql` 承载当前系统表结构。
+  - 关闭 `spring.sql.init`，移除旧的启动 DDL 补偿类，避免应用启动时隐式改表。
+  - 对已有非空库启用 `baseline-on-migrate`，首次接入 Flyway 时记录基线，不重复执行 V1。
+  - 新增测试校验 `flyway_schema_history` 存在迁移记录。
 - 优化全局异常处理：
   - Sa-Token 未登录、无权限统一错误码。
   - 参数校验返回具体字段信息。
@@ -123,7 +130,7 @@
 ### 第三优先级：架构演进
 
 - 按 `auth`、`system`、`support`、`common` 梳理模块边界。
-- 引入 Flyway 或 Liquibase 管理数据库迁移。
+- 后续表结构变更必须新增 Flyway 增量脚本，并在交付说明中明确影响范围和回滚方式。
 - 预留 SSO 模块：飞书扫码、飞书 SSO、OAuth2/OIDC 等统一接入。
 - 多租户能力仅在业务确认需要后再引入，避免过早复杂化。
 - 代码生成、插件化、低代码作为长期增强项，不作为当前主线底座。
@@ -134,6 +141,7 @@
 - `main`：稳定版本、正式环境部署来源。
 - Jenkins 先接 `develop` 做后端测试与构建：
   - `cd server && ./mvnw test`
+  - 检查 Flyway 迁移测试通过，确保 `flyway_schema_history` 有迁移记录
   - 登录测试账号后调用 `/api/system/api-resources/governance`，要求 `passed=true` 且 `errorCount=0`
   - 权限码命名统一遵循 `/api/system/api-resources/governance` 返回的 `permissionCodePattern`
   - 前端后续可接 `pnpm build`

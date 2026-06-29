@@ -2,11 +2,11 @@
 
 ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
-当前产品版本：`v0.0.8`
+当前产品版本：`v0.0.9`
 
 ## 当前能力
 
-- 后端：Spring Boot 3.5.9、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、H2、统一响应、统一异常、登录认证、角色权限、动态菜单、用户 CRUD、Actuator、Swagger UI。
+- 后端：Spring Boot 3.5.9、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、Flyway、MySQL、统一响应、统一异常、登录认证、角色权限、动态菜单、用户 CRUD、Actuator、Swagger UI。
 - 前端：Vue3、Vite、TypeScript、Element Plus、Pinia、Vue Router、Axios 请求拦截、Vben web-ele 风格登录页、管理布局、工作台、用户管理页。
 - 认证：`Authorization: Bearer <token>`，由 Sa-Token 签发与校验。
 - 演示账号：`admin / admin123`
@@ -102,7 +102,7 @@ pnpm build
 
 ## 后续路线
 
-1. 将当前 H2 内存库切换为 MySQL/PostgreSQL，并补充 Flyway/Liquibase 迁移。
+1. 持续补充 Flyway 增量迁移脚本和数据库变更回滚说明。
 2. 将 Sa-Token 会话存储切换到 Redis，支持分布式部署。
 3. 完成角色、菜单、部门、岗位、字典、操作日志等企业后台基础模块。
 4. 增加飞书、企业微信、钉钉第三方登录适配层。

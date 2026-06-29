@@ -15,7 +15,13 @@ spring:
     password: ${ONES_DB_PASSWORD:}
   sql:
     init:
-      mode: always
+      mode: never
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 1
+    baseline-description: ONES-ADMIN existing schema baseline
   data:
     redis:
       host: ${ONES_REDIS_HOST:localhost}
@@ -57,7 +63,7 @@ sa-token:
   is-print: false
 
 ones:
-  version: ${ONES_ADMIN_VERSION:v0.0.8}
+  version: ${ONES_ADMIN_VERSION:v0.0.9}
   security:
     login:
       max-failed-login-count: ${ONES_LOGIN_MAX_FAILED_COUNT:5}

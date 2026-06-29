@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.9 - 2026-06-29
+
+- 引入 Flyway 数据库迁移治理，新增 `db/migration/V1__init_schema.sql` 基线迁移脚本。
+- 关闭 Spring SQL init，移除旧的 `schema.sql` 和启动 DDL 补偿类 `DatabaseSchemaMigrator`。
+- 对已有非空数据库启用 `baseline-on-migrate`，避免接入 Flyway 时重复执行基线脚本。
+- 新增数据库迁移治理测试，验证测试环境存在 Flyway 迁移历史表。
+
 ## v0.0.8 - 2026-06-29
 
 - 新增认证模块错误码 `AuthErrorCode` 和系统模块错误码 `SystemErrorCode`。
