@@ -41,6 +41,7 @@
 - 接口资源清单已补充接口负责人、引入版本、生命周期、风险级别元数据，便于接口归属、下线计划、风险审计和 Jenkins 报告分组。
 - 已提供接口资源 CSV 导出接口，便于审计留档、接口变更对比和 Jenkins 产物归档。
 - 已提供接口资源 Manifest，输出稳定 JSON 清单和 `SHA-256` 指纹，便于接口契约归档和版本间变更比对。
+- 已提供接口资源 Manifest Diff，可对比上一版本 Manifest 和当前运行时 Manifest，输出新增、删除、修改和破坏性变更统计。
 - 已建立接口治理质量门禁，可输出权限缺口、系统写接口无权限、接口文档元数据缺失等违规项。
 - 已建立接口权限注册一致性检查，可识别代码权限点是否写入 `sys_permission`，以及是否挂载到 `sys_menu.auth_code` 供角色授权。
 - 已建立权限码命名规范检查，当前统一使用小写冒号分段格式：`^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$`。
@@ -88,6 +89,8 @@
   - 支持按负责人、生命周期和风险级别筛选接口资源。
   - 提供 `/api/system/api-resources/export` 接口资源 CSV 导出，字段覆盖接口标识、处理器、权限点、权限状态、认证级别、废弃状态和访问策略。
   - 提供 `/api/system/api-resources/manifest` 接口资源 Manifest，字段覆盖应用版本、资源总数、`SHA-256` 指纹和关键接口元数据。
+  - 提供 `/api/system/api-resources/manifest/diff` 接口资源 Manifest Diff，支持比对上一版本 Manifest 与当前运行时 Manifest。
+  - Manifest Diff 会识别新增、删除、修改接口资源；删除接口、认证级别、权限码、权限模式、写操作属性变化按破坏性变更处理。
   - 提供 `/api/system/api-resources/summary` 治理汇总接口，返回接口总数、写操作数、权限缺口数、访问策略数、废弃接口数、认证级别分布和模块分布。
   - 提供 `/api/system/api-resources/governance` 接口治理质量门禁，返回是否通过、错误数、警告数、权限码正则和违规明细。
   - 自动区分 `PUBLIC`、`LOGIN`、`PERMISSION` 三类接口认证级别。
@@ -159,6 +162,7 @@
   - 登录测试账号后调用 `/api/system/api-resources/governance`，要求 `passed=true` 且 `errorCount=0`
   - 可调用 `/api/system/api-resources/export` 导出 CSV 作为构建产物，便于接口清单留档和版本差异比对
   - 可调用 `/api/system/api-resources/manifest` 保存 JSON 与 `checksum`，用于识别接口契约是否发生变更
+  - 可将上一版本 Manifest POST 到 `/api/system/api-resources/manifest/diff`，若 `breakingChangeCount > 0` 则要求人工确认或阻断发布
   - 权限码命名统一遵循 `/api/system/api-resources/governance` 返回的 `permissionCodePattern`
   - 前端后续可接 `pnpm build`
 - 合入 `main` 前必须确保后端测试通过、前端构建通过、数据库迁移说明完整。

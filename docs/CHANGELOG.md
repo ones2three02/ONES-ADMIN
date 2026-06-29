@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.15 - 2026-06-29
+
+- 新增接口资源 Manifest 差异对比接口 `/api/system/api-resources/manifest/diff`。
+- Manifest Diff 支持识别新增、删除、修改接口资源，并统计破坏性变更数量。
+- 删除接口、认证级别变更、权限码变更、权限模式变更和写操作属性变更会被标记为破坏性变更。
+- Manifest Diff 沿用 `system:api:list` 权限控制，便于 Jenkins 在发布前做接口契约差异门禁。
+- README 首版接口表新增 Manifest Diff 入口。
+
 ## v0.0.14 - 2026-06-29
 
 - 新增接口生命周期元数据注解 `@ApiResourceMetadata`，用于维护接口负责人、引入版本、生命周期和风险级别。

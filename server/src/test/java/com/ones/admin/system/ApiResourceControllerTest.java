@@ -2,6 +2,8 @@ package com.ones.admin.system;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ones.admin.auth.dto.LoginRequest;
 import com.ones.admin.common.code.CommonErrorCode;
 import com.ones.admin.system.dto.UserCreateRequest;
@@ -265,9 +267,9 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.14"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.15"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
-                .andExpect(jsonPath("$.data.total").value(41))
+                .andExpect(jsonPath("$.data.total").value(42))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -300,6 +302,72 @@ class ApiResourceControllerTest {
                 .isEqualTo("com.ones.admin.system.ApiResourceController#generateApiResourceManifest");
         assertThat(permissionCodes(manifest)).containsExactly("system:api:list");
         assertThat(manifest.path("writeOperation").asBoolean()).isFalse();
+    }
+
+    @Test
+    void diffApiResourceManifest() throws Exception {
+        String token = login("admin", "admin123");
+        String currentResponse = mockMvc.perform(get("/api/system/api-resources/manifest")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        ObjectNode previousManifest = (ObjectNode) objectMapper.readTree(currentResponse).path("data");
+        previousManifest.put("applicationVersion", "v0.0.14");
+        previousManifest.put("checksum", "previous-checksum");
+        ArrayNode previousResources = objectMapper.createArrayNode();
+        for (JsonNode resource : previousManifest.path("resources")) {
+            ObjectNode resourceNode = resource.deepCopy();
+            if ("GET".equals(resourceNode.path("method").asText())
+                    && "/api/system/api-resources/manifest".equals(resourceNode.path("path").asText())) {
+                continue;
+            }
+            if ("GET".equals(resourceNode.path("method").asText())
+                    && "/api/system/users".equals(resourceNode.path("path").asText())) {
+                resourceNode.put("authType", "LOGIN");
+                resourceNode.set("permissionCodes", objectMapper.createArrayNode());
+            }
+            previousResources.add(resourceNode);
+        }
+        previousResources.addObject()
+                .put("apiKey", "GET /api/legacy/removed")
+                .put("method", "GET")
+                .put("path", "/api/legacy/removed")
+                .put("handler", "com.ones.admin.LegacyController#removed")
+                .put("authType", "LOGIN")
+                .set("permissionCodes", objectMapper.createArrayNode());
+        previousManifest.set("resources", previousResources);
+        previousManifest.put("total", previousResources.size());
+
+        String diffResponse = mockMvc.perform(post("/api/system/api-resources/manifest/diff")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(previousManifest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.changed").value(true))
+                .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.15"))
+                .andExpect(jsonPath("$.data.addedCount").value(1))
+                .andExpect(jsonPath("$.data.removedCount").value(1))
+                .andExpect(jsonPath("$.data.modifiedCount").value(1))
+                .andExpect(jsonPath("$.data.breakingChangeCount").value(2))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode changes = objectMapper.readTree(diffResponse).at("/data/changes");
+        JsonNode added = findChange(changes, "ADDED", "GET /api/system/api-resources/manifest");
+        assertThat(added.path("severity").asText()).isEqualTo("INFO");
+        assertThat(added.path("breakingChange").asBoolean()).isFalse();
+        JsonNode removed = findChange(changes, "REMOVED", "GET /api/legacy/removed");
+        assertThat(removed.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(removed.path("breakingChange").asBoolean()).isTrue();
+        JsonNode modified = findChange(changes, "MODIFIED", "GET /api/system/users");
+        assertThat(modified.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(modified.path("breakingChange").asBoolean()).isTrue();
+        assertThat(fieldNames(modified)).containsExactly("authType", "permissionCodes");
     }
 
     @Test
@@ -343,6 +411,13 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + operatorToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+
+        mockMvc.perform(post("/api/system/api-resources/manifest/diff")
+                        .header("Authorization", "Bearer " + operatorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
     }
 
     private JsonNode findResource(JsonNode resources, String method, String path) {
@@ -356,6 +431,20 @@ class ApiResourceControllerTest {
     private List<String> permissionCodes(JsonNode resource) {
         return StreamSupport.stream(resource.path("permissionCodes").spliterator(), false)
                 .map(JsonNode::asText)
+                .toList();
+    }
+
+    private JsonNode findChange(JsonNode changes, String changeType, String apiKey) {
+        return StreamSupport.stream(changes.spliterator(), false)
+                .filter(change -> changeType.equals(change.path("changeType").asText())
+                        && apiKey.equals(change.path("apiKey").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到接口变更：" + changeType + " " + apiKey));
+    }
+
+    private List<String> fieldNames(JsonNode change) {
+        return StreamSupport.stream(change.path("changedFields").spliterator(), false)
+                .map(field -> field.path("fieldName").asText())
                 .toList();
     }
 

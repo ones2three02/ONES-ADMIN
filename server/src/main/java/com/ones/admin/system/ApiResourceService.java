@@ -10,6 +10,7 @@ import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.config.SaTokenConfig;
 import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
+import com.ones.admin.system.dto.ApiResourceManifestDiffResponse;
 import com.ones.admin.system.dto.ApiResourceManifestResponse;
 import com.ones.admin.system.dto.ApiResourceQuery;
 import com.ones.admin.system.dto.ApiResourceResponse;
@@ -36,7 +37,9 @@ import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -62,7 +65,7 @@ public class ApiResourceService {
             RequestMappingHandlerMapping requestMappingHandlerMapping,
             SystemPermissionMapper permissionMapper,
             SystemMenuMapper menuMapper,
-            @Value("${ones.version:v0.0.14}") String applicationVersion
+            @Value("${ones.version:v0.0.15}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -140,6 +143,179 @@ public class ApiResourceService {
                 resources.size(),
                 resources
         );
+    }
+
+    public ApiResourceManifestDiffResponse diffManifest(ApiResourceManifestResponse previousManifest) {
+        ApiResourceManifestResponse currentManifest = generateManifest();
+        List<ApiResourceManifestResponse.Resource> previousResources = resourcesOf(previousManifest);
+        List<ApiResourceManifestResponse.Resource> currentResources = resourcesOf(currentManifest);
+        Map<String, ApiResourceManifestResponse.Resource> previousByKey = resourcesByKey(previousResources);
+        Map<String, ApiResourceManifestResponse.Resource> currentByKey = resourcesByKey(currentResources);
+        List<ApiResourceManifestDiffResponse.Change> changes = new ArrayList<>();
+        for (ApiResourceManifestResponse.Resource current : currentResources) {
+            if (!previousByKey.containsKey(current.apiKey())) {
+                changes.add(toAddedChange(current));
+            }
+        }
+        for (ApiResourceManifestResponse.Resource previous : previousResources) {
+            ApiResourceManifestResponse.Resource current = currentByKey.get(previous.apiKey());
+            if (current == null) {
+                changes.add(toRemovedChange(previous));
+                continue;
+            }
+            List<ApiResourceManifestDiffResponse.FieldChange> fieldChanges = diffFields(previous, current);
+            if (!fieldChanges.isEmpty()) {
+                changes.add(toModifiedChange(previous, current, fieldChanges));
+            }
+        }
+        changes = changes.stream()
+                .sorted(Comparator.comparing(ApiResourceManifestDiffResponse.Change::apiKey)
+                        .thenComparing(ApiResourceManifestDiffResponse.Change::changeType))
+                .toList();
+        long addedCount = countChangeType(changes, "ADDED");
+        long removedCount = countChangeType(changes, "REMOVED");
+        long modifiedCount = countChangeType(changes, "MODIFIED");
+        long breakingChangeCount = changes.stream()
+                .filter(ApiResourceManifestDiffResponse.Change::breakingChange)
+                .count();
+        return new ApiResourceManifestDiffResponse(
+                previousManifest == null ? null : previousManifest.applicationVersion(),
+                currentManifest.applicationVersion(),
+                previousManifest == null ? null : previousManifest.checksum(),
+                currentManifest.checksum(),
+                !changes.isEmpty(),
+                addedCount,
+                removedCount,
+                modifiedCount,
+                breakingChangeCount,
+                changes
+        );
+    }
+
+    private List<ApiResourceManifestResponse.Resource> resourcesOf(ApiResourceManifestResponse manifest) {
+        if (manifest == null || manifest.resources() == null) {
+            return List.of();
+        }
+        return manifest.resources().stream()
+                .filter(resource -> resource != null && hasText(resource.apiKey()))
+                .toList();
+    }
+
+    private Map<String, ApiResourceManifestResponse.Resource> resourcesByKey(
+            List<ApiResourceManifestResponse.Resource> resources
+    ) {
+        return resources.stream()
+                .collect(Collectors.toMap(
+                        ApiResourceManifestResponse.Resource::apiKey,
+                        Function.identity(),
+                        (first, second) -> first
+                ));
+    }
+
+    private ApiResourceManifestDiffResponse.Change toAddedChange(ApiResourceManifestResponse.Resource current) {
+        return new ApiResourceManifestDiffResponse.Change(
+                "ADDED",
+                "INFO",
+                current.apiKey(),
+                current.method(),
+                current.path(),
+                false,
+                List.of(),
+                "新增接口资源"
+        );
+    }
+
+    private ApiResourceManifestDiffResponse.Change toRemovedChange(ApiResourceManifestResponse.Resource previous) {
+        return new ApiResourceManifestDiffResponse.Change(
+                "REMOVED",
+                "ERROR",
+                previous.apiKey(),
+                previous.method(),
+                previous.path(),
+                true,
+                List.of(),
+                "接口资源已删除，属于破坏性变更"
+        );
+    }
+
+    private ApiResourceManifestDiffResponse.Change toModifiedChange(
+            ApiResourceManifestResponse.Resource previous,
+            ApiResourceManifestResponse.Resource current,
+            List<ApiResourceManifestDiffResponse.FieldChange> fieldChanges
+    ) {
+        boolean breaking = fieldChanges.stream()
+                .map(ApiResourceManifestDiffResponse.FieldChange::fieldName)
+                .anyMatch(this::isBreakingField);
+        return new ApiResourceManifestDiffResponse.Change(
+                "MODIFIED",
+                breaking ? "ERROR" : "WARN",
+                current.apiKey(),
+                current.method(),
+                current.path(),
+                breaking,
+                fieldChanges,
+                breaking ? "接口契约发生破坏性变更" : "接口元数据发生变化"
+        );
+    }
+
+    private List<ApiResourceManifestDiffResponse.FieldChange> diffFields(
+            ApiResourceManifestResponse.Resource previous,
+            ApiResourceManifestResponse.Resource current
+    ) {
+        List<ApiResourceManifestDiffResponse.FieldChange> changes = new ArrayList<>();
+        addFieldChange(changes, "handler", previous.handler(), current.handler());
+        addFieldChange(changes, "authType", previous.authType(), current.authType());
+        addFieldChange(changes, "permissionCodes",
+                String.join("|", permissionCodesOf(previous)),
+                String.join("|", permissionCodesOf(current)));
+        addFieldChange(changes, "permissionMode", previous.permissionMode(), current.permissionMode());
+        addFieldChange(changes, "writeOperation",
+                String.valueOf(previous.writeOperation()),
+                String.valueOf(current.writeOperation()));
+        addFieldChange(changes, "owner", previous.owner(), current.owner());
+        addFieldChange(changes, "sinceVersion", previous.sinceVersion(), current.sinceVersion());
+        addFieldChange(changes, "lifecycle", previous.lifecycle(), current.lifecycle());
+        addFieldChange(changes, "riskLevel", previous.riskLevel(), current.riskLevel());
+        addFieldChange(changes, "deprecated",
+                String.valueOf(previous.deprecated()),
+                String.valueOf(current.deprecated()));
+        return changes;
+    }
+
+    private List<String> permissionCodesOf(ApiResourceManifestResponse.Resource resource) {
+        if (resource.permissionCodes() == null) {
+            return List.of();
+        }
+        return resource.permissionCodes();
+    }
+
+    private void addFieldChange(
+            List<ApiResourceManifestDiffResponse.FieldChange> changes,
+            String fieldName,
+            String previousValue,
+            String currentValue
+    ) {
+        if (Objects.equals(nullToEmpty(previousValue), nullToEmpty(currentValue))) {
+            return;
+        }
+        changes.add(new ApiResourceManifestDiffResponse.FieldChange(
+                fieldName,
+                previousValue,
+                currentValue
+        ));
+    }
+
+    private boolean isBreakingField(String fieldName) {
+        return "authType".equals(fieldName)
+                || "permissionCodes".equals(fieldName)
+                || "permissionMode".equals(fieldName)
+                || "writeOperation".equals(fieldName);
+    }
+
+    private long countChangeType(List<ApiResourceManifestDiffResponse.Change> changes, String changeType) {
+        return changes.stream()
+                .filter(change -> changeType.equals(change.changeType()))
+                .count();
     }
 
     public String exportCsv() {

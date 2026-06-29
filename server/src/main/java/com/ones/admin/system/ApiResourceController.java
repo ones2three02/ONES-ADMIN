@@ -7,6 +7,7 @@ import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
+import com.ones.admin.system.dto.ApiResourceManifestDiffResponse;
 import com.ones.admin.system.dto.ApiResourceManifestResponse;
 import com.ones.admin.system.dto.ApiResourceQuery;
 import com.ones.admin.system.dto.ApiResourceResponse;
@@ -18,6 +19,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -66,6 +69,15 @@ public class ApiResourceController {
     @Operation(summary = "生成接口资源 Manifest")
     public ApiResult<ApiResourceManifestResponse> generateApiResourceManifest() {
         return ApiResult.ok(apiResourceService.generateManifest());
+    }
+
+    @PostMapping("/manifest/diff")
+    @SaCheckPermission("system:api:list")
+    @Operation(summary = "对比接口资源 Manifest")
+    public ApiResult<ApiResourceManifestDiffResponse> diffApiResourceManifest(
+            @RequestBody ApiResourceManifestResponse previousManifest
+    ) {
+        return ApiResult.ok(apiResourceService.diffManifest(previousManifest));
     }
 
     @GetMapping("/export")
