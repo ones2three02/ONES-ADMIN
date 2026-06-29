@@ -137,6 +137,38 @@ class ApiResourceControllerTest {
     }
 
     @Test
+    void summarizeApiResources() throws Exception {
+        String token = login("admin", "admin123");
+
+        String listResponse = mockMvc.perform(get("/api/system/api-resources")
+                        .param("pageNum", "1")
+                        .param("pageSize", "200")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long listTotal = objectMapper.readTree(listResponse).at("/data/total").asLong();
+
+        String summaryResponse = mockMvc.perform(get("/api/system/api-resources/summary")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.permissionMissingCount").value(0))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode summary = objectMapper.readTree(summaryResponse).path("data");
+        assertThat(summary.path("total").asLong()).isEqualTo(listTotal);
+        assertThat(summary.path("writeOperationCount").asLong()).isGreaterThan(0);
+        assertThat(summary.path("explicitAccessPolicyCount").asLong()).isGreaterThan(0);
+        assertThat(findAuthTypeCount(summary, "PERMISSION")).isGreaterThan(0);
+        assertThat(findModule(summary, "系统管理-接口资源").path("permissionCount").asLong()).isGreaterThan(0);
+    }
+
+    @Test
     void rejectUserWithoutApiResourcePermission() throws Exception {
         String adminToken = login("admin", "admin123");
         String username = "api_operator_" + System.nanoTime();
@@ -176,6 +208,22 @@ class ApiResourceControllerTest {
         return StreamSupport.stream(resource.path("permissionCodes").spliterator(), false)
                 .map(JsonNode::asText)
                 .toList();
+    }
+
+    private long findAuthTypeCount(JsonNode summary, String authType) {
+        return StreamSupport.stream(summary.path("authTypes").spliterator(), false)
+                .filter(node -> authType.equals(node.path("authType").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到认证级别：" + authType))
+                .path("count")
+                .asLong();
+    }
+
+    private JsonNode findModule(JsonNode summary, String module) {
+        return StreamSupport.stream(summary.path("modules").spliterator(), false)
+                .filter(node -> module.equals(node.path("module").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到模块：" + module));
     }
 
     private String login(String username, String password) throws Exception {

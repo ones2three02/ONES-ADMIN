@@ -8,6 +8,7 @@ import com.ones.admin.common.web.PageResult;
 import com.ones.admin.config.SaTokenConfig;
 import com.ones.admin.system.dto.ApiResourceQuery;
 import com.ones.admin.system.dto.ApiResourceResponse;
+import com.ones.admin.system.dto.ApiResourceSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -22,7 +23,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class ApiResourceService {
@@ -42,6 +45,32 @@ public class ApiResourceService {
         int fromIndex = (int) Math.min((query.getPageNum() - 1) * query.getPageSize(), records.size());
         int toIndex = (int) Math.min(fromIndex + query.getPageSize(), records.size());
         return PageResult.of(query.getPageNum(), query.getPageSize(), records.size(), records.subList(fromIndex, toIndex));
+    }
+
+    public ApiResourceSummaryResponse summarize() {
+        List<ApiResourceResponse> resources = listApiResources();
+        List<ApiResourceSummaryResponse.AuthTypeStat> authTypes = resources.stream()
+                .collect(Collectors.groupingBy(ApiResourceResponse::authType, Collectors.counting()))
+                .entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new ApiResourceSummaryResponse.AuthTypeStat(entry.getKey(), entry.getValue()))
+                .toList();
+        List<ApiResourceSummaryResponse.ModuleStat> modules = resources.stream()
+                .collect(Collectors.groupingBy(resource -> blankToDefault(resource.module(), "未分组")))
+                .entrySet()
+                .stream()
+                .map(entry -> toModuleStat(entry.getKey(), entry.getValue()))
+                .sorted(Comparator.comparing(ApiResourceSummaryResponse.ModuleStat::module))
+                .toList();
+        return new ApiResourceSummaryResponse(
+                resources.size(),
+                resources.stream().filter(ApiResourceResponse::writeOperation).count(),
+                resources.stream().filter(ApiResourceResponse::permissionMissing).count(),
+                resources.stream().filter(ApiResourceResponse::accessPolicyExplicit).count(),
+                authTypes,
+                modules
+        );
     }
 
     public List<ApiResourceResponse> listApiResources() {
@@ -223,6 +252,28 @@ public class ApiResourceService {
 
     private boolean hasText(String value) {
         return value != null && !value.trim().isBlank();
+    }
+
+    private ApiResourceSummaryResponse.ModuleStat toModuleStat(String module, List<ApiResourceResponse> resources) {
+        return new ApiResourceSummaryResponse.ModuleStat(
+                module,
+                resources.size(),
+                countAuthType(resources, ApiAuthType.PUBLIC),
+                countAuthType(resources, ApiAuthType.LOGIN),
+                countAuthType(resources, ApiAuthType.PERMISSION),
+                resources.stream().filter(ApiResourceResponse::writeOperation).count(),
+                resources.stream().filter(ApiResourceResponse::permissionMissing).count()
+        );
+    }
+
+    private long countAuthType(List<ApiResourceResponse> resources, ApiAuthType authType) {
+        return resources.stream()
+                .filter(resource -> authType.name().equals(resource.authType()))
+                .count();
+    }
+
+    private String blankToDefault(String value, String defaultValue) {
+        return hasText(value) ? value : defaultValue;
     }
 
     private record PermissionMetadata(List<String> codes, String mode) {
