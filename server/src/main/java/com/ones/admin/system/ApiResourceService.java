@@ -28,10 +28,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 public class ApiResourceService {
+
+    private static final String PERMISSION_CODE_PATTERN_TEXT =
+            "^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$";
+    private static final Pattern PERMISSION_CODE_PATTERN = Pattern.compile(PERMISSION_CODE_PATTERN_TEXT);
 
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
     private final SystemPermissionMapper permissionMapper;
@@ -97,6 +102,7 @@ public class ApiResourceService {
                 violations.size(),
                 errorCount,
                 warningCount,
+                PERMISSION_CODE_PATTERN_TEXT,
                 violations
         );
     }
@@ -135,6 +141,7 @@ public class ApiResourceService {
                 permissionMetadata.codes(),
                 assignablePermissionCodes
         );
+        List<String> invalidPermissionCodes = invalidPermissionCodes(permissionMetadata.codes());
         for (String path : paths(info)) {
             if (!path.startsWith("/api/")) {
                 continue;
@@ -148,6 +155,8 @@ public class ApiResourceService {
                         moduleName(handlerMethod),
                         operationSummary(handlerMethod),
                         permissionMetadata.codes(),
+                        invalidPermissionCodes.isEmpty(),
+                        invalidPermissionCodes,
                         permissionMetadata.mode(),
                         authType.name(),
                         accessPolicyMetadata.explicit(),
@@ -285,6 +294,14 @@ public class ApiResourceService {
                     "系统接口缺少权限点或显式访问策略"
             ));
         }
+        if (!resource.invalidPermissionCodes().isEmpty()) {
+            violations.add(toViolation(
+                    resource,
+                    "PERMISSION_CODE_INVALID_FORMAT",
+                    "ERROR",
+                    "接口权限码命名不符合规范：" + String.join(",", resource.invalidPermissionCodes())
+            ));
+        }
         if (!resource.unregisteredPermissionCodes().isEmpty()) {
             violations.add(toViolation(
                     resource,
@@ -379,6 +396,12 @@ public class ApiResourceService {
     private List<String> missingPermissionCodes(List<String> permissionCodes, Set<String> existingCodes) {
         return permissionCodes.stream()
                 .filter(permission -> !existingCodes.contains(permission))
+                .toList();
+    }
+
+    private List<String> invalidPermissionCodes(List<String> permissionCodes) {
+        return permissionCodes.stream()
+                .filter(permission -> !PERMISSION_CODE_PATTERN.matcher(permission).matches())
                 .toList();
     }
 

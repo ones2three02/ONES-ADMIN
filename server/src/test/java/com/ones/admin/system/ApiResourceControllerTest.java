@@ -53,6 +53,8 @@ class ApiResourceControllerTest {
         assertThat(userListResource.path("summary").asText()).isEqualTo("查询用户列表");
         assertThat(userListResource.path("permissionMode").asText()).isEqualTo("AND");
         assertThat(userListResource.path("authType").asText()).isEqualTo("PERMISSION");
+        assertThat(userListResource.path("permissionCodeStandard").asBoolean()).isTrue();
+        assertThat(userListResource.path("invalidPermissionCodes").isEmpty()).isTrue();
         assertThat(userListResource.path("accessPolicyExplicit").asBoolean()).isFalse();
         assertThat(userListResource.path("requiresPermission").asBoolean()).isTrue();
         assertThat(userListResource.path("permissionRegistered").asBoolean()).isTrue();
@@ -183,6 +185,8 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.passed").value(true))
                 .andExpect(jsonPath("$.data.errorCount").value(0))
                 .andExpect(jsonPath("$.data.warningCount").value(0))
+                .andExpect(jsonPath("$.data.permissionCodePattern")
+                        .value("^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$"))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();

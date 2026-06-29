@@ -8,6 +8,7 @@ public record ApiResourceGovernanceResponse(
         long violationCount,
         long errorCount,
         long warningCount,
+        String permissionCodePattern,
         List<Violation> violations
 ) {
 

@@ -8,6 +8,8 @@ public record ApiResourceResponse(
         String module,
         String summary,
         List<String> permissionCodes,
+        boolean permissionCodeStandard,
+        List<String> invalidPermissionCodes,
         String permissionMode,
         String authType,
         boolean accessPolicyExplicit,
