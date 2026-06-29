@@ -11,6 +11,8 @@ import com.ones.admin.common.web.PageResult;
 import com.ones.admin.config.SaTokenConfig;
 import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
 import com.ones.admin.system.dto.ApiResourceManifestDiffResponse;
+import com.ones.admin.system.dto.ApiResourceManifestGateRequest;
+import com.ones.admin.system.dto.ApiResourceManifestGateResponse;
 import com.ones.admin.system.dto.ApiResourceManifestResponse;
 import com.ones.admin.system.dto.ApiResourceQuery;
 import com.ones.admin.system.dto.ApiResourceResponse;
@@ -65,7 +67,7 @@ public class ApiResourceService {
             RequestMappingHandlerMapping requestMappingHandlerMapping,
             SystemPermissionMapper permissionMapper,
             SystemMenuMapper menuMapper,
-            @Value("${ones.version:v0.0.15}") String applicationVersion
+            @Value("${ones.version:v0.0.16}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -190,6 +192,60 @@ public class ApiResourceService {
                 breakingChangeCount,
                 changes
         );
+    }
+
+    public ApiResourceManifestGateResponse gateManifest(ApiResourceManifestGateRequest request) {
+        ApiResourceManifestResponse previousManifest = request == null ? null : request.previousManifest();
+        ApiResourceManifestDiffResponse diff = diffManifest(previousManifest);
+        ApiResourceGovernanceResponse governance = checkGovernance();
+        List<String> reasons = new ArrayList<>();
+        boolean requiredManualReview = diff.breakingChangeCount() > 0;
+        boolean reviewReasonRequired = false;
+        boolean passed;
+        String status;
+        if (governance.errorCount() > 0) {
+            passed = false;
+            status = "BLOCKED";
+            reasons.add("接口治理存在 " + governance.errorCount() + " 个错误，必须修复后才能发布");
+        } else if (requiredManualReview && !allowBreakingChanges(request)) {
+            passed = false;
+            status = "BLOCKED";
+            reviewReasonRequired = true;
+            reasons.add("存在 " + diff.breakingChangeCount() + " 个破坏性接口契约变更，需要人工确认");
+        } else if (requiredManualReview && !hasText(request.reviewReason())) {
+            passed = false;
+            status = "REVIEW_REASON_REQUIRED";
+            reviewReasonRequired = true;
+            reasons.add("破坏性接口契约变更已允许，但缺少人工确认原因");
+        } else if (requiredManualReview) {
+            passed = true;
+            status = "MANUAL_APPROVED";
+            reasons.add("存在 " + diff.breakingChangeCount() + " 个破坏性接口契约变更，已记录人工确认原因");
+        } else {
+            passed = true;
+            status = diff.changed() ? "PASSED_WITH_CHANGES" : "PASSED";
+            reasons.add(diff.changed() ? "存在非破坏性接口契约变化，允许发布" : "接口契约未变化，允许发布");
+        }
+        if (governance.warningCount() > 0) {
+            reasons.add("接口治理存在 " + governance.warningCount() + " 个警告，建议跟踪处理");
+        }
+        return new ApiResourceManifestGateResponse(
+                passed,
+                status,
+                diff.previousVersion(),
+                diff.currentVersion(),
+                governance.errorCount(),
+                governance.warningCount(),
+                diff.breakingChangeCount(),
+                requiredManualReview,
+                reviewReasonRequired,
+                reasons,
+                diff
+        );
+    }
+
+    private boolean allowBreakingChanges(ApiResourceManifestGateRequest request) {
+        return request != null && request.allowBreakingChanges();
     }
 
     private List<ApiResourceManifestResponse.Resource> resourcesOf(ApiResourceManifestResponse manifest) {

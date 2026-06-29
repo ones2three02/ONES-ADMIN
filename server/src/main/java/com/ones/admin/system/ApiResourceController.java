@@ -8,6 +8,8 @@ import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
 import com.ones.admin.system.dto.ApiResourceManifestDiffResponse;
+import com.ones.admin.system.dto.ApiResourceManifestGateRequest;
+import com.ones.admin.system.dto.ApiResourceManifestGateResponse;
 import com.ones.admin.system.dto.ApiResourceManifestResponse;
 import com.ones.admin.system.dto.ApiResourceQuery;
 import com.ones.admin.system.dto.ApiResourceResponse;
@@ -78,6 +80,15 @@ public class ApiResourceController {
             @RequestBody ApiResourceManifestResponse previousManifest
     ) {
         return ApiResult.ok(apiResourceService.diffManifest(previousManifest));
+    }
+
+    @PostMapping("/manifest/gate")
+    @SaCheckPermission("system:api:list")
+    @Operation(summary = "校验接口资源 Manifest 发布门禁")
+    public ApiResult<ApiResourceManifestGateResponse> gateApiResourceManifest(
+            @RequestBody ApiResourceManifestGateRequest request
+    ) {
+        return ApiResult.ok(apiResourceService.gateManifest(request));
     }
 
     @GetMapping("/export")

@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.16 - 2026-06-29
+
+- 新增接口资源 Manifest 发布门禁接口 `/api/system/api-resources/manifest/gate`。
+- 发布门禁会综合接口治理结果和 Manifest Diff，输出 `passed`、`status`、阻断原因和差异明细。
+- 存在接口治理错误时直接阻断发布；存在破坏性接口契约变更时默认阻断发布。
+- 破坏性变更只有在显式允许并填写人工确认原因后才返回 `MANUAL_APPROVED` 通过状态。
+- README 首版接口表新增 Manifest Gate 入口，便于 Jenkins 直接接入发布准入。
+
 ## v0.0.15 - 2026-06-29
 
 - 新增接口资源 Manifest 差异对比接口 `/api/system/api-resources/manifest/diff`。
