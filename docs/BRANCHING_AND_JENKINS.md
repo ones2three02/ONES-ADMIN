@@ -20,6 +20,15 @@ ONES-ADMIN 使用 `main + develop + 短生命周期分支` 的企业级分支模
 4. `release/x.y.z` 验证通过后合并到 `main`，并打版本标签 `vX.Y.Z`。
 5. `main` 的生产修复从 `main` 拉 `hotfix/*`，修复后同时合并回 `main` 和 `develop`。
 
+## 版本号规则
+
+- ONES-ADMIN 产品版本使用 `vMAJOR.MINOR.PATCH` 格式，例如 `v0.0.1`。
+- 每批可交付变更都必须同步更新根目录 `VERSION` 和 `docs/CHANGELOG.md`。
+- 后端 Maven 版本与产品版本保持一致，但不带 `v`，开发分支使用 `-SNAPSHOT`，例如 `0.0.1-SNAPSHOT`。
+- OpenAPI 展示版本读取后端配置 `ones.version`，默认与根目录 `VERSION` 保持一致。
+- 前端 `web/package.json` 当前保留 Vben 上游框架版本，不作为 ONES-ADMIN 产品版本来源。
+- 兼容性修复和小优化递增 PATCH；新增模块能力递增 MINOR；破坏性变更递增 MAJOR。
+
 ## Jenkins 推荐流水线
 
 ### feature/* 或 Pull Request

@@ -56,6 +56,7 @@ class ApiInfrastructureTest {
     void openApiDocsAvailable() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.info.title").value("ONES-ADMIN 后端接口"));
+                .andExpect(jsonPath("$.info.title").value("ONES-ADMIN 后端接口"))
+                .andExpect(jsonPath("$.info.version").value("v0.0.1"));
     }
 }

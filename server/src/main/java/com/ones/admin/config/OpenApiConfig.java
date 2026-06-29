@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.Components;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springdoc.core.models.GroupedOpenApi;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -22,12 +23,18 @@ public class OpenApiConfig {
 
     private static final String BEARER_AUTH = "BearerAuth";
 
+    private final String applicationVersion;
+
+    public OpenApiConfig(@Value("${ones.version:v0.0.1}") String applicationVersion) {
+        this.applicationVersion = applicationVersion;
+    }
+
     @Bean
     public OpenAPI onesAdminOpenApi() {
         return new OpenAPI()
                 .info(new Info()
                         .title("ONES-ADMIN 后端接口")
-                        .version("0.1.0")
+                        .version(applicationVersion)
                         .description("企业级后台管理系统接口文档，基于 Spring Boot 3、Sa-Token、MyBatis-Plus 构建。"))
                 .components(new Components()
                         .addSecuritySchemes(BEARER_AUTH, new SecurityScheme()
