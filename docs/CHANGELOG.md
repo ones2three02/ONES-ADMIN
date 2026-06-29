@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.18 - 2026-06-29
+
+- 接口治理质量门禁新增 `operationIdPattern`，当前规范为 `^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$`。
+- 新增 `OPERATION_ID_INVALID_FORMAT` 错误规则，阻断不符合命名规范的接口操作标识。
+- 新增 `OPERATION_ID_DUPLICATED` 错误规则，阻断重复 `operationId`，保证 API Catalog、客户端生成和 Jenkins 报告可稳定定位接口。
+- 接口治理违规项新增 `operationId` 字段，便于前端接口管理页和 CI 报告直接定位问题接口。
+- 补充专门测试 Controller，验证重复和非法 `operationId` 会导致治理门禁失败。
+
 ## v0.0.17 - 2026-06-29
 
 - 接口资源清单新增稳定 `operationId` 字段，默认采用 `ControllerSimpleName_methodName`，优先兼容 `@Operation.operationId` 显式配置。

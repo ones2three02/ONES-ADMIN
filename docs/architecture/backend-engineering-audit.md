@@ -53,6 +53,7 @@
 - 已提供接口资源 Manifest Diff，可对比上一版本 Manifest 和当前运行时 Manifest，输出新增、删除、修改和破坏性变更统计。
 - 已提供接口资源 Manifest 发布门禁，可综合接口治理错误、破坏性接口变更和人工确认原因输出发布准入结果。
 - 已将 `operationId` 纳入接口清单、CSV、Manifest、Manifest 指纹和 Manifest Diff，接口操作标识变化按破坏性变更处理。
+- 已建立 `operationId` 命名规范和唯一性门禁，当前格式为 `^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$`，重复或非法命名会作为治理错误阻断发布。
 - 已建立接口治理质量门禁，可输出权限缺口、系统写接口无权限、接口文档元数据缺失等违规项。
 - 已建立接口权限注册一致性检查，可识别代码权限点是否写入 `sys_permission`，以及是否挂载到 `sys_menu.auth_code` 供角色授权。
 - 已建立权限码命名规范检查，当前统一使用小写冒号分段格式：`^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$`。
@@ -105,11 +106,11 @@
   - 提供 `/api/system/api-resources/manifest/gate` 接口资源 Manifest 发布门禁，输出 `passed`、`status`、阻断原因、治理计数和差异明细。
   - Manifest Gate 对接口治理错误直接阻断；对破坏性接口契约变更默认阻断，显式允许并填写人工确认原因后返回 `MANUAL_APPROVED`。
   - 提供 `/api/system/api-resources/summary` 治理汇总接口，返回接口总数、写操作数、权限缺口数、访问策略数、废弃接口数、认证级别分布和模块分布。
-  - 提供 `/api/system/api-resources/governance` 接口治理质量门禁，返回是否通过、错误数、警告数、权限码正则和违规明细。
+  - 提供 `/api/system/api-resources/governance` 接口治理质量门禁，返回是否通过、错误数、警告数、权限码正则、`operationId` 正则和违规明细。
   - 自动区分 `PUBLIC`、`LOGIN`、`PERMISSION` 三类接口认证级别。
   - 提供 `@ApiAccessPolicy` 显式标记登录态接口的设计意图，减少安全巡检误报。
   - 对仅登录保护、且没有显式访问策略的系统接口标记权限缺口，便于安全巡检。
-  - 对系统写接口无权限点、权限码命名不规范、权限点未注册、权限点不可授权、废弃接口、缺少接口负责人、缺少引入版本、缺少生命周期、缺少风险级别、缺少 OpenAPI 模块标签、缺少接口摘要等问题输出结构化治理结果，便于 Jenkins 自动巡检。
+  - 对系统写接口无权限点、权限码命名不规范、`operationId` 命名不规范、`operationId` 重复、权限点未注册、权限点不可授权、废弃接口、缺少接口负责人、缺少引入版本、缺少生命周期、缺少风险级别、缺少 OpenAPI 模块标签、缺少接口摘要等问题输出结构化治理结果，便于 Jenkins 自动巡检。
   - 新增权限点 `system:api:list`，超级管理员启动时自动补齐授权。
   - 新增文件上传权限点 `system:file:upload`，文件上传不再只是登录态即可访问。
   - 审计日志、接口资源、文件上传等暂未落前端页面的权限，以菜单 button 节点挂入授权树，避免出现无页面组件的空路由。
@@ -178,6 +179,7 @@
   - 可将上一版本 Manifest POST 到 `/api/system/api-resources/manifest/diff`，若 `breakingChangeCount > 0` 则要求人工确认或阻断发布
   - 推荐 Jenkins 使用 `/api/system/api-resources/manifest/gate` 作为最终接口契约发布门禁，要求 `passed=true`
   - 权限码命名统一遵循 `/api/system/api-resources/governance` 返回的 `permissionCodePattern`
+  - `operationId` 命名统一遵循 `/api/system/api-resources/governance` 返回的 `operationIdPattern`，且必须全局唯一
   - 前端后续可接 `pnpm build`
 - 合入 `main` 前必须确保后端测试通过、前端构建通过、数据库迁移说明完整。
 

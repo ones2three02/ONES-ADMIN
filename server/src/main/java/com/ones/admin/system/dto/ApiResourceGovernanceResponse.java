@@ -9,6 +9,7 @@ public record ApiResourceGovernanceResponse(
         long errorCount,
         long warningCount,
         String permissionCodePattern,
+        String operationIdPattern,
         List<Violation> violations
 ) {
 
@@ -17,6 +18,7 @@ public record ApiResourceGovernanceResponse(
             String severity,
             String method,
             String path,
+            String operationId,
             String module,
             String summary,
             String message

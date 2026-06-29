@@ -221,6 +221,8 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.warningCount").value(0))
                 .andExpect(jsonPath("$.data.permissionCodePattern")
                         .value("^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$"))
+                .andExpect(jsonPath("$.data.operationIdPattern")
+                        .value("^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$"))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -229,6 +231,8 @@ class ApiResourceControllerTest {
         assertThat(governance.path("total").asLong()).isGreaterThan(0);
         assertThat(governance.path("violationCount").asLong())
                 .isEqualTo(governance.path("warningCount").asLong());
+        assertThat(ruleCodes(governance.path("violations")))
+                .doesNotContain("OPERATION_ID_INVALID_FORMAT", "OPERATION_ID_DUPLICATED");
     }
 
     @Test
@@ -270,7 +274,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.17"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.18"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(43))
                 .andReturn()
@@ -327,7 +331,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.17"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.18"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))
@@ -524,6 +528,12 @@ class ApiResourceControllerTest {
     private List<String> fieldNames(JsonNode change) {
         return StreamSupport.stream(change.path("changedFields").spliterator(), false)
                 .map(field -> field.path("fieldName").asText())
+                .toList();
+    }
+
+    private List<String> ruleCodes(JsonNode violations) {
+        return StreamSupport.stream(violations.spliterator(), false)
+                .map(violation -> violation.path("ruleCode").asText())
                 .toList();
     }
 

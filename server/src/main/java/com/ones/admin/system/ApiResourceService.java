@@ -50,8 +50,11 @@ public class ApiResourceService {
 
     private static final String PERMISSION_CODE_PATTERN_TEXT =
             "^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$";
+    private static final String OPERATION_ID_PATTERN_TEXT =
+            "^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$";
     private static final String CHECKSUM_ALGORITHM = "SHA-256";
     private static final Pattern PERMISSION_CODE_PATTERN = Pattern.compile(PERMISSION_CODE_PATTERN_TEXT);
+    private static final Pattern OPERATION_ID_PATTERN = Pattern.compile(OPERATION_ID_PATTERN_TEXT);
     private static final String CSV_HEADER = "apiKey,operationId,method,path,handler,module,summary,authType,permissionCodes,"
             + "permissionMode,requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
             + "writeOperation,deprecated,owner,sinceVersion,lifecycle,riskLevel,"
@@ -67,7 +70,7 @@ public class ApiResourceService {
             RequestMappingHandlerMapping requestMappingHandlerMapping,
             SystemPermissionMapper permissionMapper,
             SystemMenuMapper menuMapper,
-            @Value("${ones.version:v0.0.17}") String applicationVersion
+            @Value("${ones.version:v0.0.18}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -384,9 +387,10 @@ public class ApiResourceService {
 
     public ApiResourceGovernanceResponse checkGovernance() {
         List<ApiResourceResponse> resources = listApiResources();
-        List<ApiResourceGovernanceResponse.Violation> violations = resources.stream()
+        List<ApiResourceGovernanceResponse.Violation> violations = new ArrayList<>(resources.stream()
                 .flatMap(resource -> governanceViolations(resource).stream())
-                .toList();
+                .toList());
+        violations.addAll(duplicatedOperationIdViolations(resources));
         long errorCount = countSeverity(violations, "ERROR");
         long warningCount = countSeverity(violations, "WARN");
         return new ApiResourceGovernanceResponse(
@@ -396,6 +400,7 @@ public class ApiResourceService {
                 errorCount,
                 warningCount,
                 PERMISSION_CODE_PATTERN_TEXT,
+                OPERATION_ID_PATTERN_TEXT,
                 violations
         );
     }
@@ -791,6 +796,21 @@ public class ApiResourceService {
                     "接口权限码命名不符合规范：" + String.join(",", resource.invalidPermissionCodes())
             ));
         }
+        if (!hasText(resource.operationId())) {
+            violations.add(toViolation(
+                    resource,
+                    "OPERATION_ID_MISSING",
+                    "ERROR",
+                    "接口缺少稳定 operationId"
+            ));
+        } else if (!OPERATION_ID_PATTERN.matcher(resource.operationId()).matches()) {
+            violations.add(toViolation(
+                    resource,
+                    "OPERATION_ID_INVALID_FORMAT",
+                    "ERROR",
+                    "接口 operationId 命名不符合规范：" + resource.operationId()
+            ));
+        }
         if (!resource.unregisteredPermissionCodes().isEmpty()) {
             violations.add(toViolation(
                     resource,
@@ -876,6 +896,26 @@ public class ApiResourceService {
         return violations;
     }
 
+    private List<ApiResourceGovernanceResponse.Violation> duplicatedOperationIdViolations(
+            List<ApiResourceResponse> resources
+    ) {
+        Map<String, List<ApiResourceResponse>> resourcesByOperationId = resources.stream()
+                .filter(resource -> hasText(resource.operationId()))
+                .collect(Collectors.groupingBy(ApiResourceResponse::operationId));
+        return resourcesByOperationId.entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().size() > 1)
+                .flatMap(entry -> entry.getValue()
+                        .stream()
+                        .map(resource -> toViolation(
+                                resource,
+                                "OPERATION_ID_DUPLICATED",
+                                "ERROR",
+                                "接口 operationId 必须全局唯一：" + entry.getKey()
+                        )))
+                .toList();
+    }
+
     private ApiResourceGovernanceResponse.Violation toViolation(
             ApiResourceResponse resource,
             String ruleCode,
@@ -887,6 +927,7 @@ public class ApiResourceService {
                 severity,
                 resource.method(),
                 resource.path(),
+                resource.operationId(),
                 resource.module(),
                 resource.summary(),
                 message
