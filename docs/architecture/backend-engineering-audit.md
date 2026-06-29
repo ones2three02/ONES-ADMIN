@@ -40,6 +40,7 @@
 - 已建立权限码命名规范检查，当前统一使用小写冒号分段格式：`^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$`。
 - 已建立模块化错误码体系，通用、认证、系统模块错误码分层维护，并通过测试校验跨模块错误码唯一性。
 - 已接入 Flyway 数据库迁移治理，基线表结构位于 `server/src/main/resources/db/migration/V1__init_schema.sql`。
+- 已补充数据库迁移质量门禁，校验脚本命名、版本连续性、旧 `schema.sql` 禁用和破坏性 SQL 审批标记。
 - 高风险写接口已接入防重复提交保护，正式环境默认使用 Redis 存储防重票据。
 - MySQL、Redis、RabbitMQ 配置通过环境变量注入，本地敏感配置不提交 Git。
 
@@ -60,7 +61,9 @@
   - 基线脚本 `V1__init_schema.sql` 承载当前系统表结构。
   - 关闭 `spring.sql.init`，移除旧的启动 DDL 补偿类，避免应用启动时隐式改表。
   - 对已有非空库启用 `baseline-on-migrate`，首次接入 Flyway 时记录基线，不重复执行 V1。
-  - 新增测试校验 `flyway_schema_history` 存在迁移记录。
+  - 新增测试校验 `flyway_schema_history` 存在迁移记录、迁移文件命名规范、版本连续且无旧 `schema.sql`。
+  - 破坏性 SQL 必须包含 `ONES-MIGRATION-APPROVED-DESTRUCTIVE` 审批标记。
+  - 详细规范见 [数据库迁移治理规范](database-migration-governance.md)。
 - 优化全局异常处理：
   - Sa-Token 未登录、无权限统一错误码。
   - 参数校验返回具体字段信息。

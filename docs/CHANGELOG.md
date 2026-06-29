@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.10 - 2026-06-29
+
+- 新增数据库迁移治理规范文档 `docs/architecture/database-migration-governance.md`。
+- 增强 Flyway 迁移测试，校验迁移文件命名、版本连续性和旧 `schema.sql` 禁用规则。
+- 新增破坏性 SQL 门禁，`drop table`、`truncate table`、`delete from`、`alter table ... drop column` 必须包含审批标记。
+- README 增加数据库迁移治理文档入口。
+
 ## v0.0.9 - 2026-06-29
 
 - 引入 Flyway 数据库迁移治理，新增 `db/migration/V1__init_schema.sql` 基线迁移脚本。
