@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -240,6 +241,45 @@ class ApiResourceOperationIdGovernanceTest {
         assertThat(violation.path("remediation").asText()).contains("LOGIN_EXCLUDE_PATH_PATTERNS");
     }
 
+    @Test
+    void apiMethodMustBeExplicit() throws Exception {
+        String token = login("admin", "admin123");
+
+        String resourceResponse = mockMvc.perform(get("/api/system/api-resources")
+                        .param("pageNum", "1")
+                        .param("pageSize", "200")
+                        .param("path", "/api/test/contract/all-method")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].method").value("ALL"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode ambiguousMethodResource = objectMapper.readTree(resourceResponse).at("/data/list/0");
+        assertThat(ambiguousMethodResource.path("operationId").asText())
+                .isEqualTo("ContractFixture_allMethod");
+
+        String governanceResponse = mockMvc.perform(get("/api/system/api-resources/governance")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.passed").value(false))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode violations = objectMapper.readTree(governanceResponse).at("/data/violations");
+        JsonNode violation = findViolation(
+                violations,
+                "/api/test/contract/all-method",
+                "API_METHOD_NOT_EXPLICIT"
+        );
+        assertThat(violation.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(violation.path("remediation").asText()).contains("@GetMapping");
+    }
+
     private List<String> ruleCodes(List<JsonNode> violations) {
         return violations.stream()
                 .map(violation -> violation.path("ruleCode").asText())
@@ -379,6 +419,12 @@ class ApiResourceOperationIdGovernanceTest {
         @ApiAccessPolicy(value = ApiAuthType.PUBLIC, reason = "测试公开策略缺少运行时白名单同步")
         public ApiResult<String> publicWithoutRuntimeWhitelist() {
             return ApiResult.ok("public-without-runtime-whitelist");
+        }
+
+        @RequestMapping("/api/test/contract/all-method")
+        @Operation(summary = "未显式声明 HTTP 方法", operationId = "ContractFixture_allMethod")
+        public ApiResult<String> allMethod() {
+            return ApiResult.ok("all-method");
         }
     }
 }

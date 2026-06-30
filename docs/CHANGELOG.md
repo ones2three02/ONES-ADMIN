@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.32 - 2026-06-30
+
+- 接口契约治理新增 `API_METHOD_NOT_EXPLICIT` 阻断规则，禁止 `/api/**` 暴露未显式声明 HTTP 方法的 `ALL` 泛匹配接口。
+- 接口治理可识别仅使用 `@RequestMapping` 且未指定 `method` 的接口，要求改为 `@GetMapping`、`@PostMapping` 或显式 `@RequestMapping(method = ...)`。
+- 补充企业级接口管理调研结论：Spectral 强调规则化契约 lint，oasdiff 强调 method+path 级别的接口差异，Kong 强调运行时路由策略稳定性。
+- 产品版本递增至 `v0.0.32`。
+
 ## v0.0.31 - 2026-06-30
 
 - 公开接口治理新增 `PUBLIC_API_NOT_IN_RUNTIME_WHITELIST` 阻断规则，要求 `@ApiAccessPolicy(ApiAuthType.PUBLIC)` 必须同步加入 Sa-Token 运行时白名单。

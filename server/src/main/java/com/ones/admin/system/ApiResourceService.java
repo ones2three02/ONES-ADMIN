@@ -99,6 +99,13 @@ public class ApiResourceService {
                     "将公开接口加入 SaTokenConfig.LOGIN_EXCLUDE_PATH_PATTERNS，或改为 LOGIN/PERMISSION 访问策略，确保接口目录和运行时拦截器一致"
             ),
             new GovernanceRule(
+                    "API_METHOD_NOT_EXPLICIT",
+                    "ERROR",
+                    "CONTRACT",
+                    "接口未显式声明 HTTP 方法",
+                    "使用 @GetMapping、@PostMapping、@PutMapping、@DeleteMapping，或在 @RequestMapping(method = ...) 中声明明确方法，避免 ALL 泛匹配破坏接口契约和网关路由"
+            ),
+            new GovernanceRule(
                     "PERMISSION_CODE_INVALID_FORMAT",
                     "ERROR",
                     "SECURITY",
@@ -249,7 +256,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.31}") String applicationVersion
+            @Value("${ones.version:v0.0.32}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -1257,6 +1264,14 @@ public class ApiResourceService {
                     "PUBLIC_API_NOT_IN_RUNTIME_WHITELIST",
                     "ERROR",
                     "公开接口访问策略未同步到运行时白名单"
+            ));
+        }
+        if ("ALL".equals(resource.method())) {
+            violations.add(toViolation(
+                    resource,
+                    "API_METHOD_NOT_EXPLICIT",
+                    "ERROR",
+                    "接口必须显式声明 HTTP 方法"
             ));
         }
         if (!resource.invalidPermissionCodes().isEmpty()) {

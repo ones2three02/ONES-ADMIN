@@ -288,6 +288,12 @@ class ApiResourceControllerTest {
         assertThat(publicRuntimeWhitelistRule.path("category").asText()).isEqualTo("SECURITY");
         assertThat(publicRuntimeWhitelistRule.path("remediation").asText()).contains("LOGIN_EXCLUDE_PATH_PATTERNS");
 
+        JsonNode explicitMethodRule = findRule(rules, "API_METHOD_NOT_EXPLICIT");
+        assertThat(explicitMethodRule.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(explicitMethodRule.path("blocking").asBoolean()).isTrue();
+        assertThat(explicitMethodRule.path("category").asText()).isEqualTo("CONTRACT");
+        assertThat(explicitMethodRule.path("remediation").asText()).contains("@GetMapping");
+
         JsonNode deprecatedRule = findRule(rules, "DEPRECATED_API");
         assertThat(deprecatedRule.path("severity").asText()).isEqualTo("WARN");
         assertThat(deprecatedRule.path("blocking").asBoolean()).isFalse();
@@ -352,7 +358,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.31"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.32"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(48))
                 .andReturn()
@@ -411,7 +417,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.31"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.32"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.snapshot.total").value(48))
                 .andExpect(jsonPath("$.data.snapshot.manifest.total").value(48))
@@ -510,7 +516,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.31"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.32"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))
