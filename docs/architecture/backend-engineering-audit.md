@@ -22,6 +22,9 @@
 | [pb33f/openapi-changes](https://github.com/pb33f/openapi-changes) | OpenAPI 破坏性变更检测 CLI | CI/CD 契约变更报告、破坏性变更识别 |
 | [oasdiff/oasdiff](https://github.com/oasdiff/oasdiff) | OpenAPI Diff 与 Breaking Changes | Manifest Diff 与发布门禁设计 |
 | [OpenAPITools/openapi-diff](https://github.com/OpenAPITools/openapi-diff) | Java OpenAPI 差异比较工具 | Java 生态契约差异检测 |
+| [Kong/kong](https://github.com/Kong/kong) | API/AI Gateway、插件化策略、流量治理 | 策略目录化、网关能力边界、接口治理与运行时策略分层 |
+| [APIParkLab/APIPark](https://github.com/APIParkLab/APIPark) | AI/API 网关、开放平台、API 申请审批、调用统计 | API 申请审批、调用统计、开放平台体验 |
+| [apioo/fusio](https://github.com/apioo/fusio) | Self-hosted API Management | API 管理后台、接口发布、开发者消费侧能力 |
 
 结论：ONES-ADMIN 当前不宜盲目切换 ORM 或引入插件化/低代码大框架，短期应优先补齐接口治理、安全边界、审计日志、文件治理、数据字典等企业后台底座。
 
@@ -32,6 +35,7 @@
 - RuoYi/Yudao 的价值在于“框架化治理”：API 访问日志、错误日志、操作日志、安全框架、数据权限等能力拆成 starter 的方式值得后续模块化时参考。
 - 本轮接口管理吸收了三类做法：Smart Admin 的接口文档标签规范、Cool Admin Java 的 OpenAPI 自定义资源思路、RuoYi/Yudao 的 API 访问日志可定位 Controller 方法思路。
 - API Catalog 类项目强调稳定接口身份、负责人和生命周期；API Gateway/API Management 类项目强调发布准入、策略和流量治理；OpenAPI Diff 类项目强调 CI 中识别破坏性变更。
+- Kong、APISIX、Tyk、apiman、Gravitee 这类 API 管理项目普遍把“策略/规则”作为一等资产管理，而不是只在报错时输出一段提示；ONES-ADMIN 的接口治理也应暴露规则目录，便于 CI、前端和人工巡检统一解释。
 - ONES-ADMIN 当前保持 Spring Boot 3 + Sa-Token + MyBatis-Plus，不跟随 Cool Admin Java 切换 MyBatis-Flex；后续只吸收它的模块边界和初始化治理思想。
 
 ## 2. 当前后端基线
@@ -55,6 +59,7 @@
 - 已将 `operationId` 纳入接口清单、CSV、Manifest、Manifest 指纹和 Manifest Diff，接口操作标识变化按破坏性变更处理。
 - 已建立 `operationId` 命名规范和唯一性门禁，当前格式为 `^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$`，重复或非法命名会作为治理错误阻断发布。
 - 已建立接口治理质量门禁，可输出权限缺口、系统写接口无权限、接口文档元数据缺失等违规项。
+- 已建立接口治理规则目录，结构化输出规则编码、严重级别、是否阻断、分类和修复建议，便于 Jenkins、接口管理页和人工巡检复用同一套规则解释。
 - 已建立接口权限注册一致性检查，可识别代码权限点是否写入 `sys_permission`，以及是否挂载到 `sys_menu.auth_code` 供角色授权。
 - 已建立权限码命名规范检查，当前统一使用小写冒号分段格式：`^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$`。
 - 已建立模块化错误码体系，通用、认证、系统模块错误码分层维护，并通过测试校验跨模块错误码唯一性。
@@ -113,6 +118,7 @@
   - Manifest Gate 对接口治理错误直接阻断；对破坏性接口契约变更默认阻断，显式允许并填写人工确认原因后返回 `MANUAL_APPROVED`。
   - 提供 `/api/system/api-resources/summary` 治理汇总接口，返回接口总数、写操作数、权限缺口数、访问策略数、废弃接口数、认证级别分布和模块分布。
   - 提供 `/api/system/api-resources/governance` 接口治理质量门禁，返回是否通过、错误数、警告数、权限码正则、`operationId` 正则和违规明细。
+  - 提供 `/api/system/api-resources/governance/rules` 接口治理规则目录，返回规则编码、严重级别、是否阻断、规则分类、说明和修复建议。
   - 自动区分 `PUBLIC`、`LOGIN`、`PERMISSION` 三类接口认证级别。
   - 提供 `@ApiAccessPolicy` 显式标记登录态接口的设计意图，减少安全巡检误报。
   - 对仅登录保护、且没有显式访问策略的系统接口标记权限缺口，便于安全巡检。
@@ -189,6 +195,7 @@
   - `cd server && ./mvnw test`
   - 检查 Flyway 迁移测试通过，确保 `flyway_schema_history` 有迁移记录
   - 登录测试账号后调用 `/api/system/api-resources/governance`，要求 `passed=true` 且 `errorCount=0`
+  - 可调用 `/api/system/api-resources/governance/rules` 输出规则目录，作为 Jenkins 报告中 ruleCode 的解释来源
   - 可调用 `/api/system/api-resources/export` 导出 CSV 作为构建产物，便于接口清单留档和版本差异比对
   - 可调用 `/api/system/api-resources/manifest` 生成 JSON 与 `checksum`，用于识别接口契约是否发生变更
   - 推荐 Jenkins 在开发/测试环境调用 `/api/system/api-resources/manifest/snapshots/latest` 获取上一版发布快照

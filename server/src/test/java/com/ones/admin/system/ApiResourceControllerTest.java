@@ -236,6 +236,36 @@ class ApiResourceControllerTest {
     }
 
     @Test
+    void listApiResourceGovernanceRules() throws Exception {
+        String token = login("admin", "admin123");
+
+        String rulesResponse = mockMvc.perform(get("/api/system/api-resources/governance/rules")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.permissionCodePattern")
+                        .value("^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$"))
+                .andExpect(jsonPath("$.data.operationIdPattern")
+                        .value("^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode rules = objectMapper.readTree(rulesResponse).at("/data/rules");
+        assertThat(rules).hasSizeGreaterThanOrEqualTo(15);
+        JsonNode permissionMissingRule = findRule(rules, "API_PERMISSION_MISSING");
+        assertThat(permissionMissingRule.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(permissionMissingRule.path("blocking").asBoolean()).isTrue();
+        assertThat(permissionMissingRule.path("category").asText()).isEqualTo("SECURITY");
+        assertThat(permissionMissingRule.path("remediation").asText()).contains("@SaCheckPermission");
+
+        JsonNode deprecatedRule = findRule(rules, "DEPRECATED_API");
+        assertThat(deprecatedRule.path("severity").asText()).isEqualTo("WARN");
+        assertThat(deprecatedRule.path("blocking").asBoolean()).isFalse();
+        assertThat(deprecatedRule.path("category").asText()).isEqualTo("LIFECYCLE");
+    }
+
+    @Test
     void exportApiResourcesAsCsv() throws Exception {
         String token = login("admin", "admin123");
 
@@ -274,9 +304,9 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.24"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.25"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
-                .andExpect(jsonPath("$.data.total").value(47))
+                .andExpect(jsonPath("$.data.total").value(48))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -326,10 +356,10 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.24"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.25"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
-                .andExpect(jsonPath("$.data.snapshot.total").value(47))
-                .andExpect(jsonPath("$.data.snapshot.manifest.total").value(47))
+                .andExpect(jsonPath("$.data.snapshot.total").value(48))
+                .andExpect(jsonPath("$.data.snapshot.manifest.total").value(48))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -424,7 +454,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.24"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.25"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))
@@ -528,6 +558,11 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
 
         mockMvc.perform(get("/api/system/api-resources/governance")
+                        .header("Authorization", "Bearer " + operatorToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+
+        mockMvc.perform(get("/api/system/api-resources/governance/rules")
                         .header("Authorization", "Bearer " + operatorToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
@@ -640,6 +675,13 @@ class ApiResourceControllerTest {
                         && apiKey.equals(change.path("apiKey").asText()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("未找到接口变更：" + changeType + " " + apiKey));
+    }
+
+    private JsonNode findRule(JsonNode rules, String ruleCode) {
+        return StreamSupport.stream(rules.spliterator(), false)
+                .filter(rule -> ruleCode.equals(rule.path("ruleCode").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到接口治理规则：" + ruleCode));
     }
 
     private List<String> fieldNames(JsonNode change) {

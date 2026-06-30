@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.25 - 2026-06-30
+
+- 新增 `/api/system/api-resources/governance/rules` 接口，结构化输出接口治理规则目录、严重级别、阻断属性、分类和修复建议。
+- 将接口治理规则从散落的修复建议收敛为统一规则目录，便于 Jenkins、接口管理页和人工巡检按规则编码解释治理结果。
+- 补充企业级接口管理调研结论：Backstage 强调 API Catalog 与 Owner，Gravitee/APISIX/Kong/Tyk/apiman 强调策略化 API 管理，oasdiff/openapi-diff 强调契约差异和破坏性变更门禁。
+- 产品版本递增至 `v0.0.25`。
+
 ## v0.0.24 - 2026-06-30
 
 - 将 MinIO Java SDK 调整为 `8.5.17` 稳定线，避免 SDK 9.x 与当前 Maven/OkHttp 5 JVM 依赖组合在本地 MinIO 服务上出现响应解析兼容问题。
