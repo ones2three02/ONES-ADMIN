@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ones.admin.OnesAdminApplication;
 import com.ones.admin.auth.dto.LoginRequest;
+import com.ones.admin.common.web.ApiAccessPolicy;
+import com.ones.admin.common.web.ApiAuthType;
 import com.ones.admin.common.web.ApiLifecycleStatus;
 import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
@@ -199,6 +201,45 @@ class ApiResourceOperationIdGovernanceTest {
         assertThat(violation.path("remediation").asText()).contains("@RepeatSubmit");
     }
 
+    @Test
+    void publicAccessPolicyMustMatchRuntimeWhitelist() throws Exception {
+        String token = login("admin", "admin123");
+
+        String resourceResponse = mockMvc.perform(get("/api/system/api-resources")
+                        .param("pageNum", "1")
+                        .param("pageSize", "200")
+                        .param("path", "/api/test/security/public-without-runtime-whitelist")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].authType").value("PUBLIC"))
+                .andExpect(jsonPath("$.data.list[0].accessPolicyExplicit").value(true))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode publicPolicyResource = objectMapper.readTree(resourceResponse).at("/data/list/0");
+        assertThat(publicPolicyResource.path("accessPolicyReason").asText()).contains("测试公开策略");
+
+        String governanceResponse = mockMvc.perform(get("/api/system/api-resources/governance")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.passed").value(false))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode violations = objectMapper.readTree(governanceResponse).at("/data/violations");
+        JsonNode violation = findViolation(
+                violations,
+                "/api/test/security/public-without-runtime-whitelist",
+                "PUBLIC_API_NOT_IN_RUNTIME_WHITELIST"
+        );
+        assertThat(violation.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(violation.path("remediation").asText()).contains("LOGIN_EXCLUDE_PATH_PATTERNS");
+    }
+
     private List<String> ruleCodes(List<JsonNode> violations) {
         return violations.stream()
                 .map(violation -> violation.path("ruleCode").asText())
@@ -328,6 +369,16 @@ class ApiResourceOperationIdGovernanceTest {
         @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
         public ApiResult<String> highRiskWithoutRepeatSubmit() {
             return ApiResult.ok("high-risk-without-repeat-submit");
+        }
+
+        @GetMapping("/api/test/security/public-without-runtime-whitelist")
+        @Operation(
+                summary = "公开策略未同步运行时白名单",
+                operationId = "SecurityFixture_publicWithoutRuntimeWhitelist"
+        )
+        @ApiAccessPolicy(value = ApiAuthType.PUBLIC, reason = "测试公开策略缺少运行时白名单同步")
+        public ApiResult<String> publicWithoutRuntimeWhitelist() {
+            return ApiResult.ok("public-without-runtime-whitelist");
         }
     }
 }

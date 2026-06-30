@@ -92,6 +92,13 @@ public class ApiResourceService {
                     "为公开接口补充 @ApiAccessPolicy(ApiAuthType.PUBLIC, reason = \"...\")，说明开放原因、调用方和安全补偿措施"
             ),
             new GovernanceRule(
+                    "PUBLIC_API_NOT_IN_RUNTIME_WHITELIST",
+                    "ERROR",
+                    "SECURITY",
+                    "公开接口未加入运行时白名单",
+                    "将公开接口加入 SaTokenConfig.LOGIN_EXCLUDE_PATH_PATTERNS，或改为 LOGIN/PERMISSION 访问策略，确保接口目录和运行时拦截器一致"
+            ),
+            new GovernanceRule(
                     "PERMISSION_CODE_INVALID_FORMAT",
                     "ERROR",
                     "SECURITY",
@@ -242,7 +249,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.30}") String applicationVersion
+            @Value("${ones.version:v0.0.31}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -1242,6 +1249,14 @@ public class ApiResourceService {
                     "PUBLIC_API_WITHOUT_ACCESS_POLICY",
                     "ERROR",
                     "公开接口必须显式声明访问策略和开放原因"
+            ));
+        }
+        if ("PUBLIC".equals(resource.authType()) && !isPublicPath(resource.path())) {
+            violations.add(toViolation(
+                    resource,
+                    "PUBLIC_API_NOT_IN_RUNTIME_WHITELIST",
+                    "ERROR",
+                    "公开接口访问策略未同步到运行时白名单"
             ));
         }
         if (!resource.invalidPermissionCodes().isEmpty()) {

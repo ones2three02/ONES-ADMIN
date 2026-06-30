@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.31 - 2026-06-30
+
+- 公开接口治理新增 `PUBLIC_API_NOT_IN_RUNTIME_WHITELIST` 阻断规则，要求 `@ApiAccessPolicy(ApiAuthType.PUBLIC)` 必须同步加入 Sa-Token 运行时白名单。
+- 接口治理可识别“接口目录标记公开，但运行时拦截器未放行”的不一致风险，避免后续飞书扫码、SSO 回调等入口只改文档不改拦截器。
+- 补充企业级接口管理调研结论：Kong、APISIX、Tyk、apiman 均强调路由策略与运行时网关行为一致。
+- 产品版本递增至 `v0.0.31`。
+
 ## v0.0.30 - 2026-06-30
 
 - 公开接口治理新增 `PUBLIC_API_WITHOUT_ACCESS_POLICY` 阻断规则，`PUBLIC` 接口必须显式声明 `@ApiAccessPolicy(ApiAuthType.PUBLIC, reason = "...")`。
