@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -175,6 +176,29 @@ class ApiResourceOperationIdGovernanceTest {
         assertThat(removedStillMappedViolation.path("remediation").asText()).contains("删除运行时路由");
     }
 
+    @Test
+    void highRiskWriteApiRequiresRepeatSubmitProtection() throws Exception {
+        String token = login("admin", "admin123");
+
+        String governanceResponse = mockMvc.perform(get("/api/system/api-resources/governance")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.passed").value(false))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode violations = objectMapper.readTree(governanceResponse).at("/data/violations");
+        JsonNode violation = findViolation(
+                violations,
+                "/api/test/security/high-risk-without-repeat-submit",
+                "HIGH_RISK_WRITE_API_WITHOUT_REPEAT_SUBMIT"
+        );
+        assertThat(violation.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(violation.path("remediation").asText()).contains("@RepeatSubmit");
+    }
+
     private List<String> ruleCodes(List<JsonNode> violations) {
         return violations.stream()
                 .map(violation -> violation.path("ruleCode").asText())
@@ -294,6 +318,16 @@ class ApiResourceOperationIdGovernanceTest {
         @ApiResourceMetadata(lifecycle = ApiLifecycleStatus.REMOVED)
         public ApiResult<String> removedStillMapped() {
             return ApiResult.ok("removed-still-mapped");
+        }
+
+        @PostMapping("/api/test/security/high-risk-without-repeat-submit")
+        @Operation(
+                summary = "高风险写接口缺少重复提交防护",
+                operationId = "SecurityFixture_highRiskWithoutRepeatSubmit"
+        )
+        @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
+        public ApiResult<String> highRiskWithoutRepeatSubmit() {
+            return ApiResult.ok("high-risk-without-repeat-submit");
         }
     }
 }

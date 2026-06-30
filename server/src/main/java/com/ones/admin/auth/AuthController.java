@@ -6,6 +6,7 @@ import com.ones.admin.auth.dto.LoginResponse;
 import com.ones.admin.auth.dto.TokenInfo;
 import com.ones.admin.auth.dto.UserProfile;
 import com.ones.admin.common.exception.BusinessException;
+import com.ones.admin.common.repeatsubmit.RepeatSubmit;
 import com.ones.admin.common.web.ApiLifecycleStatus;
 import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
@@ -84,6 +85,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
+    @RepeatSubmit
     @Operation(summary = "刷新当前登录令牌")
     public ApiResult<String> refresh() {
         StpUtil.checkLogin();
@@ -92,6 +94,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @RepeatSubmit
     @Operation(summary = "退出登录")
     public ApiResult<Void> logout() {
         StpUtil.logout();

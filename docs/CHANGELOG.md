@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.29 - 2026-06-30
+
+- 接口资源清单、CSV 导出、Manifest 和 Manifest 指纹新增 `repeatSubmitProtected`，用于记录接口是否具备重复提交防护。
+- 接口治理规则新增 `HIGH_RISK_WRITE_API_WITHOUT_REPEAT_SUBMIT`，非公开高风险写接口缺少 `@RepeatSubmit` 时作为 ERROR 阻断发布门禁。
+- 为认证刷新、退出登录和接口 Manifest 发布等高风险写接口补充重复提交防护，登录接口继续由失败次数与临时锁定策略保护。
+- 补充企业级接口管理调研结论：SmartAdmin 强调登录安全与三级等保能力，apiman/APIPark 强调 API 管理策略资产化，Spectral 强调规则化质量门禁。
+- 产品版本递增至 `v0.0.29`。
+
 ## v0.0.28 - 2026-06-30
 
 - 接口生命周期治理新增 `LIFECYCLE_DEPRECATED_WITHOUT_DEPRECATED_FLAG` 规则，要求 `lifecycle=DEPRECATED` 的接口同步 OpenAPI `deprecated` 标记。

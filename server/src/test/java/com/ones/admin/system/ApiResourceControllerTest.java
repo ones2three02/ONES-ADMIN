@@ -77,12 +77,14 @@ class ApiResourceControllerTest {
         assertThat(userListResource.path("unassignablePermissionCodes").isEmpty()).isTrue();
         assertThat(userListResource.path("permissionMissing").asBoolean()).isFalse();
         assertThat(userListResource.path("writeOperation").asBoolean()).isFalse();
+        assertThat(userListResource.path("repeatSubmitProtected").asBoolean()).isFalse();
         assertThat(permissionCodes(userListResource)).containsExactly("system:user:list");
 
         JsonNode userCreateResource = findResource(resources, "POST", "/api/system/users");
         assertThat(userCreateResource.path("operationId").asText()).isEqualTo("UserController_createUser");
         assertThat(userCreateResource.path("summary").asText()).isEqualTo("新增用户");
         assertThat(userCreateResource.path("writeOperation").asBoolean()).isTrue();
+        assertThat(userCreateResource.path("repeatSubmitProtected").asBoolean()).isTrue();
         assertThat(userCreateResource.path("riskLevel").asText()).isEqualTo("HIGH");
         assertThat(permissionCodes(userCreateResource)).containsExactly("system:user:create");
     }
@@ -276,6 +278,11 @@ class ApiResourceControllerTest {
         assertThat(removedStillMappedRule.path("severity").asText()).isEqualTo("ERROR");
         assertThat(removedStillMappedRule.path("blocking").asBoolean()).isTrue();
         assertThat(removedStillMappedRule.path("remediation").asText()).contains("删除运行时路由");
+        JsonNode repeatSubmitRule = findRule(rules, "HIGH_RISK_WRITE_API_WITHOUT_REPEAT_SUBMIT");
+        assertThat(repeatSubmitRule.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(repeatSubmitRule.path("blocking").asBoolean()).isTrue();
+        assertThat(repeatSubmitRule.path("category").asText()).isEqualTo("SECURITY");
+        assertThat(repeatSubmitRule.path("remediation").asText()).contains("@RepeatSubmit");
     }
 
     @Test
@@ -294,7 +301,7 @@ class ApiResourceControllerTest {
         assertThat(response).startsWith(
                 "apiKey,operationId,method,path,handler,module,summary,authType,permissionCodes,permissionMode,"
                         + "requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
-                        + "writeOperation,deprecated,owner,sinceVersion,lifecycle,riskLevel,"
+                        + "writeOperation,repeatSubmitProtected,deprecated,owner,sinceVersion,lifecycle,riskLevel,"
                         + "sunsetVersion,replacementApiKey,"
                         + "accessPolicyExplicit,accessPolicyReason\n"
         );
@@ -318,7 +325,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.28"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.29"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(48))
                 .andReturn()
@@ -347,7 +354,14 @@ class ApiResourceControllerTest {
         assertThat(userList.path("sinceVersion").asText()).isEqualTo("v0.0.1");
         assertThat(userList.path("lifecycle").asText()).isEqualTo("ACTIVE");
         assertThat(userList.path("riskLevel").asText()).isEqualTo("MEDIUM");
+        assertThat(userList.path("repeatSubmitProtected").asBoolean()).isFalse();
         assertThat(permissionCodes(userList)).containsExactly("system:user:list");
+
+        JsonNode userCreate = findResource(firstManifest.path("resources"), "POST", "/api/system/users");
+        assertThat(userCreate.path("writeOperation").asBoolean()).isTrue();
+        assertThat(userCreate.path("riskLevel").asText()).isEqualTo("HIGH");
+        assertThat(userCreate.path("repeatSubmitProtected").asBoolean()).isTrue();
+        assertThat(permissionCodes(userCreate)).containsExactly("system:user:create");
 
         JsonNode manifest = findResource(firstManifest.path("resources"), "GET", "/api/system/api-resources/manifest");
         assertThat(manifest.path("handler").asText())
@@ -359,7 +373,7 @@ class ApiResourceControllerTest {
     @Test
     void publishAndListApiResourceManifestSnapshots() throws Exception {
         String token = login("admin", "admin123");
-        ObjectNode publishRequest = objectMapper.createObjectNode();
+        ObjectNode publishRequest = publishRequest();
 
         String publishResponse = mockMvc.perform(post("/api/system/api-resources/manifest/snapshots")
                         .header("Authorization", "Bearer " + token)
@@ -370,7 +384,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.28"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.29"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.snapshot.total").value(48))
                 .andExpect(jsonPath("$.data.snapshot.manifest.total").value(48))
@@ -403,6 +417,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.checksum").value(checksum))
                 .andExpect(jsonPath("$.data.manifest.checksum").value(checksum));
 
+        Thread.sleep(600);
         mockMvc.perform(post("/api/system/api-resources/manifest/snapshots")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -417,7 +432,7 @@ class ApiResourceControllerTest {
     @Test
     void gateLatestApiResourceManifestSnapshotUsesPublishedBaseline() throws Exception {
         String token = login("admin", "admin123");
-        ObjectNode request = objectMapper.createObjectNode();
+        ObjectNode request = publishRequest();
 
         String publishResponse = mockMvc.perform(post("/api/system/api-resources/manifest/snapshots")
                         .header("Authorization", "Bearer " + token)
@@ -468,7 +483,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.28"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.29"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))
@@ -687,6 +702,12 @@ class ApiResourceControllerTest {
         previousManifest.set("resources", previousResources);
         previousManifest.put("total", previousResources.size());
         return previousManifest;
+    }
+
+    private ObjectNode publishRequest() {
+        ObjectNode request = objectMapper.createObjectNode();
+        request.put("reviewReason", "接口 Manifest 发布测试-" + System.nanoTime());
+        return request;
     }
 
     private JsonNode findResource(JsonNode resources, String method, String path) {

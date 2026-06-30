@@ -1,6 +1,7 @@
 package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.ones.admin.common.repeatsubmit.RepeatSubmit;
 import com.ones.admin.common.web.ApiLifecycleStatus;
 import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
@@ -105,6 +106,7 @@ public class ApiResourceController {
 
     @PostMapping("/manifest/snapshots")
     @SaCheckPermission("system:api:publish")
+    @RepeatSubmit(intervalMillis = 500)
     @Operation(summary = "发布接口资源 Manifest 快照")
     @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<ApiResourceManifestSnapshotPublishResponse> publishApiResourceManifestSnapshot(

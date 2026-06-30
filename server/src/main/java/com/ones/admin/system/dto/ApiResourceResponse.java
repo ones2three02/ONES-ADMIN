@@ -21,6 +21,7 @@ public record ApiResourceResponse(
         List<String> unassignablePermissionCodes,
         boolean permissionMissing,
         boolean writeOperation,
+        boolean repeatSubmitProtected,
         String apiKey,
         String operationId,
         String handler,

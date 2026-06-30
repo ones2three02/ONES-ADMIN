@@ -20,6 +20,7 @@ public record ApiResourceManifestResponse(
             List<String> permissionCodes,
             String permissionMode,
             boolean writeOperation,
+            boolean repeatSubmitProtected,
             String owner,
             String sinceVersion,
             String lifecycle,

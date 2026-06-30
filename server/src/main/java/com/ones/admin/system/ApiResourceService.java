@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ones.admin.common.exception.BusinessException;
+import com.ones.admin.common.repeatsubmit.RepeatSubmit;
 import com.ones.admin.common.web.ApiAccessPolicy;
 import com.ones.admin.common.web.ApiAuthType;
 import com.ones.admin.common.web.ApiLifecycleStatus;
@@ -72,7 +73,8 @@ public class ApiResourceService {
     private static final Pattern OPERATION_ID_PATTERN = Pattern.compile(OPERATION_ID_PATTERN_TEXT);
     private static final String CSV_HEADER = "apiKey,operationId,method,path,handler,module,summary,authType,permissionCodes,"
             + "permissionMode,requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
-            + "writeOperation,deprecated,owner,sinceVersion,lifecycle,riskLevel,sunsetVersion,replacementApiKey,"
+            + "writeOperation,repeatSubmitProtected,deprecated,owner,sinceVersion,lifecycle,riskLevel,"
+            + "sunsetVersion,replacementApiKey,"
             + "accessPolicyExplicit,accessPolicyReason";
     private static final List<GovernanceRule> GOVERNANCE_RULES = List.of(
             new GovernanceRule(
@@ -116,6 +118,13 @@ public class ApiResourceService {
                     "SECURITY",
                     "系统写接口未配置权限点",
                     "系统写接口必须补充 @SaCheckPermission，或通过 @ApiAccessPolicy 明确例外并接受安全评审"
+            ),
+            new GovernanceRule(
+                    "HIGH_RISK_WRITE_API_WITHOUT_REPEAT_SUBMIT",
+                    "ERROR",
+                    "SECURITY",
+                    "非公开高风险写接口缺少重复提交防护",
+                    "为非公开高风险写接口补充 @RepeatSubmit，并结合业务幂等键、唯一约束或审批流保证重复请求不会造成脏数据；公开登录接口由登录失败锁定策略保护"
             ),
             new GovernanceRule(
                     "PERMISSION_CODE_UNASSIGNABLE",
@@ -226,7 +235,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.28}") String applicationVersion
+            @Value("${ones.version:v0.0.29}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -682,6 +691,9 @@ public class ApiResourceService {
         addFieldChange(changes, "writeOperation",
                 String.valueOf(previous.writeOperation()),
                 String.valueOf(current.writeOperation()));
+        addFieldChange(changes, "repeatSubmitProtected",
+                String.valueOf(previous.repeatSubmitProtected()),
+                String.valueOf(current.repeatSubmitProtected()));
         addFieldChange(changes, "owner", previous.owner(), current.owner());
         addFieldChange(changes, "sinceVersion", previous.sinceVersion(), current.sinceVersion());
         addFieldChange(changes, "lifecycle", previous.lifecycle(), current.lifecycle());
@@ -722,7 +734,8 @@ public class ApiResourceService {
                 || "operationId".equals(fieldName)
                 || "permissionCodes".equals(fieldName)
                 || "permissionMode".equals(fieldName)
-                || "writeOperation".equals(fieldName);
+                || "writeOperation".equals(fieldName)
+                || "repeatSubmitProtected".equals(fieldName);
     }
 
     private long countChangeType(List<ApiResourceManifestDiffResponse.Change> changes, String changeType) {
@@ -839,6 +852,7 @@ public class ApiResourceService {
         PermissionMetadata permissionMetadata = permissionMetadata(handlerMethod);
         AccessPolicyMetadata accessPolicyMetadata = accessPolicyMetadata(handlerMethod);
         ResourceMetadata resourceMetadata = resourceMetadata(handlerMethod);
+        boolean repeatSubmitProtected = repeatSubmitProtected(handlerMethod);
         List<String> unregisteredPermissionCodes = missingPermissionCodes(
                 permissionMetadata.codes(),
                 registeredPermissionCodes
@@ -874,6 +888,7 @@ public class ApiResourceService {
                         unassignablePermissionCodes,
                         permissionMissing,
                         isWriteOperation(method),
+                        repeatSubmitProtected,
                         apiKey(method, path),
                         operationId(handlerMethod),
                         handlerName(handlerMethod),
@@ -901,6 +916,7 @@ public class ApiResourceService {
                 resource.permissionCodes(),
                 resource.permissionMode(),
                 resource.writeOperation(),
+                resource.repeatSubmitProtected(),
                 resource.owner(),
                 resource.sinceVersion(),
                 resource.lifecycle(),
@@ -935,6 +951,7 @@ public class ApiResourceService {
                 String.join("|", resource.permissionCodes()),
                 nullToEmpty(resource.permissionMode()),
                 String.valueOf(resource.writeOperation()),
+                String.valueOf(resource.repeatSubmitProtected()),
                 nullToEmpty(resource.owner()),
                 nullToEmpty(resource.sinceVersion()),
                 nullToEmpty(resource.lifecycle()),
@@ -965,6 +982,7 @@ public class ApiResourceService {
                 .append(resource.permissionAssignable()).append(',')
                 .append(resource.permissionMissing()).append(',')
                 .append(resource.writeOperation()).append(',')
+                .append(resource.repeatSubmitProtected()).append(',')
                 .append(resource.deprecated()).append(',')
                 .append(csvValue(resource.owner())).append(',')
                 .append(csvValue(resource.sinceVersion())).append(',')
@@ -1051,6 +1069,10 @@ public class ApiResourceService {
         return (operation != null && operation.deprecated())
                 || AnnotationUtils.findAnnotation(handlerMethod.getMethod(), Deprecated.class) != null
                 || AnnotationUtils.findAnnotation(handlerMethod.getBeanType(), Deprecated.class) != null;
+    }
+
+    private boolean repeatSubmitProtected(HandlerMethod handlerMethod) {
+        return AnnotationUtils.findAnnotation(handlerMethod.getMethod(), RepeatSubmit.class) != null;
     }
 
     private ResourceMetadata resourceMetadata(HandlerMethod handlerMethod) {
@@ -1246,6 +1268,17 @@ public class ApiResourceService {
                     "SYSTEM_WRITE_API_WITHOUT_PERMISSION",
                     "ERROR",
                     "系统写接口必须配置权限点"
+            ));
+        }
+        if ("HIGH".equals(resource.riskLevel())
+                && resource.writeOperation()
+                && !"PUBLIC".equals(resource.authType())
+                && !resource.repeatSubmitProtected()) {
+            violations.add(toViolation(
+                    resource,
+                    "HIGH_RISK_WRITE_API_WITHOUT_REPEAT_SUBMIT",
+                    "ERROR",
+                    "非公开高风险写接口缺少重复提交防护"
             ));
         }
         if (!resource.unassignablePermissionCodes().isEmpty()) {

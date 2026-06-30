@@ -64,12 +64,13 @@
 - 已建立接口治理规则目录，结构化输出规则编码、严重级别、是否阻断、分类和修复建议，便于 Jenkins、接口管理页和人工巡检复用同一套规则解释。
 - 已建立废弃接口下线治理，废弃 API 必须维护 `sunsetVersion` 和 `replacementApiKey`，避免只有废弃标记但没有迁移路径。
 - 已建立接口生命周期一致性治理，`DEPRECATED` 必须同步 OpenAPI 废弃标记，`REMOVED` 不允许继续暴露运行时路由。
+- 已建立高风险写接口策略一致性治理，接口清单、CSV 和 Manifest 输出 `repeatSubmitProtected`，非公开高风险写接口缺少 `@RepeatSubmit` 时阻断发布。
 - 已建立接口权限注册一致性检查，可识别代码权限点是否写入 `sys_permission`，以及是否挂载到 `sys_menu.auth_code` 供角色授权。
 - 已建立权限码命名规范检查，当前统一使用小写冒号分段格式：`^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$`。
 - 已建立模块化错误码体系，通用、认证、系统模块错误码分层维护，并通过测试校验跨模块错误码唯一性。
 - 已接入 Flyway 数据库迁移治理，基线表结构位于 `server/src/main/resources/db/migration/V1__init_schema.sql`。
 - 已补充数据库迁移质量门禁，校验脚本命名、版本连续性、旧 `schema.sql` 禁用和破坏性 SQL 审批标记。
-- 高风险写接口已接入防重复提交保护，正式环境默认使用 Redis 存储防重票据。
+- 高风险写接口已接入防重复提交保护，正式环境默认使用 Redis 存储防重票据；登录接口继续由失败次数和临时锁定策略保护。
 - 文件存储已抽象为 `FileStorageService`，默认本地目录存储，可通过配置切换到 MinIO。
 - 登录日志、操作日志落库后可发布统一系统事件，默认关闭外发，可通过配置切换到 RabbitMQ。
 - MySQL、Redis、RabbitMQ、MinIO 配置通过环境变量注入，本地敏感配置不提交 Git。
@@ -127,7 +128,8 @@
   - 自动区分 `PUBLIC`、`LOGIN`、`PERMISSION` 三类接口认证级别。
   - 提供 `@ApiAccessPolicy` 显式标记登录态接口的设计意图，减少安全巡检误报。
   - 对仅登录保护、且没有显式访问策略的系统接口标记权限缺口，便于安全巡检。
-  - 对系统写接口无权限点、权限码命名不规范、`operationId` 命名不规范、`operationId` 重复、权限点未注册、权限点不可授权、废弃接口、废弃接口缺少下线版本、废弃接口缺少替代接口、`DEPRECATED` 未同步 OpenAPI 废弃标记、`REMOVED` 接口仍暴露路由、缺少接口负责人、缺少引入版本、缺少生命周期、缺少风险级别、缺少 OpenAPI 模块标签、缺少接口摘要等问题输出结构化治理结果，便于 Jenkins 自动巡检。
+  - 对系统写接口无权限点、非公开高风险写接口缺少重复提交防护、权限码命名不规范、`operationId` 命名不规范、`operationId` 重复、权限点未注册、权限点不可授权、废弃接口、废弃接口缺少下线版本、废弃接口缺少替代接口、`DEPRECATED` 未同步 OpenAPI 废弃标记、`REMOVED` 接口仍暴露路由、缺少接口负责人、缺少引入版本、缺少生命周期、缺少风险级别、缺少 OpenAPI 模块标签、缺少接口摘要等问题输出结构化治理结果，便于 Jenkins 自动巡检。
+  - 接口资源列表、CSV 导出、Manifest 和 Manifest Diff 已纳入 `repeatSubmitProtected`，重复提交防护策略变化会进入 Manifest 指纹和发布差异。
   - 每条接口治理违规项均返回 `remediation` 修复建议，便于 Jenkins 输出可执行治理动作，也便于后续接口管理页直接展示整改指引。
   - 新增权限点 `system:api:list` 和 `system:api:publish`，超级管理员启动时自动补齐授权，接口查询与接口发布分权治理。
   - 新增文件上传权限点 `system:file:upload`，文件上传不再只是登录态即可访问。
@@ -154,6 +156,8 @@
 - 新增防重复提交：
   - 提供 `@RepeatSubmit` 注解，拦截短时间内同一用户、同一方法、同一参数的重复请求。
   - 用户、角色、菜单、部门、文件上传等写接口已接入。
+  - 认证刷新、退出登录和接口 Manifest 发布等高风险写接口已接入。
+  - 非公开高风险写接口缺少 `@RepeatSubmit` 时触发 `HIGH_RISK_WRITE_API_WITHOUT_REPEAT_SUBMIT` 错误规则，阻断接口发布门禁。
   - 正式环境默认使用 Redis，测试环境使用内存票据。
 - 新增统一分页模型：
   - 提供 `PageQuery`、`PageResult<T>`，统一 `pageNum`、`pageSize`、`total`、`pages`、`list`、`empty` 字段。
@@ -203,6 +207,7 @@
   - 可调用 `/api/system/api-resources/governance/rules` 输出规则目录，作为 Jenkins 报告中 ruleCode 的解释来源
   - Jenkins 应对 `DEPRECATED_API_MISSING_SUNSET_VERSION` 和 `DEPRECATED_API_MISSING_REPLACEMENT` 输出整改提示，要求废弃接口有明确下线版本和替代接口
   - Jenkins 应将 `REMOVED_API_STILL_MAPPED` 视为阻断项，要求已移除接口不再存在运行时路由
+  - Jenkins 应将 `HIGH_RISK_WRITE_API_WITHOUT_REPEAT_SUBMIT` 视为阻断项，要求非公开高风险写接口补充 `@RepeatSubmit` 或降低风险级别并说明理由
   - 可调用 `/api/system/api-resources/export` 导出 CSV 作为构建产物，便于接口清单留档和版本差异比对
   - 可调用 `/api/system/api-resources/manifest` 生成 JSON 与 `checksum`，用于识别接口契约是否发生变更
   - 推荐 Jenkins 在开发/测试环境调用 `/api/system/api-resources/manifest/snapshots/latest` 获取上一版发布快照
