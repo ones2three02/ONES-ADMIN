@@ -149,6 +149,39 @@ class ApiResourceOperationIdGovernanceTest {
     }
 
     @Test
+    void versionMetadataMustUseProductVersionPattern() throws Exception {
+        String token = login("admin", "admin123");
+
+        String governanceResponse = mockMvc.perform(get("/api/system/api-resources/governance")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.apiVersionPattern").value("^v\\d+\\.\\d+\\.\\d+$"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode violations = objectMapper.readTree(governanceResponse).at("/data/violations");
+        JsonNode invalidSinceVersion = findViolation(
+                violations,
+                "/api/test/catalog/invalid-since-version",
+                "API_SINCE_VERSION_INVALID_FORMAT"
+        );
+        assertThat(invalidSinceVersion.path("severity").asText()).isEqualTo("WARN");
+        assertThat(invalidSinceVersion.path("message").asText()).contains("0.0.18");
+        assertThat(invalidSinceVersion.path("remediation").asText()).contains("v1.2.3");
+
+        JsonNode invalidSunsetVersion = findViolation(
+                violations,
+                "/api/test/lifecycle/deprecated-invalid-sunset-version",
+                "DEPRECATED_API_SUNSET_VERSION_INVALID_FORMAT"
+        );
+        assertThat(invalidSunsetVersion.path("severity").asText()).isEqualTo("WARN");
+        assertThat(invalidSunsetVersion.path("message").asText()).contains("9.9.9");
+        assertThat(invalidSunsetVersion.path("remediation").asText()).contains("sunsetVersion");
+    }
+
+    @Test
     void apiLifecycleMustBeConsistentWithRuntimeRouteAndOpenApiMetadata() throws Exception {
         String token = login("admin", "admin123");
 
@@ -394,6 +427,21 @@ class ApiResourceOperationIdGovernanceTest {
             return ApiResult.ok("deprecated-metadata-only");
         }
 
+        @GetMapping("/api/test/lifecycle/deprecated-invalid-sunset-version")
+        @Operation(
+                summary = "废弃接口下线版本格式非法",
+                operationId = "LifecycleFixture_deprecatedInvalidSunsetVersion",
+                deprecated = true
+        )
+        @ApiResourceMetadata(
+                lifecycle = ApiLifecycleStatus.DEPRECATED,
+                sunsetVersion = "9.9.9",
+                replacementApiKey = "GET /api/test/lifecycle/replacement"
+        )
+        public ApiResult<String> deprecatedInvalidSunsetVersion() {
+            return ApiResult.ok("deprecated-invalid-sunset-version");
+        }
+
         @GetMapping("/api/test/lifecycle/removed-still-mapped")
         @Operation(summary = "已移除但仍暴露的接口", operationId = "LifecycleFixture_removedStillMapped")
         @ApiResourceMetadata(lifecycle = ApiLifecycleStatus.REMOVED)
@@ -419,6 +467,16 @@ class ApiResourceOperationIdGovernanceTest {
         @ApiAccessPolicy(value = ApiAuthType.PUBLIC, reason = "测试公开策略缺少运行时白名单同步")
         public ApiResult<String> publicWithoutRuntimeWhitelist() {
             return ApiResult.ok("public-without-runtime-whitelist");
+        }
+
+        @GetMapping("/api/test/catalog/invalid-since-version")
+        @Operation(
+                summary = "接口引入版本格式非法",
+                operationId = "CatalogFixture_invalidSinceVersion"
+        )
+        @ApiResourceMetadata(sinceVersion = "0.0.18")
+        public ApiResult<String> invalidSinceVersion() {
+            return ApiResult.ok("invalid-since-version");
         }
 
         @RequestMapping("/api/test/contract/all-method")

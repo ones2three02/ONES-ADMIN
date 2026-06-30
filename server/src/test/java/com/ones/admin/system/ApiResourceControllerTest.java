@@ -236,6 +236,7 @@ class ApiResourceControllerTest {
                         .value("^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$"))
                 .andExpect(jsonPath("$.data.operationIdPattern")
                         .value("^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$"))
+                .andExpect(jsonPath("$.data.apiVersionPattern").value("^v\\d+\\.\\d+\\.\\d+$"))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -264,6 +265,7 @@ class ApiResourceControllerTest {
                         .value("^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$"))
                 .andExpect(jsonPath("$.data.operationIdPattern")
                         .value("^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$"))
+                .andExpect(jsonPath("$.data.apiVersionPattern").value("^v\\d+\\.\\d+\\.\\d+$"))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -311,6 +313,14 @@ class ApiResourceControllerTest {
         assertThat(removedStillMappedRule.path("severity").asText()).isEqualTo("ERROR");
         assertThat(removedStillMappedRule.path("blocking").asBoolean()).isTrue();
         assertThat(removedStillMappedRule.path("remediation").asText()).contains("删除运行时路由");
+        JsonNode invalidSinceVersionRule = findRule(rules, "API_SINCE_VERSION_INVALID_FORMAT");
+        assertThat(invalidSinceVersionRule.path("severity").asText()).isEqualTo("WARN");
+        assertThat(invalidSinceVersionRule.path("category").asText()).isEqualTo("CATALOG");
+        assertThat(invalidSinceVersionRule.path("remediation").asText()).contains("apiVersionPattern");
+        JsonNode invalidSunsetVersionRule = findRule(rules, "DEPRECATED_API_SUNSET_VERSION_INVALID_FORMAT");
+        assertThat(invalidSunsetVersionRule.path("severity").asText()).isEqualTo("WARN");
+        assertThat(invalidSunsetVersionRule.path("category").asText()).isEqualTo("LIFECYCLE");
+        assertThat(invalidSunsetVersionRule.path("remediation").asText()).contains("sunsetVersion");
         JsonNode repeatSubmitRule = findRule(rules, "HIGH_RISK_WRITE_API_WITHOUT_REPEAT_SUBMIT");
         assertThat(repeatSubmitRule.path("severity").asText()).isEqualTo("ERROR");
         assertThat(repeatSubmitRule.path("blocking").asBoolean()).isTrue();
@@ -358,7 +368,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.32"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.33"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(48))
                 .andReturn()
@@ -417,7 +427,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.32"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.33"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.snapshot.total").value(48))
                 .andExpect(jsonPath("$.data.snapshot.manifest.total").value(48))
@@ -516,7 +526,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.32"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.33"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))

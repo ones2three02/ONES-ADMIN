@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.33 - 2026-06-30
+
+- 接口治理响应和规则目录新增 `apiVersionPattern`，统一暴露接口版本元数据格式规范：`^v\d+\.\d+\.\d+$`。
+- 接口治理新增 `API_SINCE_VERSION_INVALID_FORMAT` 警告规则，识别 `@ApiResourceMetadata.sinceVersion` 不符合产品版本格式的接口资产。
+- 废弃接口治理新增 `DEPRECATED_API_SUNSET_VERSION_INVALID_FORMAT` 警告规则，识别 `sunsetVersion` 格式不规范导致下线计划无法审计的问题。
+- 补充企业级接口管理调研结论：Spectral/Optic 强调规则化 API lint 与设计质量门禁，oasdiff 强调可比较的版本差异治理，Backstage 强调 API Catalog 元数据可追踪。
+- 产品版本递增至 `v0.0.33`。
+
 ## v0.0.32 - 2026-06-30
 
 - 接口契约治理新增 `API_METHOD_NOT_EXPLICIT` 阻断规则，禁止 `/api/**` 暴露未显式声明 HTTP 方法的 `ALL` 泛匹配接口。

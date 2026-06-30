@@ -68,9 +68,12 @@ public class ApiResourceService {
             "^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$";
     private static final String OPERATION_ID_PATTERN_TEXT =
             "^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$";
+    private static final String API_VERSION_PATTERN_TEXT =
+            "^v\\d+\\.\\d+\\.\\d+$";
     private static final String CHECKSUM_ALGORITHM = "SHA-256";
     private static final Pattern PERMISSION_CODE_PATTERN = Pattern.compile(PERMISSION_CODE_PATTERN_TEXT);
     private static final Pattern OPERATION_ID_PATTERN = Pattern.compile(OPERATION_ID_PATTERN_TEXT);
+    private static final Pattern API_VERSION_PATTERN = Pattern.compile(API_VERSION_PATTERN_TEXT);
     private static final String CSV_HEADER = "apiKey,operationId,method,path,handler,module,summary,authType,permissionCodes,"
             + "permissionMode,requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
             + "writeOperation,repeatSubmitProtected,deprecated,owner,sinceVersion,lifecycle,riskLevel,"
@@ -169,6 +172,13 @@ public class ApiResourceService {
                     "在 @ApiResourceMetadata 中补充 sunsetVersion，记录计划下线版本，例如 v1.2.0"
             ),
             new GovernanceRule(
+                    "DEPRECATED_API_SUNSET_VERSION_INVALID_FORMAT",
+                    "WARN",
+                    "LIFECYCLE",
+                    "废弃接口计划下线版本格式不符合规范",
+                    "按 apiVersionPattern 调整 sunsetVersion，统一使用 v主版本.次版本.修订版本，例如 v1.2.3"
+            ),
+            new GovernanceRule(
                     "DEPRECATED_API_MISSING_REPLACEMENT",
                     "WARN",
                     "LIFECYCLE",
@@ -202,6 +212,13 @@ public class ApiResourceService {
                     "CATALOG",
                     "接口缺少引入版本元数据",
                     "在 @ApiResourceMetadata 中补充 sinceVersion，记录接口首次引入版本"
+            ),
+            new GovernanceRule(
+                    "API_SINCE_VERSION_INVALID_FORMAT",
+                    "WARN",
+                    "CATALOG",
+                    "接口引入版本格式不符合规范",
+                    "按 apiVersionPattern 调整 sinceVersion，统一使用 v主版本.次版本.修订版本，例如 v1.2.3"
             ),
             new GovernanceRule(
                     "MISSING_API_LIFECYCLE",
@@ -256,7 +273,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.32}") String applicationVersion
+            @Value("${ones.version:v0.0.33}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -339,6 +356,7 @@ public class ApiResourceService {
         return new ApiResourceGovernanceRuleResponse(
                 PERMISSION_CODE_PATTERN_TEXT,
                 OPERATION_ID_PATTERN_TEXT,
+                API_VERSION_PATTERN_TEXT,
                 rules
         );
     }
@@ -842,6 +860,7 @@ public class ApiResourceService {
                 warningCount,
                 PERMISSION_CODE_PATTERN_TEXT,
                 OPERATION_ID_PATTERN_TEXT,
+                API_VERSION_PATTERN_TEXT,
                 violations
         );
     }
@@ -1348,6 +1367,13 @@ public class ApiResourceService {
                         "WARN",
                         "废弃接口缺少计划下线版本"
                 ));
+            } else if (!API_VERSION_PATTERN.matcher(resource.sunsetVersion()).matches()) {
+                violations.add(toViolation(
+                        resource,
+                        "DEPRECATED_API_SUNSET_VERSION_INVALID_FORMAT",
+                        "WARN",
+                        "废弃接口计划下线版本格式不符合规范：" + resource.sunsetVersion()
+                ));
             }
             if (!hasText(resource.replacementApiKey())) {
                 violations.add(toViolation(
@@ -1388,6 +1414,13 @@ public class ApiResourceService {
                     "MISSING_API_SINCE_VERSION",
                     "WARN",
                     "接口缺少引入版本元数据"
+            ));
+        } else if (!API_VERSION_PATTERN.matcher(resource.sinceVersion()).matches()) {
+            violations.add(toViolation(
+                    resource,
+                    "API_SINCE_VERSION_INVALID_FORMAT",
+                    "WARN",
+                    "接口引入版本格式不符合规范：" + resource.sinceVersion()
             ));
         }
         if (!hasText(resource.lifecycle())) {

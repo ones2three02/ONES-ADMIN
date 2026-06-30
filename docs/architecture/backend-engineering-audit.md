@@ -24,6 +24,7 @@
 | [OpenAPITools/openapi-diff](https://github.com/OpenAPITools/openapi-diff) | Java OpenAPI 差异比较工具 | Java 生态契约差异检测 |
 | [Kong/kong](https://github.com/Kong/kong) | API/AI Gateway、插件化策略、流量治理 | 策略目录化、网关能力边界、接口治理与运行时策略分层 |
 | [stoplightio/spectral](https://github.com/stoplightio/spectral) | OpenAPI/AsyncAPI 规则化 lint 工具 | 规则编码、检查结果、CI 报告可机器解析 |
+| [opticdev/optic](https://github.com/opticdev/optic) | OpenAPI lint、diff、testing | API 设计质量、破坏性变更预防、接口文档准确性 |
 | [APIParkLab/APIPark](https://github.com/APIParkLab/APIPark) | AI/API 网关、开放平台、API 申请审批、调用统计 | API 申请审批、调用统计、开放平台体验 |
 | [apioo/fusio](https://github.com/apioo/fusio) | Self-hosted API Management | API 管理后台、接口发布、开发者消费侧能力 |
 
@@ -40,6 +41,7 @@
 - 公开接口本质上属于运行时安全策略资产，登录入口、健康检查、第三方扫码回调、SSO 回跳地址都必须在接口目录中显式说明开放原因、调用方和安全补偿措施，避免白名单随迭代失控。
 - Kong、APISIX、Tyk、apiman 这类网关或 API Management 项目都强调路由策略必须和运行时执行行为一致；ONES-ADMIN 的接口目录不能只描述“想要公开”，还必须校验 Sa-Token 拦截器是否真实放行。
 - Spectral 强调 OpenAPI 契约可规则化 lint，oasdiff 强调 method+path 级别识别接口差异；ONES-ADMIN 的接口扫描必须避免 `ALL` 泛匹配接口，否则 Manifest Diff、网关路由和客户端生成都会失去稳定契约。
+- Spectral/Optic 的 API lint 思路要求规范以规则编码沉淀，oasdiff 的差异治理要求版本元数据可比较；ONES-ADMIN 的 `sinceVersion`、`sunsetVersion` 必须遵循统一产品版本格式，避免接口目录只有文本而无法进入 Jenkins 审计。
 - ONES-ADMIN 当前保持 Spring Boot 3 + Sa-Token + MyBatis-Plus，不跟随 Cool Admin Java 切换 MyBatis-Flex；后续只吸收它的模块边界和初始化治理思想。
 
 ## 2. 当前后端基线
@@ -64,6 +66,7 @@
 - 已将 `operationId` 纳入接口清单、CSV、Manifest、Manifest 指纹和 Manifest Diff，接口操作标识变化按破坏性变更处理。
 - 已建立 `operationId` 命名规范和唯一性门禁，当前格式为 `^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$`，重复或非法命名会作为治理错误阻断发布。
 - 已建立显式 HTTP 方法治理，`/api/**` 接口不得使用未指定 method 的 `ALL` 泛匹配路由，避免接口契约、网关路由和客户端生成不稳定。
+- 已建立接口版本元数据格式治理，当前格式为 `^v\d+\.\d+\.\d+$`，`sinceVersion` 和废弃接口 `sunsetVersion` 不规范时输出治理警告，便于 Jenkins 和接口管理页追踪版本计划。
 - 已建立接口治理质量门禁，可输出权限缺口、系统写接口无权限、接口文档元数据缺失等违规项。
 - 已建立接口治理规则目录，结构化输出规则编码、严重级别、是否阻断、分类和修复建议，便于 Jenkins、接口管理页和人工巡检复用同一套规则解释。
 - 已建立公开接口访问策略治理，`PUBLIC` 接口必须显式声明 `@ApiAccessPolicy(ApiAuthType.PUBLIC, reason = "...")` 并同步加入 Sa-Token 运行时白名单，否则作为安全错误阻断发布。
@@ -128,13 +131,13 @@
   - Manifest Gate 对接口治理错误直接阻断；对破坏性接口契约变更默认阻断，显式允许并填写人工确认原因后返回 `MANUAL_APPROVED`。
   - Manifest Gate 的 `checks` 覆盖 `API_GOVERNANCE_ERROR`、`BREAKING_CHANGE_REVIEW`、`GOVERNANCE_WARNING_TRACKING`、`MANIFEST_DIFF_ARCHIVE`，便于 Jenkins 不解析中文原因字符串即可生成质量报告。
   - 提供 `/api/system/api-resources/summary` 治理汇总接口，返回接口总数、写操作数、权限缺口数、访问策略数、废弃接口数、认证级别分布和模块分布。
-  - 提供 `/api/system/api-resources/governance` 接口治理质量门禁，返回是否通过、错误数、警告数、权限码正则、`operationId` 正则和违规明细。
+  - 提供 `/api/system/api-resources/governance` 接口治理质量门禁，返回是否通过、错误数、警告数、权限码正则、`operationId` 正则、接口版本正则和违规明细。
   - 提供 `/api/system/api-resources/governance/rules` 接口治理规则目录，返回规则编码、严重级别、是否阻断、规则分类、说明和修复建议。
   - 自动区分 `PUBLIC`、`LOGIN`、`PERMISSION` 三类接口认证级别。
   - 提供 `@ApiAccessPolicy` 显式标记登录态和公开接口的设计意图，减少安全巡检误报。
   - 登录入口和健康检查已补充公开访问策略说明，后续飞书扫码、飞书 SSO 回调等公开入口必须复用同一治理口径。
   - 对仅登录保护、且没有显式访问策略的系统接口标记权限缺口，便于安全巡检。
-  - 对接口未显式声明 HTTP 方法、公开接口缺少显式访问策略、公开接口未同步运行时白名单、系统写接口无权限点、非公开高风险写接口缺少重复提交防护、权限码命名不规范、`operationId` 命名不规范、`operationId` 重复、权限点未注册、权限点不可授权、废弃接口、废弃接口缺少下线版本、废弃接口缺少替代接口、`DEPRECATED` 未同步 OpenAPI 废弃标记、`REMOVED` 接口仍暴露路由、缺少接口负责人、缺少引入版本、缺少生命周期、缺少风险级别、缺少 OpenAPI 模块标签、缺少接口摘要等问题输出结构化治理结果，便于 Jenkins 自动巡检。
+  - 对接口未显式声明 HTTP 方法、公开接口缺少显式访问策略、公开接口未同步运行时白名单、系统写接口无权限点、非公开高风险写接口缺少重复提交防护、权限码命名不规范、`operationId` 命名不规范、`operationId` 重复、权限点未注册、权限点不可授权、废弃接口、废弃接口缺少下线版本、废弃接口下线版本格式不规范、废弃接口缺少替代接口、`DEPRECATED` 未同步 OpenAPI 废弃标记、`REMOVED` 接口仍暴露路由、缺少接口负责人、缺少引入版本、接口引入版本格式不规范、缺少生命周期、缺少风险级别、缺少 OpenAPI 模块标签、缺少接口摘要等问题输出结构化治理结果，便于 Jenkins 自动巡检。
   - 接口资源列表、CSV 导出、Manifest 和 Manifest Diff 已纳入 `repeatSubmitProtected`，重复提交防护策略变化会进入 Manifest 指纹和发布差异。
   - 每条接口治理违规项均返回 `remediation` 修复建议，便于 Jenkins 输出可执行治理动作，也便于后续接口管理页直接展示整改指引。
   - 新增权限点 `system:api:list` 和 `system:api:publish`，超级管理员启动时自动补齐授权，接口查询与接口发布分权治理。

@@ -10,6 +10,7 @@ public record ApiResourceGovernanceResponse(
         long warningCount,
         String permissionCodePattern,
         String operationIdPattern,
+        String apiVersionPattern,
         List<Violation> violations
 ) {
 

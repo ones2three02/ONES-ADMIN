@@ -5,6 +5,7 @@ import java.util.List;
 public record ApiResourceGovernanceRuleResponse(
         String permissionCodePattern,
         String operationIdPattern,
+        String apiVersionPattern,
         List<Rule> rules
 ) {
 
