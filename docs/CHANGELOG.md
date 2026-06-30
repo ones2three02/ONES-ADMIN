@@ -1,5 +1,15 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.34 - 2026-06-30
+
+- 前端 Playwright 配置修复本地 E2E 端口契约，测试服务显式使用 `5555`，避免 `.env` 默认端口导致登录冒烟用例启动超时。
+- 前端登录 E2E 断言从旧 `Vben Admin` 品牌同步为 `ONES-ADMIN`，确保品牌落地后质量门禁不再误报。
+- 登录 E2E helper 按 Vben `SliderCaptcha` 真实成功条件拖动滑块，并断言登录后进入 `/dashboard/overview`，避免只点击按钮但没有验证登录结果。
+- 登录页左侧升级为 Vben 认证布局内的 ONES 1S 品牌视觉组件，融入执行核心、实时感知、安全守护、服务交付、数据沉淀、持续进化、连接协同、智能决策等企业级能力节点。
+- 登录页补充 `ONE SECOND`、`ONE SYSTEM`、`ONE SERVICE`、`ONE GOAL` 理念展示，移除登录标题中的非企业化表情，并将页脚版权品牌统一为 `ONES-ADMIN`。
+- 补充企业级前端调研结论：Vben 主线强调 Vue3/Vite/TypeScript/Monorepo 与多 UI 适配，Cool Admin Vue 借鉴模块化和 CRUD 效率，Art Design Pro 借鉴视觉体验，但 ONES-ADMIN 前端风格继续以 Vben 为准。
+- 产品版本递增至 `v0.0.34`。
+
 ## v0.0.33 - 2026-06-30
 
 - 接口治理响应和规则目录新增 `apiVersionPattern`，统一暴露接口版本元数据格式规范：`^v\d+\.\d+\.\d+$`。

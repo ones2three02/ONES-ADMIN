@@ -2,6 +2,74 @@
   "welcomeBack": "Welcome Back",
   "pageTitle": "ONE SYSTEM · ONE SERVICE · ONE SAFE · ONE SECOND",
   "pageDesc": "One system, one service, one safety baseline, every second creating value",
+  "visual": {
+    "mode": {
+      "lightText": "Light Mode",
+      "lightLabel": "LIGHT MODE",
+      "darkText": "Dark Mode",
+      "darkLabel": "DARK MODE"
+    },
+    "features": {
+      "execution": {
+        "title": "1S Execution Core",
+        "subtitle": "Execution Core",
+        "description": "Use one second as the execution baseline"
+      },
+      "sensing": {
+        "title": "Sensing",
+        "subtitle": "Sensing",
+        "description": "Monitor signals and respond to change in real time"
+      },
+      "security": {
+        "title": "Security",
+        "subtitle": "Security",
+        "description": "Protect the system with layered safeguards"
+      },
+      "service": {
+        "title": "Service Delivery",
+        "subtitle": "Service",
+        "description": "Deliver reliable services for business value"
+      },
+      "asset": {
+        "title": "Data Asset",
+        "subtitle": "Data Asset",
+        "description": "Turn operational data into reusable assets"
+      },
+      "evolution": {
+        "title": "Continuous Evolution",
+        "subtitle": "Evolution",
+        "description": "Keep learning and optimizing the platform"
+      },
+      "connection": {
+        "title": "Connection",
+        "subtitle": "Connection",
+        "description": "Connect teams and systems for collaboration"
+      },
+      "intelligence": {
+        "title": "Intelligence",
+        "subtitle": "Intelligence",
+        "description": "Use data to support better decisions"
+      }
+    },
+    "principles": {
+      "second": {
+        "title": "ONE SECOND",
+        "description": "Value by second"
+      },
+      "system": {
+        "title": "ONE SYSTEM",
+        "description": "Unified platform"
+      },
+      "service": {
+        "title": "ONE SERVICE",
+        "description": "Service experience"
+      },
+      "goal": {
+        "title": "ONE GOAL",
+        "description": "Customer value"
+      }
+    }
+  },
   "loginSuccess": "Login Successful",
   "loginSuccessDesc": "Welcome Back",
   "loginSubtitle": "Enter your account details to access the ONES-ADMIN enterprise platform",

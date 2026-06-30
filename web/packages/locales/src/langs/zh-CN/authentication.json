@@ -2,6 +2,74 @@
   "welcomeBack": "欢迎回来",
   "pageTitle": "ONE SYSTEM · ONE SERVICE · ONE SAFE · ONE SECOND",
   "pageDesc": "一个系统、一个服务、一份安全、每一秒都在创造价值",
+  "visual": {
+    "mode": {
+      "lightText": "白天模式",
+      "lightLabel": "LIGHT MODE",
+      "darkText": "夜间模式",
+      "darkLabel": "DARK MODE"
+    },
+    "features": {
+      "execution": {
+        "title": "1S 执行核心",
+        "subtitle": "Execution Core",
+        "description": "以 1 秒为基准驱动系统高效执行"
+      },
+      "sensing": {
+        "title": "实时感知",
+        "subtitle": "Sensing",
+        "description": "实时监控与感知，快速响应变化"
+      },
+      "security": {
+        "title": "安全守护",
+        "subtitle": "Security",
+        "description": "多层安全防护，保障系统稳定"
+      },
+      "service": {
+        "title": "服务交付",
+        "subtitle": "Service",
+        "description": "高效交付服务，创造业务价值"
+      },
+      "asset": {
+        "title": "数据沉淀",
+        "subtitle": "Data Asset",
+        "description": "沉淀信息资产，支撑持续优化"
+      },
+      "evolution": {
+        "title": "持续进化",
+        "subtitle": "Evolution",
+        "description": "自我学习与优化，系统持续成长"
+      },
+      "connection": {
+        "title": "连接协同",
+        "subtitle": "Connection",
+        "description": "打通组织生态，实现协同共赢"
+      },
+      "intelligence": {
+        "title": "智能决策",
+        "subtitle": "Intelligence",
+        "description": "数据驱动决策，让系统更智能"
+      }
+    },
+    "principles": {
+      "second": {
+        "title": "ONE SECOND",
+        "description": "以秒为单位"
+      },
+      "system": {
+        "title": "ONE SYSTEM",
+        "description": "统一系统平台"
+      },
+      "service": {
+        "title": "ONE SERVICE",
+        "description": "极致服务体验"
+      },
+      "goal": {
+        "title": "ONE GOAL",
+        "description": "创造客户价值"
+      }
+    }
+  },
   "loginSuccess": "登录成功",
   "loginSuccessDesc": "欢迎回来",
   "loginSubtitle": "请输入账号信息，进入 ONES-ADMIN 企业级管理平台",

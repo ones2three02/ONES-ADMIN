@@ -119,6 +119,8 @@ async function onSubmit(params: Recordable<any>) {
     ref="loginRef"
     :form-schema="formSchema"
     :loading="authStore.loginLoading"
+    :sub-title="$t('authentication.loginSubtitle')"
+    :title="$t('authentication.welcomeBack')"
     @submit="onSubmit"
   />
 </template>
