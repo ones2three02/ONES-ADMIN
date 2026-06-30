@@ -10,6 +10,8 @@ import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
 import com.ones.admin.system.dto.ApiResourceManifestDiffResponse;
 import com.ones.admin.system.dto.ApiResourceManifestGateRequest;
 import com.ones.admin.system.dto.ApiResourceManifestGateResponse;
+import com.ones.admin.system.dto.ApiResourceManifestLatestGateRequest;
+import com.ones.admin.system.dto.ApiResourceManifestLatestGateResponse;
 import com.ones.admin.system.dto.ApiResourceManifestResponse;
 import com.ones.admin.system.dto.ApiResourceManifestSnapshotPublishRequest;
 import com.ones.admin.system.dto.ApiResourceManifestSnapshotPublishResponse;
@@ -119,6 +121,15 @@ public class ApiResourceController {
             @RequestBody ApiResourceManifestGateRequest request
     ) {
         return ApiResult.ok(apiResourceService.gateManifest(request));
+    }
+
+    @PostMapping("/manifest/gate/latest")
+    @SaCheckPermission("system:api:list")
+    @Operation(summary = "基于最新发布快照校验接口资源 Manifest 发布门禁")
+    public ApiResult<ApiResourceManifestLatestGateResponse> gateLatestApiResourceManifest(
+            @Valid @RequestBody ApiResourceManifestLatestGateRequest request
+    ) {
+        return ApiResult.ok(apiResourceService.gateManifestWithLatestSnapshot(request));
     }
 
     @GetMapping("/export")

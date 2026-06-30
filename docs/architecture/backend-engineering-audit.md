@@ -107,6 +107,7 @@
   - 提供 `/api/system/api-resources/manifest/diff` 接口资源 Manifest Diff，支持比对上一版本 Manifest 与当前运行时 Manifest。
   - Manifest Diff 会识别新增、删除、修改接口资源；删除接口、`operationId`、认证级别、权限码、权限模式、写操作属性变化按破坏性变更处理。
   - 提供 `/api/system/api-resources/manifest/gate` 接口资源 Manifest 发布门禁，输出 `passed`、`status`、阻断原因、治理计数和差异明细。
+  - 提供 `/api/system/api-resources/manifest/gate/latest` 最新发布快照门禁干跑，自动读取服务端最新 Manifest Snapshot 作为对比基线，并返回基线快照 ID、版本和指纹。
   - Manifest Gate 对接口治理错误直接阻断；对破坏性接口契约变更默认阻断，显式允许并填写人工确认原因后返回 `MANUAL_APPROVED`。
   - 提供 `/api/system/api-resources/summary` 治理汇总接口，返回接口总数、写操作数、权限缺口数、访问策略数、废弃接口数、认证级别分布和模块分布。
   - 提供 `/api/system/api-resources/governance` 接口治理质量门禁，返回是否通过、错误数、警告数、权限码正则、`operationId` 正则和违规明细。
@@ -182,6 +183,7 @@
   - 推荐 Jenkins 在开发/测试环境调用 `/api/system/api-resources/manifest/snapshots/latest` 获取上一版发布快照
   - 可将上一版本 Manifest POST 到 `/api/system/api-resources/manifest/diff`，若 `breakingChangeCount > 0` 则要求人工确认或阻断发布
   - 推荐 Jenkins 使用 `/api/system/api-resources/manifest/gate` 作为最终接口契约发布门禁，要求 `passed=true`
+  - 更推荐 Jenkins 使用 `/api/system/api-resources/manifest/gate/latest` 做发布前干跑门禁，减少流水线自行拼装上一版 Manifest 请求体的复杂度
   - 发布通过后调用 `POST /api/system/api-resources/manifest/snapshots` 落库当前 Manifest，作为下一次发布的对比基线
   - 权限码命名统一遵循 `/api/system/api-resources/governance` 返回的 `permissionCodePattern`
   - `operationId` 命名统一遵循 `/api/system/api-resources/governance` 返回的 `operationIdPattern`，且必须全局唯一

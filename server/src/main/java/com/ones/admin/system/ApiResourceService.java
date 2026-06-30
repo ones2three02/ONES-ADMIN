@@ -22,6 +22,8 @@ import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
 import com.ones.admin.system.dto.ApiResourceManifestDiffResponse;
 import com.ones.admin.system.dto.ApiResourceManifestGateRequest;
 import com.ones.admin.system.dto.ApiResourceManifestGateResponse;
+import com.ones.admin.system.dto.ApiResourceManifestLatestGateRequest;
+import com.ones.admin.system.dto.ApiResourceManifestLatestGateResponse;
 import com.ones.admin.system.dto.ApiResourceManifestResponse;
 import com.ones.admin.system.dto.ApiResourceQuery;
 import com.ones.admin.system.dto.ApiResourceResponse;
@@ -86,7 +88,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.20}") String applicationVersion
+            @Value("${ones.version:v0.0.21}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -332,6 +334,24 @@ public class ApiResourceService {
                 reviewReasonRequired,
                 reasons,
                 diff
+        );
+    }
+
+    public ApiResourceManifestLatestGateResponse gateManifestWithLatestSnapshot(
+            ApiResourceManifestLatestGateRequest request
+    ) {
+        ApiResourceManifestSnapshotResponse latestSnapshot = latestManifestSnapshot();
+        ApiResourceManifestGateRequest gateRequest = new ApiResourceManifestGateRequest(
+                latestSnapshot == null ? null : latestSnapshot.manifest(),
+                request != null && request.allowBreakingChanges(),
+                request == null ? null : request.reviewReason()
+        );
+        return new ApiResourceManifestLatestGateResponse(
+                latestSnapshot != null,
+                latestSnapshot == null ? null : latestSnapshot.id(),
+                latestSnapshot == null ? null : latestSnapshot.applicationVersion(),
+                latestSnapshot == null ? null : latestSnapshot.checksum(),
+                gateManifest(gateRequest)
         );
     }
 

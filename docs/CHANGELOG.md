@@ -1,5 +1,11 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.21 - 2026-06-30
+
+- 新增 `/api/system/api-resources/manifest/gate/latest` 接口，支持基于最新已发布 Manifest 快照执行接口契约门禁干跑。
+- 返回门禁基线快照 ID、版本和指纹，便于 Jenkins 和人工审批定位本次发布对比基线。
+- 产品版本递增至 `v0.0.21`。
+
 ## v0.0.20 - 2026-06-30
 
 - 新增接口资源 Manifest 发布快照表 `sys_api_manifest_snapshot`，支持将接口契约以服务端版本资产落库。
