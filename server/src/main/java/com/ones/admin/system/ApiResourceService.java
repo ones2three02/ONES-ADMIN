@@ -72,7 +72,7 @@ public class ApiResourceService {
     private static final Pattern OPERATION_ID_PATTERN = Pattern.compile(OPERATION_ID_PATTERN_TEXT);
     private static final String CSV_HEADER = "apiKey,operationId,method,path,handler,module,summary,authType,permissionCodes,"
             + "permissionMode,requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
-            + "writeOperation,deprecated,owner,sinceVersion,lifecycle,riskLevel,"
+            + "writeOperation,deprecated,owner,sinceVersion,lifecycle,riskLevel,sunsetVersion,replacementApiKey,"
             + "accessPolicyExplicit,accessPolicyReason";
     private static final List<GovernanceRule> GOVERNANCE_RULES = List.of(
             new GovernanceRule(
@@ -130,6 +130,20 @@ public class ApiResourceService {
                     "LIFECYCLE",
                     "接口已标记废弃",
                     "补充迁移说明、下线版本和替代接口，并在发布计划中跟踪调用方迁移"
+            ),
+            new GovernanceRule(
+                    "DEPRECATED_API_MISSING_SUNSET_VERSION",
+                    "WARN",
+                    "LIFECYCLE",
+                    "废弃接口缺少计划下线版本",
+                    "在 @ApiResourceMetadata 中补充 sunsetVersion，记录计划下线版本，例如 v1.2.0"
+            ),
+            new GovernanceRule(
+                    "DEPRECATED_API_MISSING_REPLACEMENT",
+                    "WARN",
+                    "LIFECYCLE",
+                    "废弃接口缺少替代接口",
+                    "在 @ApiResourceMetadata 中补充 replacementApiKey，记录替代接口 apiKey，例如 GET /api/system/users"
             ),
             new GovernanceRule(
                     "MISSING_API_OWNER",
@@ -198,7 +212,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.26}") String applicationVersion
+            @Value("${ones.version:v0.0.27}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -658,6 +672,8 @@ public class ApiResourceService {
         addFieldChange(changes, "sinceVersion", previous.sinceVersion(), current.sinceVersion());
         addFieldChange(changes, "lifecycle", previous.lifecycle(), current.lifecycle());
         addFieldChange(changes, "riskLevel", previous.riskLevel(), current.riskLevel());
+        addFieldChange(changes, "sunsetVersion", previous.sunsetVersion(), current.sunsetVersion());
+        addFieldChange(changes, "replacementApiKey", previous.replacementApiKey(), current.replacementApiKey());
         addFieldChange(changes, "deprecated",
                 String.valueOf(previous.deprecated()),
                 String.valueOf(current.deprecated()));
@@ -851,6 +867,8 @@ public class ApiResourceService {
                         resourceMetadata.sinceVersion(),
                         resourceMetadata.lifecycle(),
                         resourceMetadata.riskLevel(),
+                        resourceMetadata.sunsetVersion(),
+                        resourceMetadata.replacementApiKey(),
                         deprecated(handlerMethod)
                 ));
             }
@@ -873,6 +891,8 @@ public class ApiResourceService {
                 resource.sinceVersion(),
                 resource.lifecycle(),
                 resource.riskLevel(),
+                resource.sunsetVersion(),
+                resource.replacementApiKey(),
                 resource.deprecated()
         );
     }
@@ -905,6 +925,8 @@ public class ApiResourceService {
                 nullToEmpty(resource.sinceVersion()),
                 nullToEmpty(resource.lifecycle()),
                 nullToEmpty(resource.riskLevel()),
+                nullToEmpty(resource.sunsetVersion()),
+                nullToEmpty(resource.replacementApiKey()),
                 String.valueOf(resource.deprecated())
         );
     }
@@ -934,6 +956,8 @@ public class ApiResourceService {
                 .append(csvValue(resource.sinceVersion())).append(',')
                 .append(csvValue(resource.lifecycle())).append(',')
                 .append(csvValue(resource.riskLevel())).append(',')
+                .append(csvValue(resource.sunsetVersion())).append(',')
+                .append(csvValue(resource.replacementApiKey())).append(',')
                 .append(resource.accessPolicyExplicit()).append(',')
                 .append(csvValue(resource.accessPolicyReason()))
                 .append('\n');
@@ -1026,7 +1050,11 @@ public class ApiResourceService {
                 firstText(methodMetadata == null ? null : methodMetadata.sinceVersion(),
                         classMetadata == null ? null : classMetadata.sinceVersion()),
                 lifecycleName(methodMetadata, classMetadata),
-                riskLevelName(methodMetadata, classMetadata)
+                riskLevelName(methodMetadata, classMetadata),
+                firstText(methodMetadata == null ? null : methodMetadata.sunsetVersion(),
+                        classMetadata == null ? null : classMetadata.sunsetVersion()),
+                firstText(methodMetadata == null ? null : methodMetadata.replacementApiKey(),
+                        classMetadata == null ? null : classMetadata.replacementApiKey())
         );
     }
 
@@ -1221,6 +1249,22 @@ public class ApiResourceService {
                     "WARN",
                     "接口已标记废弃，需确认迁移说明和下线计划"
             ));
+            if (!hasText(resource.sunsetVersion())) {
+                violations.add(toViolation(
+                        resource,
+                        "DEPRECATED_API_MISSING_SUNSET_VERSION",
+                        "WARN",
+                        "废弃接口缺少计划下线版本"
+                ));
+            }
+            if (!hasText(resource.replacementApiKey())) {
+                violations.add(toViolation(
+                        resource,
+                        "DEPRECATED_API_MISSING_REPLACEMENT",
+                        "WARN",
+                        "废弃接口缺少替代接口"
+                ));
+            }
         }
         if (!hasText(resource.owner())) {
             violations.add(toViolation(
@@ -1415,7 +1459,9 @@ public class ApiResourceService {
             String owner,
             String sinceVersion,
             String lifecycle,
-            String riskLevel
+            String riskLevel,
+            String sunsetVersion,
+            String replacementApiKey
     ) {
     }
 }

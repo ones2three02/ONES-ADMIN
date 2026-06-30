@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.27 - 2026-06-30
+
+- `@ApiResourceMetadata` 新增 `sunsetVersion` 和 `replacementApiKey`，用于记录废弃接口计划下线版本和替代接口。
+- 接口资源列表、CSV 导出、Manifest 和 Manifest 指纹均纳入废弃接口迁移元数据，便于 API Catalog、Jenkins 和人工审计跟踪接口下线计划。
+- 接口治理规则新增 `DEPRECATED_API_MISSING_SUNSET_VERSION` 和 `DEPRECATED_API_MISSING_REPLACEMENT`，对缺少下线版本或替代接口的废弃 API 输出 WARN 级治理结果。
+- 产品版本递增至 `v0.0.27`。
+
 ## v0.0.26 - 2026-06-30
 
 - Manifest Gate 响应新增 `checks` 机器可读检查项列表，覆盖接口治理错误、破坏性变更人工确认、治理警告跟踪和差异归档建议。

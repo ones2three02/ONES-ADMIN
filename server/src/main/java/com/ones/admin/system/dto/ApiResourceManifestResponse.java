@@ -24,6 +24,8 @@ public record ApiResourceManifestResponse(
             String sinceVersion,
             String lifecycle,
             String riskLevel,
+            String sunsetVersion,
+            String replacementApiKey,
             boolean deprecated
     ) {
     }

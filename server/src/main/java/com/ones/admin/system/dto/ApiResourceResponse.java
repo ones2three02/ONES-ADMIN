@@ -28,6 +28,8 @@ public record ApiResourceResponse(
         String sinceVersion,
         String lifecycle,
         String riskLevel,
+        String sunsetVersion,
+        String replacementApiKey,
         boolean deprecated
 ) {
 }

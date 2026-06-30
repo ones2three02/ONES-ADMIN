@@ -16,4 +16,8 @@ public @interface ApiResourceMetadata {
     ApiLifecycleStatus lifecycle() default ApiLifecycleStatus.UNSPECIFIED;
 
     ApiRiskLevel riskLevel() default ApiRiskLevel.UNSPECIFIED;
+
+    String sunsetVersion() default "";
+
+    String replacementApiKey() default "";
 }

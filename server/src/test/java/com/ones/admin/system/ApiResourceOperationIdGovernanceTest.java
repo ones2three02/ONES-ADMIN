@@ -84,10 +84,84 @@ class ApiResourceOperationIdGovernanceTest {
                 .contains("Duplicated_operationId", "bad.operation.id");
     }
 
+    @Test
+    void deprecatedApiRequiresSunsetVersionAndReplacementApiKey() throws Exception {
+        String token = login("admin", "admin123");
+
+        String resourceResponse = mockMvc.perform(get("/api/system/api-resources")
+                        .param("pageNum", "1")
+                        .param("pageSize", "200")
+                        .param("path", "/api/test/lifecycle/deprecated-with-plan")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].deprecated").value(true))
+                .andExpect(jsonPath("$.data.list[0].lifecycle").value("DEPRECATED"))
+                .andExpect(jsonPath("$.data.list[0].sunsetVersion").value("v9.9.9"))
+                .andExpect(jsonPath("$.data.list[0].replacementApiKey")
+                        .value("GET /api/test/lifecycle/replacement"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode plannedDeprecatedApi = objectMapper.readTree(resourceResponse).at("/data/list/0");
+        assertThat(plannedDeprecatedApi.path("operationId").asText())
+                .isEqualTo("LifecycleFixture_deprecatedWithPlan");
+
+        String governanceResponse = mockMvc.perform(get("/api/system/api-resources/governance")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode violations = objectMapper.readTree(governanceResponse).at("/data/violations");
+        assertThat(ruleCodes(violationsForPath(violations, "/api/test/lifecycle/deprecated-with-plan")))
+                .contains("DEPRECATED_API")
+                .doesNotContain(
+                        "DEPRECATED_API_MISSING_SUNSET_VERSION",
+                        "DEPRECATED_API_MISSING_REPLACEMENT"
+                );
+        assertThat(ruleCodes(violationsForPath(violations, "/api/test/lifecycle/deprecated-without-plan")))
+                .contains(
+                        "DEPRECATED_API",
+                        "DEPRECATED_API_MISSING_SUNSET_VERSION",
+                        "DEPRECATED_API_MISSING_REPLACEMENT"
+                );
+
+        String manifestResponse = mockMvc.perform(get("/api/system/api-resources/manifest")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode manifestResources = objectMapper.readTree(manifestResponse).at("/data/resources");
+        JsonNode deprecatedManifest = findResource(manifestResources, "GET", "/api/test/lifecycle/deprecated-with-plan");
+        assertThat(deprecatedManifest.path("sunsetVersion").asText()).isEqualTo("v9.9.9");
+        assertThat(deprecatedManifest.path("replacementApiKey").asText())
+                .isEqualTo("GET /api/test/lifecycle/replacement");
+    }
+
     private List<String> ruleCodes(List<JsonNode> violations) {
         return violations.stream()
                 .map(violation -> violation.path("ruleCode").asText())
                 .toList();
+    }
+
+    private List<JsonNode> violationsForPath(JsonNode violations, String path) {
+        return StreamSupport.stream(violations.spliterator(), false)
+                .filter(violation -> path.equals(violation.path("path").asText()))
+                .toList();
+    }
+
+    private JsonNode findResource(JsonNode resources, String method, String path) {
+        return StreamSupport.stream(resources.spliterator(), false)
+                .filter(resource -> method.equals(resource.path("method").asText())
+                        && path.equals(resource.path("path").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到接口资源：" + method + " " + path));
     }
 
     private String login(String username, String password) throws Exception {
@@ -128,6 +202,38 @@ class ApiResourceOperationIdGovernanceTest {
         @Operation(summary = "非法 operationId 测试", operationId = "bad.operation.id")
         public ApiResult<String> invalid() {
             return ApiResult.ok("invalid");
+        }
+
+        @GetMapping("/api/test/lifecycle/replacement")
+        @Operation(summary = "废弃接口替代接口", operationId = "LifecycleFixture_replacement")
+        public ApiResult<String> replacement() {
+            return ApiResult.ok("replacement");
+        }
+
+        @GetMapping("/api/test/lifecycle/deprecated-with-plan")
+        @Operation(
+                summary = "有下线计划的废弃接口",
+                operationId = "LifecycleFixture_deprecatedWithPlan",
+                deprecated = true
+        )
+        @ApiResourceMetadata(
+                lifecycle = ApiLifecycleStatus.DEPRECATED,
+                sunsetVersion = "v9.9.9",
+                replacementApiKey = "GET /api/test/lifecycle/replacement"
+        )
+        public ApiResult<String> deprecatedWithPlan() {
+            return ApiResult.ok("deprecated-with-plan");
+        }
+
+        @GetMapping("/api/test/lifecycle/deprecated-without-plan")
+        @Operation(
+                summary = "缺少下线计划的废弃接口",
+                operationId = "LifecycleFixture_deprecatedWithoutPlan",
+                deprecated = true
+        )
+        @ApiResourceMetadata(lifecycle = ApiLifecycleStatus.DEPRECATED)
+        public ApiResult<String> deprecatedWithoutPlan() {
+            return ApiResult.ok("deprecated-without-plan");
         }
     }
 }

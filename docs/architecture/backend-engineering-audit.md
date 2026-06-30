@@ -52,7 +52,7 @@
 - 已建立统一分页模型，审计日志查询支持分页与筛选。
 - 已建立运行时接口资源清单，可扫描后端真实 `/api/**` 路由、方法、模块、摘要、权限点和写操作标识。
 - 接口资源清单已提供稳定接口标识 `apiKey`、稳定操作标识 `operationId`、处理器定位 `handler` 和废弃状态 `deprecated`，便于接口管理页、API Catalog、客户端生成、审计排障和 Jenkins 报告直接定位到 Controller 方法。
-- 接口资源清单已补充接口负责人、引入版本、生命周期、风险级别元数据，便于接口归属、下线计划、风险审计和 Jenkins 报告分组。
+- 接口资源清单已补充接口负责人、引入版本、生命周期、风险级别、计划下线版本和替代接口元数据，便于接口归属、下线计划、风险审计和 Jenkins 报告分组。
 - 已提供接口资源 CSV 导出接口，便于审计留档、接口变更对比和 Jenkins 产物归档。
 - 已提供接口资源 Manifest，输出稳定 JSON 清单和 `SHA-256` 指纹，便于接口契约归档和版本间变更比对。
 - 已提供接口资源 Manifest Diff，可对比上一版本 Manifest 和当前运行时 Manifest，输出新增、删除、修改和破坏性变更统计。
@@ -62,6 +62,7 @@
 - 已建立 `operationId` 命名规范和唯一性门禁，当前格式为 `^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$`，重复或非法命名会作为治理错误阻断发布。
 - 已建立接口治理质量门禁，可输出权限缺口、系统写接口无权限、接口文档元数据缺失等违规项。
 - 已建立接口治理规则目录，结构化输出规则编码、严重级别、是否阻断、分类和修复建议，便于 Jenkins、接口管理页和人工巡检复用同一套规则解释。
+- 已建立废弃接口下线治理，废弃 API 必须维护 `sunsetVersion` 和 `replacementApiKey`，避免只有废弃标记但没有迁移路径。
 - 已建立接口权限注册一致性检查，可识别代码权限点是否写入 `sys_permission`，以及是否挂载到 `sys_menu.auth_code` 供角色授权。
 - 已建立权限码命名规范检查，当前统一使用小写冒号分段格式：`^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$`。
 - 已建立模块化错误码体系，通用、认证、系统模块错误码分层维护，并通过测试校验跨模块错误码唯一性。
@@ -105,11 +106,11 @@
   - 提供 `/api/system/api-resources` 接口，按运行时 Spring MVC 路由生成 API 资源清单。
   - 返回请求方法、路径、所属模块、接口摘要、权限点、权限码是否规范、权限模式、认证级别、是否需要权限、权限点是否注册、权限点是否可授权、是否写操作。
   - 返回稳定接口标识 `apiKey`、稳定操作标识 `operationId`、处理器定位 `handler`、废弃状态 `deprecated`，用于接口排障、变更审计、API Catalog 和生命周期治理。
-  - 返回接口负责人 `owner`、引入版本 `sinceVersion`、生命周期 `lifecycle`、风险级别 `riskLevel`，用于接口资产归属和风险分级管理。
+  - 返回接口负责人 `owner`、引入版本 `sinceVersion`、生命周期 `lifecycle`、风险级别 `riskLevel`、计划下线版本 `sunsetVersion`、替代接口 `replacementApiKey`，用于接口资产归属、废弃迁移和风险分级管理。
   - 支持分页和按方法、路径、模块、权限点、处理器、认证级别、写操作、权限缺口、废弃状态筛选。
   - 支持按负责人、生命周期和风险级别筛选接口资源。
-  - 提供 `/api/system/api-resources/export` 接口资源 CSV 导出，字段覆盖接口标识、操作标识、处理器、权限点、权限状态、认证级别、废弃状态和访问策略。
-  - 提供 `/api/system/api-resources/manifest` 接口资源 Manifest，字段覆盖应用版本、资源总数、`SHA-256` 指纹、`operationId` 和关键接口元数据。
+  - 提供 `/api/system/api-resources/export` 接口资源 CSV 导出，字段覆盖接口标识、操作标识、处理器、权限点、权限状态、认证级别、废弃状态、下线计划和访问策略。
+  - 提供 `/api/system/api-resources/manifest` 接口资源 Manifest，字段覆盖应用版本、资源总数、`SHA-256` 指纹、`operationId`、废弃迁移计划和关键接口元数据。
   - 提供 `/api/system/api-resources/manifest/snapshots` 接口资源 Manifest 发布快照查询与发布能力，支持把接口契约以服务端版本资产落库。
   - 提供 `/api/system/api-resources/manifest/snapshots/latest` 最新发布快照查询，便于 Jenkins 获取上一版契约做差异比对。
   - Manifest Snapshot 发布前会自动执行 Manifest Gate，门禁失败不落库；同一应用版本和指纹重复发布时返回既有快照，保证发布动作幂等。
@@ -125,7 +126,7 @@
   - 自动区分 `PUBLIC`、`LOGIN`、`PERMISSION` 三类接口认证级别。
   - 提供 `@ApiAccessPolicy` 显式标记登录态接口的设计意图，减少安全巡检误报。
   - 对仅登录保护、且没有显式访问策略的系统接口标记权限缺口，便于安全巡检。
-  - 对系统写接口无权限点、权限码命名不规范、`operationId` 命名不规范、`operationId` 重复、权限点未注册、权限点不可授权、废弃接口、缺少接口负责人、缺少引入版本、缺少生命周期、缺少风险级别、缺少 OpenAPI 模块标签、缺少接口摘要等问题输出结构化治理结果，便于 Jenkins 自动巡检。
+  - 对系统写接口无权限点、权限码命名不规范、`operationId` 命名不规范、`operationId` 重复、权限点未注册、权限点不可授权、废弃接口、废弃接口缺少下线版本、废弃接口缺少替代接口、缺少接口负责人、缺少引入版本、缺少生命周期、缺少风险级别、缺少 OpenAPI 模块标签、缺少接口摘要等问题输出结构化治理结果，便于 Jenkins 自动巡检。
   - 每条接口治理违规项均返回 `remediation` 修复建议，便于 Jenkins 输出可执行治理动作，也便于后续接口管理页直接展示整改指引。
   - 新增权限点 `system:api:list` 和 `system:api:publish`，超级管理员启动时自动补齐授权，接口查询与接口发布分权治理。
   - 新增文件上传权限点 `system:file:upload`，文件上传不再只是登录态即可访问。
@@ -199,6 +200,7 @@
   - 检查 Flyway 迁移测试通过，确保 `flyway_schema_history` 有迁移记录
   - 登录测试账号后调用 `/api/system/api-resources/governance`，要求 `passed=true` 且 `errorCount=0`
   - 可调用 `/api/system/api-resources/governance/rules` 输出规则目录，作为 Jenkins 报告中 ruleCode 的解释来源
+  - Jenkins 应对 `DEPRECATED_API_MISSING_SUNSET_VERSION` 和 `DEPRECATED_API_MISSING_REPLACEMENT` 输出整改提示，要求废弃接口有明确下线版本和替代接口
   - 可调用 `/api/system/api-resources/export` 导出 CSV 作为构建产物，便于接口清单留档和版本差异比对
   - 可调用 `/api/system/api-resources/manifest` 生成 JSON 与 `checksum`，用于识别接口契约是否发生变更
   - 推荐 Jenkins 在开发/测试环境调用 `/api/system/api-resources/manifest/snapshots/latest` 获取上一版发布快照
