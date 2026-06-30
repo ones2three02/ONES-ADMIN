@@ -269,6 +269,13 @@ class ApiResourceControllerTest {
         JsonNode missingReplacementRule = findRule(rules, "DEPRECATED_API_MISSING_REPLACEMENT");
         assertThat(missingReplacementRule.path("severity").asText()).isEqualTo("WARN");
         assertThat(missingReplacementRule.path("remediation").asText()).contains("replacementApiKey");
+        JsonNode deprecatedLifecycleRule = findRule(rules, "LIFECYCLE_DEPRECATED_WITHOUT_DEPRECATED_FLAG");
+        assertThat(deprecatedLifecycleRule.path("severity").asText()).isEqualTo("WARN");
+        assertThat(deprecatedLifecycleRule.path("remediation").asText()).contains("@Operation");
+        JsonNode removedStillMappedRule = findRule(rules, "REMOVED_API_STILL_MAPPED");
+        assertThat(removedStillMappedRule.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(removedStillMappedRule.path("blocking").asBoolean()).isTrue();
+        assertThat(removedStillMappedRule.path("remediation").asText()).contains("删除运行时路由");
     }
 
     @Test
@@ -311,7 +318,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.27"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.28"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(48))
                 .andReturn()
@@ -363,7 +370,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.27"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.28"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.snapshot.total").value(48))
                 .andExpect(jsonPath("$.data.snapshot.manifest.total").value(48))
@@ -461,7 +468,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.27"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.28"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))

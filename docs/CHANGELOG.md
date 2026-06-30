@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.28 - 2026-06-30
+
+- 接口生命周期治理新增 `LIFECYCLE_DEPRECATED_WITHOUT_DEPRECATED_FLAG` 规则，要求 `lifecycle=DEPRECATED` 的接口同步 OpenAPI `deprecated` 标记。
+- 接口生命周期治理新增 `REMOVED_API_STILL_MAPPED` 阻断规则，生命周期为 `REMOVED` 的接口不得继续暴露运行时路由。
+- 补充企业级接口管理调研结论：Backstage/Gravitee 强调 API 生命周期资产治理，Spectral 强调规则化一致性检查。
+- 产品版本递增至 `v0.0.28`。
+
 ## v0.0.27 - 2026-06-30
 
 - `@ApiResourceMetadata` 新增 `sunsetVersion` 和 `replacementApiKey`，用于记录废弃接口计划下线版本和替代接口。

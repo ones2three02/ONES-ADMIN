@@ -144,6 +144,37 @@ class ApiResourceOperationIdGovernanceTest {
                 .isEqualTo("GET /api/test/lifecycle/replacement");
     }
 
+    @Test
+    void apiLifecycleMustBeConsistentWithRuntimeRouteAndOpenApiMetadata() throws Exception {
+        String token = login("admin", "admin123");
+
+        String governanceResponse = mockMvc.perform(get("/api/system/api-resources/governance")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.passed").value(false))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode violations = objectMapper.readTree(governanceResponse).at("/data/violations");
+        JsonNode deprecatedMetadataOnlyViolation = findViolation(
+                violations,
+                "/api/test/lifecycle/deprecated-metadata-only",
+                "LIFECYCLE_DEPRECATED_WITHOUT_DEPRECATED_FLAG"
+        );
+        assertThat(deprecatedMetadataOnlyViolation.path("severity").asText()).isEqualTo("WARN");
+        assertThat(deprecatedMetadataOnlyViolation.path("remediation").asText()).contains("@Operation");
+
+        JsonNode removedStillMappedViolation = findViolation(
+                violations,
+                "/api/test/lifecycle/removed-still-mapped",
+                "REMOVED_API_STILL_MAPPED"
+        );
+        assertThat(removedStillMappedViolation.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(removedStillMappedViolation.path("remediation").asText()).contains("删除运行时路由");
+    }
+
     private List<String> ruleCodes(List<JsonNode> violations) {
         return violations.stream()
                 .map(violation -> violation.path("ruleCode").asText())
@@ -162,6 +193,14 @@ class ApiResourceOperationIdGovernanceTest {
                         && path.equals(resource.path("path").asText()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("未找到接口资源：" + method + " " + path));
+    }
+
+    private JsonNode findViolation(JsonNode violations, String path, String ruleCode) {
+        return StreamSupport.stream(violations.spliterator(), false)
+                .filter(violation -> path.equals(violation.path("path").asText())
+                        && ruleCode.equals(violation.path("ruleCode").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到治理违规：" + path + " " + ruleCode));
     }
 
     private String login(String username, String password) throws Exception {
@@ -234,6 +273,27 @@ class ApiResourceOperationIdGovernanceTest {
         @ApiResourceMetadata(lifecycle = ApiLifecycleStatus.DEPRECATED)
         public ApiResult<String> deprecatedWithoutPlan() {
             return ApiResult.ok("deprecated-without-plan");
+        }
+
+        @GetMapping("/api/test/lifecycle/deprecated-metadata-only")
+        @Operation(
+                summary = "仅生命周期标记废弃但 OpenAPI 未废弃",
+                operationId = "LifecycleFixture_deprecatedMetadataOnly"
+        )
+        @ApiResourceMetadata(
+                lifecycle = ApiLifecycleStatus.DEPRECATED,
+                sunsetVersion = "v9.9.9",
+                replacementApiKey = "GET /api/test/lifecycle/replacement"
+        )
+        public ApiResult<String> deprecatedMetadataOnly() {
+            return ApiResult.ok("deprecated-metadata-only");
+        }
+
+        @GetMapping("/api/test/lifecycle/removed-still-mapped")
+        @Operation(summary = "已移除但仍暴露的接口", operationId = "LifecycleFixture_removedStillMapped")
+        @ApiResourceMetadata(lifecycle = ApiLifecycleStatus.REMOVED)
+        public ApiResult<String> removedStillMapped() {
+            return ApiResult.ok("removed-still-mapped");
         }
     }
 }

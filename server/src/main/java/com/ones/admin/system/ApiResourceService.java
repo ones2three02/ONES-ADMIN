@@ -146,6 +146,20 @@ public class ApiResourceService {
                     "在 @ApiResourceMetadata 中补充 replacementApiKey，记录替代接口 apiKey，例如 GET /api/system/users"
             ),
             new GovernanceRule(
+                    "LIFECYCLE_DEPRECATED_WITHOUT_DEPRECATED_FLAG",
+                    "WARN",
+                    "LIFECYCLE",
+                    "接口生命周期为 DEPRECATED 但未同步 OpenAPI 废弃标记",
+                    "在 @Operation 中设置 deprecated = true，或使用 @Deprecated，确保 OpenAPI、API Catalog 和运行时治理状态一致"
+            ),
+            new GovernanceRule(
+                    "REMOVED_API_STILL_MAPPED",
+                    "ERROR",
+                    "LIFECYCLE",
+                    "生命周期为 REMOVED 的接口仍在运行时暴露",
+                    "删除运行时路由或将接口恢复为 DEPRECATED/ACTIVE；REMOVED 只能用于已下线且不再暴露的接口资产记录"
+            ),
+            new GovernanceRule(
                     "MISSING_API_OWNER",
                     "WARN",
                     "CATALOG",
@@ -212,7 +226,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.27}") String applicationVersion
+            @Value("${ones.version:v0.0.28}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -1265,6 +1279,22 @@ public class ApiResourceService {
                         "废弃接口缺少替代接口"
                 ));
             }
+        }
+        if ("DEPRECATED".equals(resource.lifecycle()) && !resource.deprecated()) {
+            violations.add(toViolation(
+                    resource,
+                    "LIFECYCLE_DEPRECATED_WITHOUT_DEPRECATED_FLAG",
+                    "WARN",
+                    "接口生命周期为 DEPRECATED，但 OpenAPI 未标记 deprecated"
+            ));
+        }
+        if ("REMOVED".equals(resource.lifecycle())) {
+            violations.add(toViolation(
+                    resource,
+                    "REMOVED_API_STILL_MAPPED",
+                    "ERROR",
+                    "生命周期为 REMOVED 的接口仍被运行时路由暴露"
+            ));
         }
         if (!hasText(resource.owner())) {
             violations.add(toViolation(
