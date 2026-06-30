@@ -8,6 +8,8 @@ import { $t } from '#/locales';
 
 const appName = computed(() => preferences.app.name);
 const logo = computed(() => preferences.logo.source);
+const logoDark = computed(() => preferences.logo.sourceDark);
+const sloganImage = computed(() => preferences.logo.source);
 const clickLogo = () => {};
 </script>
 
@@ -15,8 +17,10 @@ const clickLogo = () => {};
   <AuthPageLayout
     :app-name="appName"
     :logo="logo"
+    :logo-dark="logoDark"
     :page-description="$t('authentication.pageDesc')"
     :page-title="$t('authentication.pageTitle')"
+    :slogan-image="sloganImage"
     :click-logo="clickLogo"
   >
     <!-- 自定义工具栏 -->

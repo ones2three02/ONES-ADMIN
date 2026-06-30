@@ -1,10 +1,10 @@
 {
   "welcomeBack": "欢迎回来",
-  "pageTitle": "开箱即用的大型中后台管理系统",
-  "pageDesc": "工程化、高性能、跨组件库的前端模版",
+  "pageTitle": "ONE SYSTEM · ONE SERVICE · ONE SAFE · ONE SECOND",
+  "pageDesc": "一个系统、一个服务、一份安全、每一秒都在创造价值",
   "loginSuccess": "登录成功",
   "loginSuccessDesc": "欢迎回来",
-  "loginSubtitle": "请输入您的账户信息以开始管理您的项目",
+  "loginSubtitle": "请输入账号信息，进入 ONES-ADMIN 企业级管理平台",
   "selectAccount": "快速选择账号",
   "username": "账号",
   "password": "密码",

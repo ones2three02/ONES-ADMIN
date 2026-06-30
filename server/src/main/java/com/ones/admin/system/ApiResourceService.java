@@ -70,7 +70,7 @@ public class ApiResourceService {
             RequestMappingHandlerMapping requestMappingHandlerMapping,
             SystemPermissionMapper permissionMapper,
             SystemMenuMapper menuMapper,
-            @Value("${ones.version:v0.0.18}") String applicationVersion
+            @Value("${ones.version:v0.0.19}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;

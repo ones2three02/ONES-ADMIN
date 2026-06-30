@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.19 - 2026-06-30
+
+- 新增 1S 品牌静态资产，替换前端 favicon、侧边栏 Logo 和认证页品牌图标。
+- 登录页文案融入 `ONE SYSTEM · ONE SERVICE · ONE SAFE · ONE SECOND` 品牌理念，保持 Vben 原有认证布局与组件风格。
+- 系统概览页新增四项轻量品牌原则展示：`ONE SYSTEM`、`ONE SERVICE`、`ONE SAFE`、`ONE SECOND`。
+- 认证布局的自定义 `sloganImage` 补充 `object-contain`，避免品牌图在固定展示区域内被拉伸变形。
+- 产品版本递增至 `v0.0.19`，保持前后端版本标识一致。
+
 ## v0.0.18 - 2026-06-29
 
 - 接口治理质量门禁新增 `operationIdPattern`，当前规范为 `^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$`。
