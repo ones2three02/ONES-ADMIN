@@ -63,7 +63,7 @@ sa-token:
   is-print: false
 
 ones:
-  version: ${ONES_ADMIN_VERSION:v0.0.22}
+  version: ${ONES_ADMIN_VERSION:v0.0.23}
   security:
     login:
       max-failed-login-count: ${ONES_LOGIN_MAX_FAILED_COUNT:5}
@@ -72,9 +72,15 @@ ones:
       enabled: ${ONES_REPEAT_SUBMIT_ENABLED:true}
       storage: ${ONES_REPEAT_SUBMIT_STORAGE:redis}
   file:
+    storage-type: ${ONES_FILE_STORAGE_TYPE:local}
     upload-root: ${ONES_FILE_UPLOAD_ROOT:uploads}
     public-url-prefix: ${ONES_FILE_PUBLIC_URL_PREFIX:/api/system/files}
     max-size: ${ONES_FILE_MAX_SIZE:20MB}
+    minio:
+      endpoint: ${ONES_MINIO_ENDPOINT:http://localhost:9000}
+      access-key: ${ONES_MINIO_ACCESS_KEY:}
+      secret-key: ${ONES_MINIO_SECRET_KEY:}
+      bucket: ${ONES_MINIO_BUCKET:ones-admin}
     allowed-extensions:
       - jpg
       - jpeg
@@ -89,6 +95,11 @@ ones:
       - txt
       - csv
       - zip
+  events:
+    broker: ${ONES_EVENTS_BROKER:none}
+    exchange: ${ONES_EVENTS_EXCHANGE:ones.admin.events}
+    operation-audit-queue: ${ONES_OPERATION_AUDIT_QUEUE:ones.admin.audit.operation}
+    login-audit-queue: ${ONES_LOGIN_AUDIT_QUEUE:ones.admin.audit.login}
 
 management:
   endpoints:

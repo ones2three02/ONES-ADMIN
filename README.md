@@ -2,11 +2,11 @@
 
 ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
-当前产品版本：`v0.0.22`
+当前产品版本：`v0.0.23`
 
 ## 当前能力
 
-- 后端：Spring Boot 3.5.9、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、Flyway、MySQL、统一响应、统一异常、登录认证、角色权限、动态菜单、用户 CRUD、接口资源治理、接口治理修复建议、Actuator、Swagger UI。
+- 后端：Spring Boot 3.5.9、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、Flyway、MySQL、Redis、RabbitMQ、MinIO、统一响应、统一异常、登录认证、角色权限、动态菜单、用户 CRUD、接口资源治理、接口治理修复建议、Actuator、Swagger UI。
 - 前端：Vue3、Vite、TypeScript、Element Plus、Pinia、Vue Router、Axios 请求拦截、Vben web-ele 风格登录页、管理布局、工作台、用户管理页。
 - 认证：`Authorization: Bearer <token>`，由 Sa-Token 签发与校验。
 - 演示账号：`admin / admin123`
@@ -31,17 +31,19 @@ ONES-ADMIN
 - JDK 21
 - Node.js 22.18+ 或 24+
 - pnpm 11+
-- MySQL、Redis、RabbitMQ
+- MySQL、Redis，可选 RabbitMQ、MinIO
 
 ### 启动后端
 
-后端默认从环境变量读取 MySQL、Redis、RabbitMQ 配置，并会额外加载本地忽略文件：
+后端默认从环境变量读取 MySQL、Redis、RabbitMQ、MinIO 配置，并会额外加载本地忽略文件：
 
 ```text
 server/config/application-local.yml
 ```
 
 本地中间件连接信息记录在 `docs/local/middleware-credentials.md`，该目录已加入 `.gitignore`，不会提交到 Git。
+
+默认 `ones.events.broker=none`、`ones.file.storage-type=local`，本地和测试环境不会强依赖 RabbitMQ 或 MinIO。需要启用开发环境中间件时，在 `server/config/application-local.yml` 或环境变量中改为 `ONES_EVENTS_BROKER=rabbitmq`、`ONES_FILE_STORAGE_TYPE=minio`，并补齐对应连接信息。
 
 ```bash
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home

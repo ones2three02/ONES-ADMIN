@@ -2,6 +2,8 @@ package com.ones.admin.system.audit;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.ones.admin.common.event.SystemEventPayload;
+import com.ones.admin.common.event.SystemEventPublisher;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.system.dto.LoginLogQuery;
 import com.ones.admin.system.dto.LoginLogResponse;
@@ -10,15 +12,19 @@ import com.ones.admin.system.mapper.SystemLoginLogMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class LoginAuditService {
 
     private final SystemLoginLogMapper loginLogMapper;
+    private final SystemEventPublisher eventPublisher;
 
-    public LoginAuditService(SystemLoginLogMapper loginLogMapper) {
+    public LoginAuditService(SystemLoginLogMapper loginLogMapper, SystemEventPublisher eventPublisher) {
         this.loginLogMapper = loginLogMapper;
+        this.eventPublisher = eventPublisher;
     }
 
     public void recordSuccess(String username, Long userId, AuditRequestContext context) {
@@ -58,6 +64,23 @@ public class LoginAuditService {
         log.setTraceId(context.traceId());
         log.setCreatedAt(LocalDateTime.now());
         loginLogMapper.insert(log);
+        eventPublisher.publish(SystemEventPayload.of(
+                "audit.login.recorded",
+                "ones.audit.login.recorded",
+                context.traceId(),
+                loginAuditPayload(log)
+        ));
+    }
+
+    private Map<String, Object> loginAuditPayload(SystemLoginLogEntity log) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("username", log.getUsername());
+        payload.put("userId", log.getUserId());
+        payload.put("success", log.getSuccess());
+        payload.put("failureReason", log.getFailureReason());
+        payload.put("ip", log.getIp());
+        payload.put("userAgent", log.getUserAgent());
+        return payload;
     }
 
     private LambdaQueryWrapper<SystemLoginLogEntity> buildQueryWrapper(LoginLogQuery query) {

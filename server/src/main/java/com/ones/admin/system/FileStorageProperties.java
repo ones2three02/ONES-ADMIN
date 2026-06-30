@@ -11,9 +11,11 @@ import java.util.List;
 @ConfigurationProperties(prefix = "ones.file")
 public class FileStorageProperties {
 
+    private StorageType storageType = StorageType.LOCAL;
     private Path uploadRoot = Path.of("uploads");
     private String publicUrlPrefix = "/api/system/files";
     private DataSize maxSize = DataSize.ofMegabytes(20);
+    private Minio minio = new Minio();
     private List<String> allowedExtensions = List.of(
             "jpg",
             "jpeg",
@@ -29,6 +31,14 @@ public class FileStorageProperties {
             "csv",
             "zip"
     );
+
+    public StorageType getStorageType() {
+        return storageType;
+    }
+
+    public void setStorageType(StorageType storageType) {
+        this.storageType = storageType;
+    }
 
     public Path getUploadRoot() {
         return uploadRoot;
@@ -62,7 +72,60 @@ public class FileStorageProperties {
         this.allowedExtensions = allowedExtensions;
     }
 
+    public Minio getMinio() {
+        return minio;
+    }
+
+    public void setMinio(Minio minio) {
+        this.minio = minio;
+    }
+
     public Path normalizedUploadRoot() {
         return uploadRoot.toAbsolutePath().normalize();
+    }
+
+    public enum StorageType {
+        LOCAL,
+        MINIO
+    }
+
+    public static class Minio {
+
+        private String endpoint = "http://localhost:9000";
+        private String accessKey = "";
+        private String secretKey = "";
+        private String bucket = "ones-admin";
+
+        public String getEndpoint() {
+            return endpoint;
+        }
+
+        public void setEndpoint(String endpoint) {
+            this.endpoint = endpoint;
+        }
+
+        public String getAccessKey() {
+            return accessKey;
+        }
+
+        public void setAccessKey(String accessKey) {
+            this.accessKey = accessKey;
+        }
+
+        public String getSecretKey() {
+            return secretKey;
+        }
+
+        public void setSecretKey(String secretKey) {
+            this.secretKey = secretKey;
+        }
+
+        public String getBucket() {
+            return bucket;
+        }
+
+        public void setBucket(String bucket) {
+            this.bucket = bucket;
+        }
     }
 }

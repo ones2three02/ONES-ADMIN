@@ -10,11 +10,18 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -30,8 +37,16 @@ class FileControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @MockitoBean
+    private FileStorageService fileStorageService;
+
     @Test
     void uploadAllowedFile() throws Exception {
+        given(fileStorageService.store(any(MultipartFile.class), any()))
+                .willAnswer(invocation -> {
+                    String storedName = invocation.getArgument(1);
+                    return new FileStorageService.StoredFile(storedName, "/api/system/files/" + storedName);
+                });
         MockMultipartFile file = new MockMultipartFile(
                 "file",
                 "report.txt",
@@ -45,6 +60,11 @@ class FileControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.url", containsString("/api/system/files/")));
+
+        verify(fileStorageService).store(
+                any(MultipartFile.class),
+                argThat((String storedName) -> storedName.endsWith(".txt"))
+        );
     }
 
     @Test
@@ -61,6 +81,7 @@ class FileControllerTest {
                 .header("Authorization", "Bearer " + login()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(SystemErrorCode.FILE_EXTENSION_NOT_ALLOWED.code()));
+        verifyNoInteractions(fileStorageService);
     }
 
     @Test

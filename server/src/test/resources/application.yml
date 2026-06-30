@@ -34,4 +34,7 @@ ones:
     repeat-submit:
       storage: memory
   file:
+    storage-type: local
     upload-root: ${java.io.tmpdir}/ones-admin-test-uploads
+  events:
+    broker: none

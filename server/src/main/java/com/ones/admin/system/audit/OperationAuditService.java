@@ -2,6 +2,8 @@ package com.ones.admin.system.audit;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.ones.admin.common.event.SystemEventPayload;
+import com.ones.admin.common.event.SystemEventPublisher;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.system.dto.OperationLogQuery;
 import com.ones.admin.system.dto.OperationLogResponse;
@@ -10,15 +12,19 @@ import com.ones.admin.system.mapper.SystemOperationLogMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class OperationAuditService {
 
     private final SystemOperationLogMapper operationLogMapper;
+    private final SystemEventPublisher eventPublisher;
 
-    public OperationAuditService(SystemOperationLogMapper operationLogMapper) {
+    public OperationAuditService(SystemOperationLogMapper operationLogMapper, SystemEventPublisher eventPublisher) {
         this.operationLogMapper = operationLogMapper;
+        this.eventPublisher = eventPublisher;
     }
 
     public void record(OperationAuditRecord record) {
@@ -38,6 +44,29 @@ public class OperationAuditService {
         log.setDurationMs(record.durationMs());
         log.setCreatedAt(LocalDateTime.now());
         operationLogMapper.insert(log);
+        eventPublisher.publish(SystemEventPayload.of(
+                "audit.operation.recorded",
+                "ones.audit.operation.recorded",
+                record.traceId(),
+                operationAuditPayload(log)
+        ));
+    }
+
+    private Map<String, Object> operationAuditPayload(SystemOperationLogEntity log) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("userId", log.getUserId());
+        payload.put("method", log.getMethod());
+        payload.put("path", log.getPath());
+        payload.put("module", log.getModule());
+        payload.put("operation", log.getOperation());
+        payload.put("permissionCode", log.getPermissionCode());
+        payload.put("success", log.getSuccess());
+        payload.put("responseCode", log.getResponseCode());
+        payload.put("errorMessage", log.getErrorMessage());
+        payload.put("ip", log.getIp());
+        payload.put("userAgent", log.getUserAgent());
+        payload.put("durationMs", log.getDurationMs());
+        return payload;
     }
 
     public PageResult<OperationLogResponse> queryPage(OperationLogQuery query) {
