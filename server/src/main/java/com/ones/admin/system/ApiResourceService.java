@@ -198,7 +198,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.25}") String applicationVersion
+            @Value("${ones.version:v0.0.26}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -460,9 +460,95 @@ public class ApiResourceService {
                 diff.breakingChangeCount(),
                 requiredManualReview,
                 reviewReasonRequired,
+                buildGateChecks(request, governance, diff),
                 reasons,
                 diff
         );
+    }
+
+    private List<ApiResourceManifestGateResponse.Check> buildGateChecks(
+            ApiResourceManifestGateRequest request,
+            ApiResourceGovernanceResponse governance,
+            ApiResourceManifestDiffResponse diff
+    ) {
+        boolean governancePassed = governance.errorCount() == 0;
+        boolean breakingPassed = diff.breakingChangeCount() == 0
+                || allowBreakingChanges(request) && hasText(request.reviewReason());
+        boolean warningPassed = governance.warningCount() == 0;
+        return List.of(
+                new ApiResourceManifestGateResponse.Check(
+                        "API_GOVERNANCE_ERROR",
+                        "ERROR",
+                        governancePassed,
+                        true,
+                        governancePassed
+                                ? "接口治理错误检查通过"
+                                : "接口治理存在 " + governance.errorCount() + " 个错误",
+                        governancePassed
+                                ? "无需处理"
+                                : "调用 /api/system/api-resources/governance 查看 violations，并按 /governance/rules 修复 ERROR 级规则"
+                ),
+                new ApiResourceManifestGateResponse.Check(
+                        "BREAKING_CHANGE_REVIEW",
+                        "ERROR",
+                        breakingPassed,
+                        true,
+                        breakingReviewMessage(request, diff),
+                        breakingReviewRemediation(request, diff)
+                ),
+                new ApiResourceManifestGateResponse.Check(
+                        "GOVERNANCE_WARNING_TRACKING",
+                        "WARN",
+                        warningPassed,
+                        false,
+                        warningPassed
+                                ? "接口治理警告检查通过"
+                                : "接口治理存在 " + governance.warningCount() + " 个警告",
+                        warningPassed
+                                ? "无需处理"
+                                : "按 /api/system/api-resources/governance 和 /governance/rules 跟踪 WARN 级规则"
+                ),
+                new ApiResourceManifestGateResponse.Check(
+                        "MANIFEST_DIFF_ARCHIVE",
+                        "INFO",
+                        true,
+                        false,
+                        diff.changed() ? "接口契约存在变更，建议归档差异明细" : "接口契约未变化",
+                        "将 diff.changes 归档到 Jenkins 构建产物，便于版本审计和回滚排查"
+                )
+        );
+    }
+
+    private String breakingReviewMessage(
+            ApiResourceManifestGateRequest request,
+            ApiResourceManifestDiffResponse diff
+    ) {
+        if (diff.breakingChangeCount() == 0) {
+            return "未发现破坏性接口契约变更";
+        }
+        if (!allowBreakingChanges(request)) {
+            return "存在 " + diff.breakingChangeCount() + " 个破坏性接口契约变更，尚未允许人工确认";
+        }
+        if (!hasText(request.reviewReason())) {
+            return "存在 " + diff.breakingChangeCount() + " 个破坏性接口契约变更，但缺少人工确认原因";
+        }
+        return "存在 " + diff.breakingChangeCount() + " 个破坏性接口契约变更，已记录人工确认原因";
+    }
+
+    private String breakingReviewRemediation(
+            ApiResourceManifestGateRequest request,
+            ApiResourceManifestDiffResponse diff
+    ) {
+        if (diff.breakingChangeCount() == 0) {
+            return "无需处理";
+        }
+        if (!allowBreakingChanges(request)) {
+            return "优先保持接口兼容；如确认可接受，设置 allowBreakingChanges=true 并填写 reviewReason";
+        }
+        if (!hasText(request.reviewReason())) {
+            return "补充 reviewReason，记录架构负责人、影响范围和调用方迁移计划";
+        }
+        return "保留人工确认记录，并同步调用方迁移计划";
     }
 
     public ApiResourceManifestLatestGateResponse gateManifestWithLatestSnapshot(

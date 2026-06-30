@@ -304,7 +304,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.25"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.26"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(48))
                 .andReturn()
@@ -356,7 +356,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.25"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.26"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.snapshot.total").value(48))
                 .andExpect(jsonPath("$.data.snapshot.manifest.total").value(48))
@@ -454,7 +454,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.25"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.26"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))
@@ -490,7 +490,7 @@ class ApiResourceControllerTest {
         blockedRequest.set("previousManifest", previousManifest);
         blockedRequest.put("allowBreakingChanges", false);
 
-        mockMvc.perform(post("/api/system/api-resources/manifest/gate")
+        String blockedResponse = mockMvc.perform(post("/api/system/api-resources/manifest/gate")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(blockedRequest)))
@@ -501,7 +501,19 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.requiredManualReview").value(true))
                 .andExpect(jsonPath("$.data.reviewReasonRequired").value(true))
                 .andExpect(jsonPath("$.data.breakingChangeCount").value(2))
-                .andExpect(jsonPath("$.data.diff.breakingChangeCount").value(2));
+                .andExpect(jsonPath("$.data.diff.breakingChangeCount").value(2))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode blockedChecks = objectMapper.readTree(blockedResponse).at("/data/checks");
+        JsonNode blockedGovernanceCheck = findGateCheck(blockedChecks, "API_GOVERNANCE_ERROR");
+        assertThat(blockedGovernanceCheck.path("passed").asBoolean()).isTrue();
+        assertThat(blockedGovernanceCheck.path("blocking").asBoolean()).isTrue();
+        JsonNode blockedBreakingCheck = findGateCheck(blockedChecks, "BREAKING_CHANGE_REVIEW");
+        assertThat(blockedBreakingCheck.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(blockedBreakingCheck.path("passed").asBoolean()).isFalse();
+        assertThat(blockedBreakingCheck.path("blocking").asBoolean()).isTrue();
+        assertThat(blockedBreakingCheck.path("remediation").asText()).contains("allowBreakingChanges");
 
         ObjectNode missingReasonRequest = blockedRequest.deepCopy();
         missingReasonRequest.put("allowBreakingChanges", true);
@@ -518,7 +530,7 @@ class ApiResourceControllerTest {
 
         ObjectNode approvedRequest = missingReasonRequest.deepCopy();
         approvedRequest.put("reviewReason", "已由架构负责人确认本次破坏性接口变更");
-        mockMvc.perform(post("/api/system/api-resources/manifest/gate")
+        String approvedResponse = mockMvc.perform(post("/api/system/api-resources/manifest/gate")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(approvedRequest)))
@@ -527,7 +539,15 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.passed").value(true))
                 .andExpect(jsonPath("$.data.status").value("MANUAL_APPROVED"))
                 .andExpect(jsonPath("$.data.reviewReasonRequired").value(false))
-                .andExpect(jsonPath("$.data.reasons[0]").value("存在 2 个破坏性接口契约变更，已记录人工确认原因"));
+                .andExpect(jsonPath("$.data.reasons[0]").value("存在 2 个破坏性接口契约变更，已记录人工确认原因"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode approvedChecks = objectMapper.readTree(approvedResponse).at("/data/checks");
+        JsonNode approvedBreakingCheck = findGateCheck(approvedChecks, "BREAKING_CHANGE_REVIEW");
+        assertThat(approvedBreakingCheck.path("passed").asBoolean()).isTrue();
+        assertThat(approvedBreakingCheck.path("blocking").asBoolean()).isTrue();
+        assertThat(approvedBreakingCheck.path("message").asText()).contains("已记录人工确认原因");
     }
 
     @Test
@@ -682,6 +702,13 @@ class ApiResourceControllerTest {
                 .filter(rule -> ruleCode.equals(rule.path("ruleCode").asText()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("未找到接口治理规则：" + ruleCode));
+    }
+
+    private JsonNode findGateCheck(JsonNode checks, String checkCode) {
+        return StreamSupport.stream(checks.spliterator(), false)
+                .filter(check -> checkCode.equals(check.path("checkCode").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到 Manifest Gate 检查项：" + checkCode));
     }
 
     private List<String> fieldNames(JsonNode change) {

@@ -12,7 +12,18 @@ public record ApiResourceManifestGateResponse(
         long breakingChangeCount,
         boolean requiredManualReview,
         boolean reviewReasonRequired,
+        List<Check> checks,
         List<String> reasons,
         ApiResourceManifestDiffResponse diff
 ) {
+
+    public record Check(
+            String checkCode,
+            String severity,
+            boolean passed,
+            boolean blocking,
+            String message,
+            String remediation
+    ) {
+    }
 }

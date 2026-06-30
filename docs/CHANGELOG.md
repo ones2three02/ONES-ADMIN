@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.26 - 2026-06-30
+
+- Manifest Gate 响应新增 `checks` 机器可读检查项列表，覆盖接口治理错误、破坏性变更人工确认、治理警告跟踪和差异归档建议。
+- Jenkins 可按 `checkCode`、`passed`、`blocking` 和 `remediation` 生成稳定门禁报告，避免解析中文 `reasons` 字符串。
+- 补充企业级接口管理调研结论：Gravitee/Kong 强调策略化 API 管理，oasdiff 强调破坏性变更识别，Spectral 强调规则化 lint/check。
+- 产品版本递增至 `v0.0.26`。
+
 ## v0.0.25 - 2026-06-30
 
 - 新增 `/api/system/api-resources/governance/rules` 接口，结构化输出接口治理规则目录、严重级别、阻断属性、分类和修复建议。

@@ -45,6 +45,7 @@ ONES-ADMIN 使用 `main + develop + 短生命周期分支` 的企业级分支模
 - 自动部署到开发环境。
 - 适合连接开发数据库、开发 Redis、开发 RabbitMQ。
 - 建议部署后调用接口治理门禁、最新快照门禁干跑和 Manifest 发布快照接口，将当前接口契约固化为下一次发布的对比基线。
+- Manifest Gate 返回 `checks` 机器可读检查项，Jenkins 报告应优先按 `checkCode`、`passed`、`blocking`、`remediation` 输出门禁明细，避免解析中文 `reasons`。
 
 ### release/*
 

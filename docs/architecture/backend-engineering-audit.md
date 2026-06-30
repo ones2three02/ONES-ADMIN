@@ -23,6 +23,7 @@
 | [oasdiff/oasdiff](https://github.com/oasdiff/oasdiff) | OpenAPI Diff 与 Breaking Changes | Manifest Diff 与发布门禁设计 |
 | [OpenAPITools/openapi-diff](https://github.com/OpenAPITools/openapi-diff) | Java OpenAPI 差异比较工具 | Java 生态契约差异检测 |
 | [Kong/kong](https://github.com/Kong/kong) | API/AI Gateway、插件化策略、流量治理 | 策略目录化、网关能力边界、接口治理与运行时策略分层 |
+| [stoplightio/spectral](https://github.com/stoplightio/spectral) | OpenAPI/AsyncAPI 规则化 lint 工具 | 规则编码、检查结果、CI 报告可机器解析 |
 | [APIParkLab/APIPark](https://github.com/APIParkLab/APIPark) | AI/API 网关、开放平台、API 申请审批、调用统计 | API 申请审批、调用统计、开放平台体验 |
 | [apioo/fusio](https://github.com/apioo/fusio) | Self-hosted API Management | API 管理后台、接口发布、开发者消费侧能力 |
 
@@ -35,7 +36,7 @@
 - RuoYi/Yudao 的价值在于“框架化治理”：API 访问日志、错误日志、操作日志、安全框架、数据权限等能力拆成 starter 的方式值得后续模块化时参考。
 - 本轮接口管理吸收了三类做法：Smart Admin 的接口文档标签规范、Cool Admin Java 的 OpenAPI 自定义资源思路、RuoYi/Yudao 的 API 访问日志可定位 Controller 方法思路。
 - API Catalog 类项目强调稳定接口身份、负责人和生命周期；API Gateway/API Management 类项目强调发布准入、策略和流量治理；OpenAPI Diff 类项目强调 CI 中识别破坏性变更。
-- Kong、APISIX、Tyk、apiman、Gravitee 这类 API 管理项目普遍把“策略/规则”作为一等资产管理，而不是只在报错时输出一段提示；ONES-ADMIN 的接口治理也应暴露规则目录，便于 CI、前端和人工巡检统一解释。
+- Kong、APISIX、Tyk、apiman、Gravitee 这类 API 管理项目普遍把“策略/规则”作为一等资产管理，而不是只在报错时输出一段提示；Spectral 这类规则化 lint 工具也强调稳定规则编码和机器可读结果；ONES-ADMIN 的接口治理应持续暴露规则目录和检查项，便于 CI、前端和人工巡检统一解释。
 - ONES-ADMIN 当前保持 Spring Boot 3 + Sa-Token + MyBatis-Plus，不跟随 Cool Admin Java 切换 MyBatis-Flex；后续只吸收它的模块边界和初始化治理思想。
 
 ## 2. 当前后端基线
@@ -56,6 +57,7 @@
 - 已提供接口资源 Manifest，输出稳定 JSON 清单和 `SHA-256` 指纹，便于接口契约归档和版本间变更比对。
 - 已提供接口资源 Manifest Diff，可对比上一版本 Manifest 和当前运行时 Manifest，输出新增、删除、修改和破坏性变更统计。
 - 已提供接口资源 Manifest 发布门禁，可综合接口治理错误、破坏性接口变更和人工确认原因输出发布准入结果。
+- Manifest Gate 已输出机器可读 `checks` 检查项，Jenkins 可按 `checkCode`、`passed`、`blocking` 和 `remediation` 生成稳定门禁报告。
 - 已将 `operationId` 纳入接口清单、CSV、Manifest、Manifest 指纹和 Manifest Diff，接口操作标识变化按破坏性变更处理。
 - 已建立 `operationId` 命名规范和唯一性门禁，当前格式为 `^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$`，重复或非法命名会作为治理错误阻断发布。
 - 已建立接口治理质量门禁，可输出权限缺口、系统写接口无权限、接口文档元数据缺失等违规项。
@@ -113,9 +115,10 @@
   - Manifest Snapshot 发布前会自动执行 Manifest Gate，门禁失败不落库；同一应用版本和指纹重复发布时返回既有快照，保证发布动作幂等。
   - 提供 `/api/system/api-resources/manifest/diff` 接口资源 Manifest Diff，支持比对上一版本 Manifest 与当前运行时 Manifest。
   - Manifest Diff 会识别新增、删除、修改接口资源；删除接口、`operationId`、认证级别、权限码、权限模式、写操作属性变化按破坏性变更处理。
-  - 提供 `/api/system/api-resources/manifest/gate` 接口资源 Manifest 发布门禁，输出 `passed`、`status`、阻断原因、治理计数和差异明细。
+  - 提供 `/api/system/api-resources/manifest/gate` 接口资源 Manifest 发布门禁，输出 `passed`、`status`、阻断原因、治理计数、机器可读检查项和差异明细。
   - 提供 `/api/system/api-resources/manifest/gate/latest` 最新发布快照门禁干跑，自动读取服务端最新 Manifest Snapshot 作为对比基线，并返回基线快照 ID、版本和指纹。
   - Manifest Gate 对接口治理错误直接阻断；对破坏性接口契约变更默认阻断，显式允许并填写人工确认原因后返回 `MANUAL_APPROVED`。
+  - Manifest Gate 的 `checks` 覆盖 `API_GOVERNANCE_ERROR`、`BREAKING_CHANGE_REVIEW`、`GOVERNANCE_WARNING_TRACKING`、`MANIFEST_DIFF_ARCHIVE`，便于 Jenkins 不解析中文原因字符串即可生成质量报告。
   - 提供 `/api/system/api-resources/summary` 治理汇总接口，返回接口总数、写操作数、权限缺口数、访问策略数、废弃接口数、认证级别分布和模块分布。
   - 提供 `/api/system/api-resources/governance` 接口治理质量门禁，返回是否通过、错误数、警告数、权限码正则、`operationId` 正则和违规明细。
   - 提供 `/api/system/api-resources/governance/rules` 接口治理规则目录，返回规则编码、严重级别、是否阻断、规则分类、说明和修复建议。
@@ -201,6 +204,7 @@
   - 推荐 Jenkins 在开发/测试环境调用 `/api/system/api-resources/manifest/snapshots/latest` 获取上一版发布快照
   - 可将上一版本 Manifest POST 到 `/api/system/api-resources/manifest/diff`，若 `breakingChangeCount > 0` 则要求人工确认或阻断发布
   - 推荐 Jenkins 使用 `/api/system/api-resources/manifest/gate` 作为最终接口契约发布门禁，要求 `passed=true`
+  - Jenkins 报告应优先读取 Manifest Gate 的 `checks`，按 `checkCode`、`passed`、`blocking` 和 `remediation` 输出门禁明细
   - 更推荐 Jenkins 使用 `/api/system/api-resources/manifest/gate/latest` 做发布前干跑门禁，减少流水线自行拼装上一版 Manifest 请求体的复杂度
   - 发布通过后调用 `POST /api/system/api-resources/manifest/snapshots` 落库当前 Manifest，作为下一次发布的对比基线
   - 权限码命名统一遵循 `/api/system/api-resources/governance` 返回的 `permissionCodePattern`
