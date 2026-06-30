@@ -93,7 +93,7 @@ class ApiResourceControllerTest {
     void filterApiResourcesByAuthTypeAndPermissionMissing() throws Exception {
         String token = login("admin", "admin123");
 
-        mockMvc.perform(get("/api/system/api-resources")
+        String publicResponse = mockMvc.perform(get("/api/system/api-resources")
                         .param("pageNum", "1")
                         .param("pageSize", "20")
                         .param("authType", "PUBLIC")
@@ -102,7 +102,18 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.list[0].path").value("/api/auth/login"))
                 .andExpect(jsonPath("$.data.list[0].authType").value("PUBLIC"))
-                .andExpect(jsonPath("$.data.list[0].permissionMissing").value(false));
+                .andExpect(jsonPath("$.data.list[0].permissionMissing").value(false))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode publicResources = objectMapper.readTree(publicResponse).at("/data/list");
+        JsonNode loginResource = findResource(publicResources, "POST", "/api/auth/login");
+        assertThat(loginResource.path("accessPolicyExplicit").asBoolean()).isTrue();
+        assertThat(loginResource.path("accessPolicyReason").asText()).contains("登录");
+        JsonNode healthResource = findResource(publicResources, "GET", "/api/health");
+        assertThat(healthResource.path("accessPolicyExplicit").asBoolean()).isTrue();
+        assertThat(healthResource.path("accessPolicyReason").asText()).contains("健康检查");
 
         String loginOnlyResponse = mockMvc.perform(get("/api/system/api-resources")
                         .param("pageNum", "1")
@@ -234,7 +245,11 @@ class ApiResourceControllerTest {
         assertThat(governance.path("violationCount").asLong())
                 .isEqualTo(governance.path("warningCount").asLong());
         assertThat(ruleCodes(governance.path("violations")))
-                .doesNotContain("OPERATION_ID_INVALID_FORMAT", "OPERATION_ID_DUPLICATED");
+                .doesNotContain(
+                        "PUBLIC_API_WITHOUT_ACCESS_POLICY",
+                        "OPERATION_ID_INVALID_FORMAT",
+                        "OPERATION_ID_DUPLICATED"
+                );
     }
 
     @Test
@@ -260,6 +275,12 @@ class ApiResourceControllerTest {
         assertThat(permissionMissingRule.path("blocking").asBoolean()).isTrue();
         assertThat(permissionMissingRule.path("category").asText()).isEqualTo("SECURITY");
         assertThat(permissionMissingRule.path("remediation").asText()).contains("@SaCheckPermission");
+
+        JsonNode publicAccessPolicyRule = findRule(rules, "PUBLIC_API_WITHOUT_ACCESS_POLICY");
+        assertThat(publicAccessPolicyRule.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(publicAccessPolicyRule.path("blocking").asBoolean()).isTrue();
+        assertThat(publicAccessPolicyRule.path("category").asText()).isEqualTo("SECURITY");
+        assertThat(publicAccessPolicyRule.path("remediation").asText()).contains("@ApiAccessPolicy");
 
         JsonNode deprecatedRule = findRule(rules, "DEPRECATED_API");
         assertThat(deprecatedRule.path("severity").asText()).isEqualTo("WARN");
@@ -325,7 +346,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.29"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.30"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(48))
                 .andReturn()
@@ -384,7 +405,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.29"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.30"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.snapshot.total").value(48))
                 .andExpect(jsonPath("$.data.snapshot.manifest.total").value(48))
@@ -483,7 +504,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.29"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.30"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))

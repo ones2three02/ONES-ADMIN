@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.30 - 2026-06-30
+
+- 公开接口治理新增 `PUBLIC_API_WITHOUT_ACCESS_POLICY` 阻断规则，`PUBLIC` 接口必须显式声明 `@ApiAccessPolicy(ApiAuthType.PUBLIC, reason = "...")`。
+- 登录入口和健康检查补充公开访问策略说明，明确开放原因和安全补偿措施，便于后续飞书扫码、SSO 回调等公开入口复用同一治理口径。
+- 补充企业级接口管理调研结论：Kong、APISIX、Tyk 强调 API 策略资产化，Backstage 强调 API Catalog 的 owner、生命周期和可解释元数据。
+- 产品版本递增至 `v0.0.30`。
+
 ## v0.0.29 - 2026-06-30
 
 - 接口资源清单、CSV 导出、Manifest 和 Manifest 指纹新增 `repeatSubmitProtected`，用于记录接口是否具备重复提交防护。

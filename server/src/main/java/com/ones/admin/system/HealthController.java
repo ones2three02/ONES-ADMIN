@@ -1,5 +1,7 @@
 package com.ones.admin.system;
 
+import com.ones.admin.common.web.ApiAccessPolicy;
+import com.ones.admin.common.web.ApiAuthType;
 import com.ones.admin.common.web.ApiLifecycleStatus;
 import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
@@ -24,6 +26,7 @@ import java.util.Map;
 public class HealthController {
 
     @GetMapping
+    @ApiAccessPolicy(value = ApiAuthType.PUBLIC, reason = "健康检查用于负载均衡、发布探针和基础可用性巡检，只返回非敏感状态")
     @Operation(summary = "健康检查")
     public ApiResult<Map<String, String>> health() {
         return ApiResult.ok(Map.of("status", "UP", "service", "ones-admin-server"));

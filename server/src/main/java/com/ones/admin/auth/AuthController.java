@@ -7,6 +7,8 @@ import com.ones.admin.auth.dto.TokenInfo;
 import com.ones.admin.auth.dto.UserProfile;
 import com.ones.admin.common.exception.BusinessException;
 import com.ones.admin.common.repeatsubmit.RepeatSubmit;
+import com.ones.admin.common.web.ApiAccessPolicy;
+import com.ones.admin.common.web.ApiAuthType;
 import com.ones.admin.common.web.ApiLifecycleStatus;
 import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
@@ -47,6 +49,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @ApiAccessPolicy(value = ApiAuthType.PUBLIC, reason = "登录入口必须对未登录用户开放，并由登录失败次数和临时锁定策略降低暴力破解风险")
     @Operation(summary = "账号密码登录")
     public ApiResult<LoginResponse> login(
             @Valid @RequestBody LoginRequest request,
