@@ -1,5 +1,15 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.20 - 2026-06-30
+
+- 新增接口资源 Manifest 发布快照表 `sys_api_manifest_snapshot`，支持将接口契约以服务端版本资产落库。
+- 新增 `/api/system/api-resources/manifest/snapshots` 查询接口，支持分页查看历史 Manifest 快照。
+- 新增 `/api/system/api-resources/manifest/snapshots/latest` 查询接口，便于 Jenkins 获取上一版契约。
+- 新增 `/api/system/api-resources/manifest/snapshots` 发布接口，发布前自动执行 Manifest Gate，未通过门禁不落库。
+- 发布快照接口具备幂等性，同一应用版本和 Manifest 指纹重复发布时返回既有快照。
+- 新增权限点 `system:api:publish`，接口资源发布与接口资源查询分权治理。
+- 产品版本递增至 `v0.0.20`。
+
 ## v0.0.19 - 2026-06-30
 
 - 新增 1S 品牌静态资产，替换前端 favicon、侧边栏 Logo 和认证页品牌图标。

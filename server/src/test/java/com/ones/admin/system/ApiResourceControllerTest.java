@@ -274,9 +274,9 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.19"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.20"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
-                .andExpect(jsonPath("$.data.total").value(43))
+                .andExpect(jsonPath("$.data.total").value(46))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -313,6 +313,64 @@ class ApiResourceControllerTest {
     }
 
     @Test
+    void publishAndListApiResourceManifestSnapshots() throws Exception {
+        String token = login("admin", "admin123");
+        ObjectNode publishRequest = objectMapper.createObjectNode();
+
+        String publishResponse = mockMvc.perform(post("/api/system/api-resources/manifest/snapshots")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(publishRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.saved").value(true))
+                .andExpect(jsonPath("$.data.gate.passed").value(true))
+                .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.20"))
+                .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
+                .andExpect(jsonPath("$.data.snapshot.total").value(46))
+                .andExpect(jsonPath("$.data.snapshot.manifest.total").value(46))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode snapshot = objectMapper.readTree(publishResponse).at("/data/snapshot");
+        long snapshotId = snapshot.path("id").asLong();
+        String checksum = snapshot.path("checksum").asText();
+        assertThat(snapshotId).isPositive();
+        assertThat(checksum).matches("^[a-f0-9]{64}$");
+
+        mockMvc.perform(get("/api/system/api-resources/manifest/snapshots")
+                        .param("pageNum", "1")
+                        .param("pageSize", "10")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].id").value(snapshotId))
+                .andExpect(jsonPath("$.data.list[0].checksum").value(checksum))
+                .andExpect(jsonPath("$.data.list[0].manifest").doesNotExist());
+
+        mockMvc.perform(get("/api/system/api-resources/manifest/snapshots/latest")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.id").value(snapshotId))
+                .andExpect(jsonPath("$.data.checksum").value(checksum))
+                .andExpect(jsonPath("$.data.manifest.checksum").value(checksum));
+
+        mockMvc.perform(post("/api/system/api-resources/manifest/snapshots")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(publishRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.saved").value(false))
+                .andExpect(jsonPath("$.data.snapshot.id").value(snapshotId))
+                .andExpect(jsonPath("$.data.snapshot.checksum").value(checksum));
+    }
+
+    @Test
     void diffApiResourceManifest() throws Exception {
         String token = login("admin", "admin123");
         String currentResponse = mockMvc.perform(get("/api/system/api-resources/manifest")
@@ -331,7 +389,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.19"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.20"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))
@@ -460,6 +518,23 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + operatorToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+
+        mockMvc.perform(post("/api/system/api-resources/manifest/snapshots")
+                        .header("Authorization", "Bearer " + operatorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+
+        mockMvc.perform(get("/api/system/api-resources/manifest/snapshots")
+                        .header("Authorization", "Bearer " + operatorToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+
+        mockMvc.perform(get("/api/system/api-resources/manifest/snapshots/latest")
+                        .header("Authorization", "Bearer " + operatorToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
     }

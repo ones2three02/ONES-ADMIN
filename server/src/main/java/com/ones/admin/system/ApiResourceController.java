@@ -11,6 +11,10 @@ import com.ones.admin.system.dto.ApiResourceManifestDiffResponse;
 import com.ones.admin.system.dto.ApiResourceManifestGateRequest;
 import com.ones.admin.system.dto.ApiResourceManifestGateResponse;
 import com.ones.admin.system.dto.ApiResourceManifestResponse;
+import com.ones.admin.system.dto.ApiResourceManifestSnapshotPublishRequest;
+import com.ones.admin.system.dto.ApiResourceManifestSnapshotPublishResponse;
+import com.ones.admin.system.dto.ApiResourceManifestSnapshotQuery;
+import com.ones.admin.system.dto.ApiResourceManifestSnapshotResponse;
 import com.ones.admin.system.dto.ApiResourceQuery;
 import com.ones.admin.system.dto.ApiResourceResponse;
 import com.ones.admin.system.dto.ApiResourceSummaryResponse;
@@ -71,6 +75,32 @@ public class ApiResourceController {
     @Operation(summary = "生成接口资源 Manifest")
     public ApiResult<ApiResourceManifestResponse> generateApiResourceManifest() {
         return ApiResult.ok(apiResourceService.generateManifest());
+    }
+
+    @GetMapping("/manifest/snapshots")
+    @SaCheckPermission("system:api:list")
+    @Operation(summary = "查询接口资源 Manifest 发布快照")
+    public ApiResult<PageResult<ApiResourceManifestSnapshotResponse>> listApiResourceManifestSnapshots(
+            @Valid ApiResourceManifestSnapshotQuery query
+    ) {
+        return ApiResult.ok(apiResourceService.queryManifestSnapshots(query));
+    }
+
+    @GetMapping("/manifest/snapshots/latest")
+    @SaCheckPermission("system:api:list")
+    @Operation(summary = "查询最新接口资源 Manifest 发布快照")
+    public ApiResult<ApiResourceManifestSnapshotResponse> getLatestApiResourceManifestSnapshot() {
+        return ApiResult.ok(apiResourceService.latestManifestSnapshot());
+    }
+
+    @PostMapping("/manifest/snapshots")
+    @SaCheckPermission("system:api:publish")
+    @Operation(summary = "发布接口资源 Manifest 快照")
+    @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
+    public ApiResult<ApiResourceManifestSnapshotPublishResponse> publishApiResourceManifestSnapshot(
+            @Valid @RequestBody ApiResourceManifestSnapshotPublishRequest request
+    ) {
+        return ApiResult.ok(apiResourceService.publishManifestSnapshot(request));
     }
 
     @PostMapping("/manifest/diff")

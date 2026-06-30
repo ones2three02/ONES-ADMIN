@@ -2,6 +2,11 @@ package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaMode;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ones.admin.common.exception.BusinessException;
 import com.ones.admin.common.web.ApiAccessPolicy;
 import com.ones.admin.common.web.ApiAuthType;
 import com.ones.admin.common.web.ApiLifecycleStatus;
@@ -9,6 +14,10 @@ import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.config.SaTokenConfig;
+import com.ones.admin.system.dto.ApiResourceManifestSnapshotPublishRequest;
+import com.ones.admin.system.dto.ApiResourceManifestSnapshotPublishResponse;
+import com.ones.admin.system.dto.ApiResourceManifestSnapshotQuery;
+import com.ones.admin.system.dto.ApiResourceManifestSnapshotResponse;
 import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
 import com.ones.admin.system.dto.ApiResourceManifestDiffResponse;
 import com.ones.admin.system.dto.ApiResourceManifestGateRequest;
@@ -17,6 +26,8 @@ import com.ones.admin.system.dto.ApiResourceManifestResponse;
 import com.ones.admin.system.dto.ApiResourceQuery;
 import com.ones.admin.system.dto.ApiResourceResponse;
 import com.ones.admin.system.dto.ApiResourceSummaryResponse;
+import com.ones.admin.system.entity.SystemApiManifestSnapshotEntity;
+import com.ones.admin.system.mapper.SystemApiManifestSnapshotMapper;
 import com.ones.admin.system.mapper.SystemMenuMapper;
 import com.ones.admin.system.mapper.SystemPermissionMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +35,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.method.HandlerMethod;
@@ -63,6 +75,8 @@ public class ApiResourceService {
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
     private final SystemPermissionMapper permissionMapper;
     private final SystemMenuMapper menuMapper;
+    private final SystemApiManifestSnapshotMapper manifestSnapshotMapper;
+    private final ObjectMapper objectMapper;
     private final String applicationVersion;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
@@ -70,11 +84,15 @@ public class ApiResourceService {
             RequestMappingHandlerMapping requestMappingHandlerMapping,
             SystemPermissionMapper permissionMapper,
             SystemMenuMapper menuMapper,
-            @Value("${ones.version:v0.0.19}") String applicationVersion
+            SystemApiManifestSnapshotMapper manifestSnapshotMapper,
+            ObjectMapper objectMapper,
+            @Value("${ones.version:v0.0.20}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
         this.menuMapper = menuMapper;
+        this.manifestSnapshotMapper = manifestSnapshotMapper;
+        this.objectMapper = objectMapper;
         this.applicationVersion = applicationVersion;
     }
 
@@ -148,6 +166,76 @@ public class ApiResourceService {
                 resources.size(),
                 resources
         );
+    }
+
+    @Transactional
+    public ApiResourceManifestSnapshotPublishResponse publishManifestSnapshot(
+            ApiResourceManifestSnapshotPublishRequest request
+    ) {
+        ApiResourceManifestSnapshotResponse latestSnapshot = latestManifestSnapshot();
+        ApiResourceManifestGateRequest gateRequest = new ApiResourceManifestGateRequest(
+                latestSnapshot == null ? null : latestSnapshot.manifest(),
+                request != null && request.allowBreakingChanges(),
+                request == null ? null : request.reviewReason()
+        );
+        ApiResourceManifestGateResponse gate = gateManifest(gateRequest);
+        if (!gate.passed()) {
+            return new ApiResourceManifestSnapshotPublishResponse(false, null, gate);
+        }
+
+        ApiResourceManifestResponse manifest = generateManifest();
+        SystemApiManifestSnapshotEntity existing = manifestSnapshotMapper.selectOne(
+                new LambdaQueryWrapper<SystemApiManifestSnapshotEntity>()
+                        .eq(SystemApiManifestSnapshotEntity::getApplicationVersion, manifest.applicationVersion())
+                        .eq(SystemApiManifestSnapshotEntity::getChecksum, manifest.checksum())
+                        .last("limit 1")
+        );
+        if (existing != null) {
+            return new ApiResourceManifestSnapshotPublishResponse(
+                    false,
+                    toSnapshotResponse(existing, true),
+                    gate
+            );
+        }
+
+        SystemApiManifestSnapshotEntity snapshot = new SystemApiManifestSnapshotEntity();
+        snapshot.setApplicationVersion(manifest.applicationVersion());
+        snapshot.setChecksumAlgorithm(manifest.checksumAlgorithm());
+        snapshot.setChecksum(manifest.checksum());
+        snapshot.setResourceCount(manifest.total());
+        snapshot.setManifestJson(writeManifest(manifest));
+        snapshot.setPublishStatus(gate.status());
+        snapshot.setReviewReason(trimToNull(request == null ? null : request.reviewReason()));
+        snapshot.setCreatedAt(java.time.LocalDateTime.now());
+        manifestSnapshotMapper.insert(snapshot);
+        return new ApiResourceManifestSnapshotPublishResponse(
+                true,
+                toSnapshotResponse(snapshot, true),
+                gate
+        );
+    }
+
+    public PageResult<ApiResourceManifestSnapshotResponse> queryManifestSnapshots(
+            ApiResourceManifestSnapshotQuery query
+    ) {
+        IPage<SystemApiManifestSnapshotEntity> page = manifestSnapshotMapper.selectPage(
+                query.toMyBatisPage(),
+                buildSnapshotQueryWrapper(query)
+        );
+        List<ApiResourceManifestSnapshotResponse> records = page.getRecords()
+                .stream()
+                .map(snapshot -> toSnapshotResponse(snapshot, false))
+                .toList();
+        return PageResult.of(page, records);
+    }
+
+    public ApiResourceManifestSnapshotResponse latestManifestSnapshot() {
+        SystemApiManifestSnapshotEntity latest = manifestSnapshotMapper.selectOne(
+                new LambdaQueryWrapper<SystemApiManifestSnapshotEntity>()
+                        .orderByDesc(SystemApiManifestSnapshotEntity::getId)
+                        .last("limit 1")
+        );
+        return latest == null ? null : toSnapshotResponse(latest, true);
     }
 
     public ApiResourceManifestDiffResponse diffManifest(ApiResourceManifestResponse previousManifest) {
@@ -377,6 +465,61 @@ public class ApiResourceService {
         return changes.stream()
                 .filter(change -> changeType.equals(change.changeType()))
                 .count();
+    }
+
+    private LambdaQueryWrapper<SystemApiManifestSnapshotEntity> buildSnapshotQueryWrapper(
+            ApiResourceManifestSnapshotQuery query
+    ) {
+        LambdaQueryWrapper<SystemApiManifestSnapshotEntity> wrapper =
+                new LambdaQueryWrapper<SystemApiManifestSnapshotEntity>()
+                        .orderByDesc(SystemApiManifestSnapshotEntity::getId);
+        if (hasText(query.getApplicationVersion())) {
+            wrapper.eq(
+                    SystemApiManifestSnapshotEntity::getApplicationVersion,
+                    query.getApplicationVersion().trim()
+            );
+        }
+        if (hasText(query.getChecksum())) {
+            wrapper.eq(SystemApiManifestSnapshotEntity::getChecksum, query.getChecksum().trim());
+        }
+        return wrapper;
+    }
+
+    private ApiResourceManifestSnapshotResponse toSnapshotResponse(
+            SystemApiManifestSnapshotEntity snapshot,
+            boolean includeManifest
+    ) {
+        return new ApiResourceManifestSnapshotResponse(
+                snapshot.getId(),
+                snapshot.getApplicationVersion(),
+                snapshot.getChecksumAlgorithm(),
+                snapshot.getChecksum(),
+                snapshot.getResourceCount() == null ? 0 : snapshot.getResourceCount(),
+                snapshot.getPublishStatus(),
+                snapshot.getReviewReason(),
+                snapshot.getCreatedAt(),
+                includeManifest ? readManifest(snapshot.getManifestJson()) : null
+        );
+    }
+
+    private String writeManifest(ApiResourceManifestResponse manifest) {
+        try {
+            return objectMapper.writeValueAsString(manifest);
+        } catch (JsonProcessingException exception) {
+            throw new BusinessException("接口资源 Manifest 序列化失败");
+        }
+    }
+
+    private ApiResourceManifestResponse readManifest(String manifestJson) {
+        try {
+            return objectMapper.readValue(manifestJson, ApiResourceManifestResponse.class);
+        } catch (JsonProcessingException exception) {
+            throw new BusinessException("接口资源 Manifest 快照解析失败");
+        }
+    }
+
+    private String trimToNull(String value) {
+        return hasText(value) ? value.trim() : null;
     }
 
     public String exportCsv() {

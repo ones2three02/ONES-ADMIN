@@ -101,6 +101,9 @@
   - 支持按负责人、生命周期和风险级别筛选接口资源。
   - 提供 `/api/system/api-resources/export` 接口资源 CSV 导出，字段覆盖接口标识、操作标识、处理器、权限点、权限状态、认证级别、废弃状态和访问策略。
   - 提供 `/api/system/api-resources/manifest` 接口资源 Manifest，字段覆盖应用版本、资源总数、`SHA-256` 指纹、`operationId` 和关键接口元数据。
+  - 提供 `/api/system/api-resources/manifest/snapshots` 接口资源 Manifest 发布快照查询与发布能力，支持把接口契约以服务端版本资产落库。
+  - 提供 `/api/system/api-resources/manifest/snapshots/latest` 最新发布快照查询，便于 Jenkins 获取上一版契约做差异比对。
+  - Manifest Snapshot 发布前会自动执行 Manifest Gate，门禁失败不落库；同一应用版本和指纹重复发布时返回既有快照，保证发布动作幂等。
   - 提供 `/api/system/api-resources/manifest/diff` 接口资源 Manifest Diff，支持比对上一版本 Manifest 与当前运行时 Manifest。
   - Manifest Diff 会识别新增、删除、修改接口资源；删除接口、`operationId`、认证级别、权限码、权限模式、写操作属性变化按破坏性变更处理。
   - 提供 `/api/system/api-resources/manifest/gate` 接口资源 Manifest 发布门禁，输出 `passed`、`status`、阻断原因、治理计数和差异明细。
@@ -111,7 +114,7 @@
   - 提供 `@ApiAccessPolicy` 显式标记登录态接口的设计意图，减少安全巡检误报。
   - 对仅登录保护、且没有显式访问策略的系统接口标记权限缺口，便于安全巡检。
   - 对系统写接口无权限点、权限码命名不规范、`operationId` 命名不规范、`operationId` 重复、权限点未注册、权限点不可授权、废弃接口、缺少接口负责人、缺少引入版本、缺少生命周期、缺少风险级别、缺少 OpenAPI 模块标签、缺少接口摘要等问题输出结构化治理结果，便于 Jenkins 自动巡检。
-  - 新增权限点 `system:api:list`，超级管理员启动时自动补齐授权。
+  - 新增权限点 `system:api:list` 和 `system:api:publish`，超级管理员启动时自动补齐授权，接口查询与接口发布分权治理。
   - 新增文件上传权限点 `system:file:upload`，文件上传不再只是登录态即可访问。
   - 审计日志、接口资源、文件上传等暂未落前端页面的权限，以菜单 button 节点挂入授权树，避免出现无页面组件的空路由。
   - 暂不新增前端菜单，避免出现无页面组件的空路由；后续按 Vben 风格补接口管理页后再挂菜单。
@@ -175,9 +178,11 @@
   - 检查 Flyway 迁移测试通过，确保 `flyway_schema_history` 有迁移记录
   - 登录测试账号后调用 `/api/system/api-resources/governance`，要求 `passed=true` 且 `errorCount=0`
   - 可调用 `/api/system/api-resources/export` 导出 CSV 作为构建产物，便于接口清单留档和版本差异比对
-  - 可调用 `/api/system/api-resources/manifest` 保存 JSON 与 `checksum`，用于识别接口契约是否发生变更
+  - 可调用 `/api/system/api-resources/manifest` 生成 JSON 与 `checksum`，用于识别接口契约是否发生变更
+  - 推荐 Jenkins 在开发/测试环境调用 `/api/system/api-resources/manifest/snapshots/latest` 获取上一版发布快照
   - 可将上一版本 Manifest POST 到 `/api/system/api-resources/manifest/diff`，若 `breakingChangeCount > 0` 则要求人工确认或阻断发布
   - 推荐 Jenkins 使用 `/api/system/api-resources/manifest/gate` 作为最终接口契约发布门禁，要求 `passed=true`
+  - 发布通过后调用 `POST /api/system/api-resources/manifest/snapshots` 落库当前 Manifest，作为下一次发布的对比基线
   - 权限码命名统一遵循 `/api/system/api-resources/governance` 返回的 `permissionCodePattern`
   - `operationId` 命名统一遵循 `/api/system/api-resources/governance` 返回的 `operationIdPattern`，且必须全局唯一
   - 前端后续可接 `pnpm build`

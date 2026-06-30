@@ -84,6 +84,7 @@ public class SystemDataInitializer implements ApplicationRunner {
                 ensurePermission("system:audit:login-log", "登录日志查询"),
                 ensurePermission("system:audit:operation-log", "操作日志查询"),
                 ensurePermission("system:api:list", "接口资源查询"),
+                ensurePermission("system:api:publish", "接口资源发布"),
                 ensurePermission("system:file:upload", "文件上传")
         );
 
@@ -260,8 +261,10 @@ public class SystemDataInitializer implements ApplicationRunner {
                 null, null, "system:audit:operation-log", "lucide:scroll-text", "button", 51);
         ensureMenu(system.getId(), "SystemApiResourceList", "接口资源查询", "/system#api-resource-list",
                 null, null, "system:api:list", "lucide:network", "button", 52);
+        ensureMenu(system.getId(), "SystemApiResourcePublish", "接口资源发布", "/system#api-resource-publish",
+                null, null, "system:api:publish", "lucide:badge-check", "button", 53);
         ensureMenu(system.getId(), "SystemFileUpload", "文件上传", "/system#file-upload",
-                null, null, "system:file:upload", "lucide:upload", "button", 53);
+                null, null, "system:file:upload", "lucide:upload", "button", 54);
     }
 
     private SystemMenuEntity ensureMenu(

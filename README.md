@@ -2,7 +2,7 @@
 
 ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
-当前产品版本：`v0.0.19`
+当前产品版本：`v0.0.20`
 
 ## 当前能力
 
@@ -95,6 +95,9 @@ pnpm build
 | `GET` | `/api/system/roles` | 查询角色列表 |
 | `GET` | `/api/system/api-resources/export` | 导出接口资源 CSV 清单 |
 | `GET` | `/api/system/api-resources/manifest` | 生成接口资源 Manifest |
+| `GET` | `/api/system/api-resources/manifest/snapshots` | 查询接口资源 Manifest 发布快照 |
+| `GET` | `/api/system/api-resources/manifest/snapshots/latest` | 查询最新接口资源 Manifest 发布快照 |
+| `POST` | `/api/system/api-resources/manifest/snapshots` | 发布接口资源 Manifest 快照 |
 | `POST` | `/api/system/api-resources/manifest/diff` | 对比接口资源 Manifest |
 | `POST` | `/api/system/api-resources/manifest/gate` | 校验接口资源 Manifest 发布门禁 |
 | `GET` | `/api/health` | 应用健康检查 |
