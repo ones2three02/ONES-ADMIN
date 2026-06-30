@@ -1,5 +1,11 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.22 - 2026-06-30
+
+- 接口治理违规项新增 `remediation` 修复建议字段，让 Jenkins、后续接口管理页和人工巡检能直接看到治理动作。
+- 为权限、`operationId`、生命周期元数据、OpenAPI 元数据、废弃接口等治理规则补充规则级修复建议。
+- 产品版本递增至 `v0.0.22`。
+
 ## v0.0.21 - 2026-06-30
 
 - 新增 `/api/system/api-resources/manifest/gate/latest` 接口，支持基于最新已发布 Manifest 快照执行接口契约门禁干跑。

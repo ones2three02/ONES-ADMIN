@@ -70,6 +70,16 @@ class ApiResourceOperationIdGovernanceTest {
         assertThat(operationViolations)
                 .allSatisfy(violation -> assertThat(violation.path("severity").asText()).isEqualTo("ERROR"));
         assertThat(operationViolations)
+                .allSatisfy(violation -> assertThat(violation.path("remediation").asText()).isNotBlank());
+        assertThat(operationViolations)
+                .filteredOn(violation -> "OPERATION_ID_INVALID_FORMAT".equals(violation.path("ruleCode").asText()))
+                .allSatisfy(violation -> assertThat(violation.path("remediation").asText())
+                        .contains("Controller_动作"));
+        assertThat(operationViolations)
+                .filteredOn(violation -> "OPERATION_ID_DUPLICATED".equals(violation.path("ruleCode").asText()))
+                .allSatisfy(violation -> assertThat(violation.path("remediation").asText())
+                        .contains("唯一 operationId"));
+        assertThat(operationViolations)
                 .extracting(violation -> violation.path("operationId").asText())
                 .contains("Duplicated_operationId", "bad.operation.id");
     }

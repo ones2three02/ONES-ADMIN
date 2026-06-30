@@ -21,7 +21,8 @@ public record ApiResourceGovernanceResponse(
             String operationId,
             String module,
             String summary,
-            String message
+            String message,
+            String remediation
     ) {
     }
 }

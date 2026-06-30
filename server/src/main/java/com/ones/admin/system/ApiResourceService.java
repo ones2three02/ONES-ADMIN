@@ -88,7 +88,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.21}") String applicationVersion
+            @Value("${ones.version:v0.0.22}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -1093,8 +1093,45 @@ public class ApiResourceService {
                 resource.operationId(),
                 resource.module(),
                 resource.summary(),
-                message
+                message,
+                remediation(ruleCode)
         );
+    }
+
+    private String remediation(String ruleCode) {
+        return switch (ruleCode) {
+            case "API_PERMISSION_MISSING" ->
+                    "为接口补充 @SaCheckPermission 权限点；如果确实只需要登录态访问，补充 @ApiAccessPolicy 并说明原因";
+            case "PERMISSION_CODE_INVALID_FORMAT" ->
+                    "按 permissionCodePattern 调整权限码，建议使用 模块:资源:动作 形式，例如 system:user:list";
+            case "OPERATION_ID_MISSING" ->
+                    "在 @Operation 中补充稳定 operationId，建议使用 Controller_动作 形式";
+            case "OPERATION_ID_INVALID_FORMAT" ->
+                    "按 operationIdPattern 调整 operationId，建议使用 Controller_动作 形式，避免点号、短横线和空格";
+            case "PERMISSION_CODE_UNREGISTERED" ->
+                    "在系统权限初始化或权限迁移中注册该权限码，并确认超级管理员角色可获得授权";
+            case "SYSTEM_WRITE_API_WITHOUT_PERMISSION" ->
+                    "系统写接口必须补充 @SaCheckPermission，或通过 @ApiAccessPolicy 明确例外并接受安全评审";
+            case "PERMISSION_CODE_UNASSIGNABLE" ->
+                    "将权限点挂载到菜单权限树的 button 节点，确保角色授权页面可以分配该能力";
+            case "DEPRECATED_API" ->
+                    "补充迁移说明、下线版本和替代接口，并在发布计划中跟踪调用方迁移";
+            case "MISSING_API_OWNER" ->
+                    "在 @ApiResourceMetadata 中补充 owner，明确接口资产负责人";
+            case "MISSING_API_SINCE_VERSION" ->
+                    "在 @ApiResourceMetadata 中补充 sinceVersion，记录接口首次引入版本";
+            case "MISSING_API_LIFECYCLE" ->
+                    "在 @ApiResourceMetadata 中补充 lifecycle，明确 ACTIVE、DEPRECATED 等生命周期状态";
+            case "MISSING_API_RISK_LEVEL" ->
+                    "在 @ApiResourceMetadata 中补充 riskLevel，写接口和敏感接口建议标记为 HIGH";
+            case "MISSING_MODULE_TAG" ->
+                    "在 Controller 上补充 @Tag，确保接口可归属到清晰模块";
+            case "MISSING_OPERATION_SUMMARY" ->
+                    "在方法上补充 @Operation(summary = \"...\")，用业务语义描述接口用途";
+            case "OPERATION_ID_DUPLICATED" ->
+                    "为重复接口分配唯一 operationId，建议使用具体 Controller_动作 命名，避免客户端生成和接口目录引用冲突";
+            default -> "根据 ruleCode 对应的接口治理规范补充元数据、权限配置或发布说明";
+        };
     }
 
     private long countSeverity(List<ApiResourceGovernanceResponse.Violation> violations, String severity) {
