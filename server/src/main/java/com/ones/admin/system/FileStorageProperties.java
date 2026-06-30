@@ -95,6 +95,7 @@ public class FileStorageProperties {
         private String accessKey = "";
         private String secretKey = "";
         private String bucket = "ones-admin";
+        private boolean proxyEnabled = false;
 
         public String getEndpoint() {
             return endpoint;
@@ -126,6 +127,14 @@ public class FileStorageProperties {
 
         public void setBucket(String bucket) {
             this.bucket = bucket;
+        }
+
+        public boolean isProxyEnabled() {
+            return proxyEnabled;
+        }
+
+        public void setProxyEnabled(boolean proxyEnabled) {
+            this.proxyEnabled = proxyEnabled;
         }
     }
 }

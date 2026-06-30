@@ -63,7 +63,7 @@ sa-token:
   is-print: false
 
 ones:
-  version: ${ONES_ADMIN_VERSION:v0.0.23}
+  version: ${ONES_ADMIN_VERSION:v0.0.24}
   security:
     login:
       max-failed-login-count: ${ONES_LOGIN_MAX_FAILED_COUNT:5}
@@ -81,6 +81,7 @@ ones:
       access-key: ${ONES_MINIO_ACCESS_KEY:}
       secret-key: ${ONES_MINIO_SECRET_KEY:}
       bucket: ${ONES_MINIO_BUCKET:ones-admin}
+      proxy-enabled: ${ONES_MINIO_PROXY_ENABLED:false}
     allowed-extensions:
       - jpg
       - jpeg
