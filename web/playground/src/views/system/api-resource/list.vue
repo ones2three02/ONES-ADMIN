@@ -11,9 +11,8 @@ import { Alert, Button, Card, Skeleton, Statistic, Tag } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
-  getApiResourceGovernance,
+  getApiResourceGovernanceReport,
   getApiResourceList,
-  getApiResourceSummary,
 } from '#/api';
 import { $t } from '#/locales';
 
@@ -21,10 +20,18 @@ import { useColumns, useGridFormSchema } from './table';
 
 defineOptions({ name: 'SystemApiResources' });
 
-const summary = ref<SystemApiResourceApi.ApiResourceSummary>();
-const governance = ref<SystemApiResourceApi.ApiResourceGovernance>();
+const governanceReport =
+  ref<SystemApiResourceApi.ApiResourceGovernanceReport>();
 const loadingOverview = ref(false);
 const loadError = ref('');
+
+const summary = computed(() => governanceReport.value?.summary);
+const governance = computed(() => governanceReport.value?.governance);
+const releaseGate = computed(() => governanceReport.value?.latestGate.gate);
+const gateChecks = computed(() => releaseGate.value?.checks.slice(0, 4) ?? []);
+const governanceRules = computed(
+  () => governanceReport.value?.rules.rules.slice(0, 6) ?? [],
+);
 
 const [Grid, gridApi] = useVbenVxeGrid({
   formOptions: {
@@ -107,6 +114,31 @@ const metrics = computed(() => [
   },
 ]);
 
+const gateStatus = computed(() => {
+  if (!releaseGate.value) {
+    return {
+      color: 'processing',
+      text: '加载中',
+    };
+  }
+  if (releaseGate.value.passed) {
+    return {
+      color: 'success',
+      text: '发布通过',
+    };
+  }
+  if (releaseGate.value.requiredManualReview) {
+    return {
+      color: 'warning',
+      text: '需要复核',
+    };
+  }
+  return {
+    color: 'error',
+    text: '发布阻断',
+  };
+});
+
 const topViolations = computed(() => {
   return governance.value?.violations.slice(0, 3) ?? [];
 });
@@ -115,14 +147,9 @@ async function loadOverview() {
   loadingOverview.value = true;
   loadError.value = '';
   try {
-    const [summaryResponse, governanceResponse] = await Promise.all([
-      getApiResourceSummary(),
-      getApiResourceGovernance(),
-    ]);
-    summary.value = summaryResponse;
-    governance.value = governanceResponse;
+    governanceReport.value = await getApiResourceGovernanceReport();
   } catch {
-    loadError.value = '接口治理概览加载失败，请稍后重试';
+    loadError.value = '接口治理报告加载失败，请稍后重试';
   } finally {
     loadingOverview.value = false;
   }
@@ -141,6 +168,16 @@ function renderGovernanceTag() {
     },
     () => governanceStatus.value.text,
   );
+}
+
+function getSeverityColor(severity: string) {
+  if (severity === 'ERROR') {
+    return 'error';
+  }
+  if (severity === 'WARN') {
+    return 'warning';
+  }
+  return 'processing';
 }
 
 onMounted(() => {
@@ -204,6 +241,115 @@ onMounted(() => {
         </Card>
       </div>
 
+      <div
+        v-if="governanceReport"
+        class="mb-4 grid gap-4 xl:grid-cols-2"
+      >
+        <Card variant="borderless">
+          <div class="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2 font-medium">
+                <IconifyIcon
+                  class="size-4 text-primary"
+                  icon="lucide:shield-check"
+                />
+                发布门禁
+              </div>
+              <div class="text-muted-foreground mt-1 text-xs">
+                对接口治理、破坏性变更和人工复核要求进行统一放行判断。
+              </div>
+            </div>
+            <Tag :color="gateStatus.color">{{ gateStatus.text }}</Tag>
+          </div>
+
+          <div class="mb-4 grid gap-3 sm:grid-cols-3">
+            <div class="rounded border border-border p-3">
+              <div class="text-muted-foreground text-xs">当前版本</div>
+              <div class="mt-1 text-sm font-medium">
+                {{ releaseGate?.currentVersion || governanceReport.applicationVersion }}
+              </div>
+            </div>
+            <div class="rounded border border-border p-3">
+              <div class="text-muted-foreground text-xs">破坏性变更</div>
+              <div class="mt-1 text-sm font-medium">
+                {{ releaseGate?.breakingChangeCount ?? 0 }}
+              </div>
+            </div>
+            <div class="rounded border border-border p-3">
+              <div class="text-muted-foreground text-xs">人工复核</div>
+              <div class="mt-1 text-sm font-medium">
+                {{ releaseGate?.requiredManualReview ? '需要' : '不需要' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div
+              v-for="check in gateChecks"
+              :key="check.checkCode"
+              class="rounded border border-border p-3"
+            >
+              <div class="mb-2 flex items-center justify-between gap-2">
+                <Tag :color="getSeverityColor(check.severity)">
+                  {{ check.severity }}
+                </Tag>
+                <span class="text-muted-foreground truncate text-xs">
+                  {{ check.checkCode }}
+                </span>
+              </div>
+              <div class="text-sm font-medium">{{ check.message }}</div>
+              <div class="text-muted-foreground mt-2 line-clamp-2 text-xs">
+                {{ check.remediation }}
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card variant="borderless">
+          <div class="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2 font-medium">
+                <IconifyIcon
+                  class="size-4 text-primary"
+                  icon="lucide:list-checks"
+                />
+                治理规则
+              </div>
+              <div class="text-muted-foreground mt-1 text-xs">
+                规则编码与后端校验结果保持一致，便于 CI、前端和人工巡检统一解释。
+              </div>
+            </div>
+            <Tag color="processing">
+              {{ governanceReport.rules.rules.length }} 条
+            </Tag>
+          </div>
+
+          <div class="space-y-3">
+            <div
+              v-for="rule in governanceRules"
+              :key="rule.ruleCode"
+              class="rounded border border-border p-3"
+            >
+              <div class="mb-2 flex items-center justify-between gap-2">
+                <div class="flex min-w-0 items-center gap-2">
+                  <Tag :color="getSeverityColor(rule.severity)">
+                    {{ rule.severity }}
+                  </Tag>
+                  <span class="truncate text-xs font-medium">
+                    {{ rule.ruleCode }}
+                  </span>
+                </div>
+                <Tag v-if="rule.blocking" color="error">阻断</Tag>
+              </div>
+              <div class="text-sm font-medium">{{ rule.description }}</div>
+              <div class="text-muted-foreground mt-2 line-clamp-2 text-xs">
+                {{ rule.remediation }}
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
       <Card v-if="topViolations.length > 0" class="mb-4" variant="borderless">
         <div class="mb-3 flex items-center gap-2 font-medium">
           <IconifyIcon class="size-4 text-warning" icon="lucide:triangle-alert" />
@@ -231,7 +377,7 @@ onMounted(() => {
         </div>
       </Card>
 
-      <Skeleton v-if="loadingOverview && !summary" active />
+      <Skeleton v-if="loadingOverview && !governanceReport" active />
 
       <Grid v-else table-title="接口资源清单">
         <template #toolbar-tools>

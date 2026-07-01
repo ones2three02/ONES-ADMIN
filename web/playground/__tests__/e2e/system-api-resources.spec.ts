@@ -20,6 +20,9 @@ test.describe('System API Resources Page', () => {
     await expect(
       pageContent.getByText('接口资源清单', { exact: true }),
     ).toBeVisible();
+    await expect(pageContent.getByText('发布门禁', { exact: true })).toBeVisible();
+    await expect(pageContent.getByText('治理规则', { exact: true })).toBeVisible();
+    await expect(pageContent.getByText('API_GOVERNANCE_ERROR')).toBeVisible();
     await expect(
       pageContent.getByText('/api/system/api-resources', { exact: true }),
     ).toBeVisible();

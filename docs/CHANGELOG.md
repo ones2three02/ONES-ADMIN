@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.38 - 2026-07-01
+
+- 前端接口管理页接入 `/api/system/api-resources/governance/report` 聚合报告，统一消费后端治理汇总、规则目录和最新发布门禁干跑结果。
+- 接口管理页新增 `发布门禁` 面板，展示当前版本、破坏性变更数、人工复核要求和机器可读检查项，例如 `API_GOVERNANCE_ERROR`。
+- 接口管理页新增 `治理规则` 面板，展示规则编码、严重级别、阻断标识和修复建议，借鉴 Backstage API Catalog 的可发现性、Gravitee 的生命周期视角、Kong/APISIX/Tyk 的策略资产化思路。
+- Playwright 接口管理 E2E 增加发布门禁与治理规则断言，确保后端治理能力不只停留在接口层。
+- 产品版本递增至 `v0.0.38`。
+
 ## v0.0.37 - 2026-07-01
 
 - 后端接口管理新增 `/api/system/api-resources/governance/report` 聚合报告接口，一次性返回应用版本、生成时间、治理汇总、治理结果、规则目录、Manifest 和基于最新快照的 Gate 干跑结果。
