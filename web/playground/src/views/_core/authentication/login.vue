@@ -140,6 +140,10 @@ async function onSubmit(params: Recordable<any>) {
   >
     <template #title>
       <div class="enterprise-login-heading">
+        <div class="enterprise-login-eyebrow">
+          <span></span>
+          ONES-ADMIN ACCESS
+        </div>
         <h2>{{ $t('authentication.loginPanel.title') }}</h2>
         <p>{{ $t('authentication.loginPanel.subtitle') }}</p>
         <div class="enterprise-login-status">
@@ -148,8 +152,11 @@ async function onSubmit(params: Recordable<any>) {
             :key="item.title"
             class="enterprise-login-status-item"
           >
-            <strong>{{ item.title }}</strong>
-            <small>{{ item.description }}</small>
+            <span class="enterprise-login-status-dot"></span>
+            <div>
+              <strong>{{ item.title }}</strong>
+              <small>{{ item.description }}</small>
+            </div>
           </div>
         </div>
       </div>
@@ -159,13 +166,33 @@ async function onSubmit(params: Recordable<any>) {
 
 <style scoped>
 .enterprise-login-heading {
-  margin-bottom: 28px;
+  margin-bottom: 26px;
+}
+
+.enterprise-login-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: hsl(var(--primary));
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.enterprise-login-eyebrow span {
+  display: inline-block;
+  width: 28px;
+  height: 2px;
+  border-radius: 999px;
+  background: hsl(var(--primary));
+  box-shadow: 0 0 18px hsl(var(--primary) / 42%);
 }
 
 .enterprise-login-heading h2 {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   color: hsl(var(--foreground));
-  font-size: 36px;
+  font-size: 34px;
   font-weight: 800;
   letter-spacing: 0;
   line-height: 1.15;
@@ -181,22 +208,35 @@ async function onSubmit(params: Recordable<any>) {
 .enterprise-login-status {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 16px;
+  gap: 0;
+  overflow: hidden;
+  margin-top: 18px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+  background: hsl(var(--background) / 62%);
+  box-shadow: 0 18px 44px hsl(var(--primary) / 7%);
 }
 
 .enterprise-login-status-item {
   display: flex;
   min-width: 0;
-  flex-direction: column;
-  gap: 4px;
-  border: 1px solid hsl(var(--border));
-  border-radius: 10px;
-  padding: 9px 10px;
-  background:
-    linear-gradient(180deg, hsl(var(--primary) / 8%), transparent),
-    hsl(var(--background));
-  box-shadow: 0 10px 26px hsl(var(--primary) / 8%);
+  align-items: flex-start;
+  gap: 8px;
+  padding: 11px 12px;
+}
+
+.enterprise-login-status-item + .enterprise-login-status-item {
+  border-left: 1px solid hsl(var(--border));
+}
+
+.enterprise-login-status-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: hsl(var(--primary));
+  box-shadow: 0 0 14px hsl(var(--primary) / 52%);
 }
 
 .enterprise-login-status-item strong {
@@ -210,7 +250,9 @@ async function onSubmit(params: Recordable<any>) {
 }
 
 .enterprise-login-status-item small {
+  display: block;
   overflow: hidden;
+  margin-top: 4px;
   color: hsl(var(--muted-foreground));
   font-size: 11px;
   line-height: 1.35;
@@ -221,6 +263,11 @@ async function onSubmit(params: Recordable<any>) {
 @media (max-width: 480px) {
   .enterprise-login-status {
     grid-template-columns: 1fr;
+  }
+
+  .enterprise-login-status-item + .enterprise-login-status-item {
+    border-top: 1px solid hsl(var(--border));
+    border-left: 0;
   }
 }
 </style>

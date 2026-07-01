@@ -190,9 +190,15 @@ const logoSrc = computed(() => {
                 <span>{{ modeText }}</span>
               </div>
               <span class="login-mode-label">{{ modeLabel }}</span>
+              <div class="login-visual-brand">
+                <strong>ONES / 1S</strong>
+                <small>SYSTEM CORE VISUAL</small>
+              </div>
             </div>
 
             <div class="login-visual-stage">
+              <div class="login-axis login-axis-x"></div>
+              <div class="login-axis login-axis-y"></div>
               <div class="login-orbit login-orbit-outer"></div>
               <div class="login-orbit login-orbit-middle"></div>
               <div class="login-orbit login-orbit-inner"></div>
@@ -295,34 +301,35 @@ const logoSrc = computed(() => {
 
 <style scoped>
 .login-left-bg {
+  overflow: hidden;
   background:
-    radial-gradient(circle at 46% 40%, rgba(37, 99, 235, 14%), transparent 34%),
-    radial-gradient(circle at 76% 24%, rgba(99, 102, 241, 16%), transparent 28%),
-    radial-gradient(circle at 24% 76%, rgba(6, 182, 212, 10%), transparent 30%),
-    linear-gradient(135deg, #fbfdff 0%, #f3f7ff 48%, #eef5ff 100%);
+    radial-gradient(circle at 50% 40%, rgba(37, 99, 235, 18%), transparent 35%),
+    radial-gradient(circle at 78% 18%, rgba(99, 102, 241, 14%), transparent 30%),
+    radial-gradient(circle at 20% 80%, rgba(6, 182, 212, 10%), transparent 32%),
+    linear-gradient(135deg, #fbfdff 0%, #f4f8ff 45%, #edf5ff 100%);
   border-right: 1px solid rgba(37, 99, 235, 10%);
   color: #0b1536;
 }
 
 .login-background {
   background:
-    radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 22%) 0%, transparent 58%),
-    radial-gradient(circle at 30% 35%, rgba(124, 58, 237, 16%) 0%, transparent 44%),
-    radial-gradient(circle at 70% 58%, rgba(6, 182, 212, 14%) 0%, transparent 46%);
-  filter: blur(74px);
+    radial-gradient(circle at 48% 48%, rgba(37, 99, 235, 24%) 0%, transparent 57%),
+    radial-gradient(circle at 32% 34%, rgba(124, 58, 237, 15%) 0%, transparent 44%),
+    radial-gradient(circle at 70% 58%, rgba(6, 182, 212, 15%) 0%, transparent 46%);
+  filter: blur(82px);
 }
 
 .login-grid {
   background-image:
-    linear-gradient(rgba(37, 99, 235, 6%) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(37, 99, 235, 6%) 1px, transparent 1px);
+    linear-gradient(rgba(37, 99, 235, 5%) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 5%) 1px, transparent 1px);
   background-size: 32px 32px;
-  opacity: 0.78;
-  mask-image: linear-gradient(to bottom, transparent, black 12%, black 82%, transparent);
+  opacity: 0.72;
+  mask-image: radial-gradient(circle at 50% 48%, black 0%, black 58%, transparent 82%);
 }
 
 .login-visual-content {
-  padding: 48px 72px 40px 56px;
+  padding: 42px 58px 34px 44px;
 }
 
 .login-visual-inner {
@@ -330,29 +337,38 @@ const logoSrc = computed(() => {
   z-index: 1;
   display: flex;
   box-sizing: border-box;
-  width: min(100%, 760px);
-  height: min(82vh, 720px);
-  min-height: 620px;
+  width: min(100%, 860px);
+  height: min(86vh, 760px);
+  min-height: 640px;
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
-  border: 1px solid rgba(37, 99, 235, 12%);
-  border-radius: 28px;
-  padding: 22px 28px 24px;
+  border: 1px solid rgba(37, 99, 235, 10%);
+  border-radius: 30px;
+  padding: 22px 30px 24px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 78%), rgba(255, 255, 255, 54%)),
-    radial-gradient(circle at 50% 42%, rgba(37, 99, 235, 12%), transparent 48%);
+    radial-gradient(circle at 50% 45%, rgba(37, 99, 235, 12%), transparent 48%),
+    linear-gradient(180deg, rgba(255, 255, 255, 72%), rgba(255, 255, 255, 42%));
   box-shadow:
-    0 28px 80px rgba(37, 99, 235, 14%),
-    inset 0 1px 0 rgba(255, 255, 255, 72%);
-  backdrop-filter: blur(18px);
+    0 32px 90px rgba(37, 99, 235, 13%),
+    inset 0 1px 0 rgba(255, 255, 255, 76%);
+  backdrop-filter: blur(20px);
 }
 
 .login-visual-inner::before {
   position: absolute;
-  inset: 18px;
-  border: 1px solid rgba(37, 99, 235, 7%);
-  border-radius: 22px;
+  inset: 16px;
+  border: 1px solid rgba(37, 99, 235, 8%);
+  border-radius: 24px;
+  pointer-events: none;
+  content: '';
+}
+
+.login-visual-inner::after {
+  position: absolute;
+  inset: auto 8% 74px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 24%), transparent);
   pointer-events: none;
   content: '';
 }
@@ -385,26 +401,49 @@ const logoSrc = computed(() => {
   text-transform: uppercase;
 }
 
+.login-visual-brand {
+  display: flex;
+  margin-left: auto;
+  flex-direction: column;
+  align-items: flex-end;
+  color: rgba(11, 21, 54, 62%);
+  line-height: 1.2;
+}
+
+.login-visual-brand strong {
+  color: #0b1536;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.login-visual-brand small {
+  margin-top: 3px;
+  color: rgba(11, 21, 54, 42%);
+  font-size: 10px;
+  font-weight: 700;
+}
+
 .login-visual-stage {
   position: relative;
   isolation: isolate;
-  height: 490px;
-  margin-top: 6px;
+  height: 510px;
+  margin-top: 2px;
 }
 
 .login-visual-stage::before {
   position: absolute;
-  top: 56%;
+  top: 55%;
   left: 50%;
   z-index: -1;
-  width: 430px;
-  height: 168px;
+  width: 490px;
+  height: 178px;
   border-radius: 50%;
   background:
-    radial-gradient(circle, rgba(37, 99, 235, 22%), transparent 62%),
-    radial-gradient(circle, rgba(6, 182, 212, 18%), transparent 70%);
+    radial-gradient(circle, rgba(37, 99, 235, 24%), transparent 62%),
+    radial-gradient(circle, rgba(6, 182, 212, 18%), transparent 70%),
+    linear-gradient(90deg, transparent, rgba(124, 58, 237, 18%), transparent);
   filter: blur(8px);
-  transform: translate(-50%, -50%) rotate(-6deg);
+  transform: translate(-50%, -50%) rotate(-7deg);
   content: '';
 }
 
@@ -413,24 +452,47 @@ const logoSrc = computed(() => {
   top: 50%;
   left: 50%;
   z-index: -1;
-  width: 600px;
-  height: 360px;
+  width: 680px;
+  height: 406px;
   border-radius: 50%;
   background:
-    linear-gradient(90deg, transparent 49%, rgba(37, 99, 235, 18%) 50%, transparent 51%),
-    linear-gradient(0deg, transparent 49%, rgba(37, 99, 235, 12%) 50%, transparent 51%);
-  opacity: 0.7;
-  transform: translate(-50%, -50%) rotate(-10deg);
+    linear-gradient(90deg, transparent 49.6%, rgba(37, 99, 235, 16%) 50%, transparent 50.4%),
+    linear-gradient(0deg, transparent 49.6%, rgba(37, 99, 235, 10%) 50%, transparent 50.4%);
+  opacity: 0.72;
+  transform: translate(-50%, -50%) rotate(-9deg);
   content: '';
+}
+
+.login-axis {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 20%), transparent);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.login-axis-x {
+  width: 660px;
+  height: 1px;
+  transform: translate(-50%, -50%);
+}
+
+.login-axis-y {
+  width: 1px;
+  height: 390px;
+  transform: translate(-50%, -50%) rotate(180deg);
 }
 
 .login-orbit {
   position: absolute;
   inset: 50%;
-  border: 1px solid rgba(37, 99, 235, 22%);
+  border: 1px solid rgba(37, 99, 235, 24%);
   border-style: dashed;
   border-radius: 50%;
-  box-shadow: 0 0 32px rgba(37, 99, 235, 10%);
+  box-shadow: 0 0 34px rgba(37, 99, 235, 11%);
+  animation: login-orbit-breathe 8s ease-in-out infinite;
   transform: translate(-50%, -50%);
 }
 
@@ -446,41 +508,41 @@ const logoSrc = computed(() => {
 }
 
 .login-orbit::before {
-  top: 18%;
-  right: 13%;
+  top: 16%;
+  right: 14%;
 }
 
 .login-orbit::after {
-  bottom: 14%;
-  left: 21%;
+  bottom: 15%;
+  left: 20%;
 }
 
 .login-orbit-outer {
-  width: 540px;
-  height: 320px;
-  transform: translate(-50%, -50%) rotate(-10deg);
+  width: 610px;
+  height: 356px;
+  transform: translate(-50%, -50%) rotate(-9deg);
 }
 
 .login-orbit-middle {
-  width: 450px;
-  height: 270px;
-  opacity: 0.76;
+  width: 510px;
+  height: 300px;
+  opacity: 0.78;
   transform: translate(-50%, -50%) rotate(12deg);
 }
 
 .login-orbit-inner {
-  width: 330px;
-  height: 205px;
-  opacity: 0.62;
-  transform: translate(-50%, -50%) rotate(-24deg);
+  width: 382px;
+  height: 232px;
+  opacity: 0.66;
+  transform: translate(-50%, -50%) rotate(-23deg);
 }
 
 .login-scan-line {
   position: absolute;
-  top: 11%;
+  top: 10%;
   left: 50%;
   width: 1px;
-  height: 78%;
+  height: 80%;
   background: linear-gradient(transparent, rgba(37, 99, 235, 46%), transparent);
   box-shadow: 0 0 18px rgba(37, 99, 235, 28%);
   transform: translateX(-50%);
@@ -491,26 +553,42 @@ const logoSrc = computed(() => {
   top: 50%;
   left: 50%;
   z-index: 1;
-  width: 336px;
-  height: 336px;
+  width: 386px;
+  height: 386px;
   overflow: hidden;
-  border: 1px solid rgba(37, 99, 235, 18%);
-  border-radius: 34px;
-  background: rgba(255, 255, 255, 36%);
+  border: 1px solid rgba(37, 99, 235, 16%);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 64%), rgba(255, 255, 255, 10%)),
+    rgba(255, 255, 255, 28%);
   box-shadow:
-    0 30px 86px rgba(37, 99, 235, 22%),
-    0 0 0 12px rgba(255, 255, 255, 34%),
-    inset 0 1px 0 rgba(255, 255, 255, 58%);
+    0 38px 110px rgba(37, 99, 235, 24%),
+    0 0 0 16px rgba(255, 255, 255, 26%),
+    inset 0 1px 0 rgba(255, 255, 255, 62%);
   animation: login-core-float 5s ease-in-out infinite;
+  mask-image: radial-gradient(circle, black 0%, black 66%, transparent 78%);
   transform: translate(-50%, -50%);
+}
+
+.login-core-visual::before {
+  position: absolute;
+  inset: 62%;
+  z-index: 1;
+  width: 68%;
+  height: 24%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37, 99, 235, 24%), transparent 68%);
+  filter: blur(8px);
+  transform: translate(-50%, -50%);
+  content: '';
 }
 
 .login-core-visual::after {
   position: absolute;
-  inset: 14px;
-  border: 1px solid rgba(125, 211, 252, 24%);
-  border-radius: 26px;
-  box-shadow: inset 0 0 32px rgba(37, 99, 235, 20%);
+  inset: 40px;
+  border: 1px solid rgba(125, 211, 252, 20%);
+  border-radius: 999px;
+  box-shadow: inset 0 0 34px rgba(37, 99, 235, 20%);
   pointer-events: none;
   content: '';
 }
@@ -526,32 +604,35 @@ const logoSrc = computed(() => {
   position: absolute;
   z-index: 2;
   display: flex;
-  width: 178px;
-  min-height: 70px;
+  width: 186px;
+  min-height: 74px;
   align-items: flex-start;
-  gap: 10px;
-  border: 1px solid rgba(37, 99, 235, 10%);
-  border-radius: 18px;
-  padding: 10px;
-  background: rgba(255, 255, 255, 66%);
+  gap: 12px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
   color: rgba(11, 21, 54, 74%);
-  box-shadow: 0 16px 44px rgba(37, 99, 235, 10%);
-  backdrop-filter: blur(16px);
+  box-shadow: none;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 48%);
 }
 
 .login-node-icon {
   display: inline-flex;
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(37, 99, 235, 15%);
+  border: 1px solid rgba(37, 99, 235, 14%);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 82%);
+  background:
+    radial-gradient(circle at 38% 28%, rgba(255, 255, 255, 92%), rgba(255, 255, 255, 66%)),
+    rgba(255, 255, 255, 74%);
   color: #2563eb;
   box-shadow:
-    0 14px 34px rgba(37, 99, 235, 16%),
+    0 18px 38px rgba(37, 99, 235, 18%),
+    0 0 0 8px rgba(37, 99, 235, 5%),
     inset 0 0 18px rgba(37, 99, 235, 8%);
 }
 
@@ -563,8 +644,8 @@ const logoSrc = computed(() => {
 
 .login-node-copy strong {
   color: #0b1536;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   line-height: 1.2;
 }
 
@@ -581,60 +662,61 @@ const logoSrc = computed(() => {
   color: rgba(11, 21, 54, 48%);
   font-size: 11px;
   font-style: normal;
-  line-height: 1.35;
+  line-height: 1.45;
 }
 
 .login-node-top {
-  top: 0;
+  top: 4px;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .login-node-right-top {
-  top: 90px;
-  right: 0;
+  top: 88px;
+  right: 6px;
 }
 
 .login-node-right-middle {
-  top: 222px;
+  top: 226px;
   right: 0;
 }
 
 .login-node-right-bottom {
-  right: 18px;
-  bottom: 44px;
+  right: 28px;
+  bottom: 42px;
 }
 
 .login-node-bottom {
-  bottom: 0;
+  bottom: 4px;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .login-node-left-bottom {
-  bottom: 44px;
-  left: 18px;
+  bottom: 42px;
+  left: 28px;
 }
 
 .login-node-left-middle {
-  top: 222px;
+  top: 226px;
   left: 0;
 }
 
 .login-node-left-top {
-  top: 90px;
-  left: 0;
+  top: 88px;
+  left: 6px;
 }
 
 .login-visual-title {
   position: relative;
   z-index: 2;
+  margin-top: -4px;
   text-align: center;
 }
 
 .login-visual-title div {
   color: #0b1536;
-  font-size: 22px;
+  font-size: 23px;
   font-weight: 800;
   line-height: 1.25;
 }
@@ -651,12 +733,14 @@ const logoSrc = computed(() => {
   z-index: 2;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  border: 1px solid rgba(37, 99, 235, 10%);
-  border-radius: 18px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 58%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 58%);
+  gap: 10px;
+  border: 1px solid rgba(37, 99, 235, 9%);
+  border-radius: 16px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 44%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 58%),
+    0 16px 46px rgba(37, 99, 235, 8%);
 }
 
 .login-principle-item {
@@ -673,8 +757,9 @@ const logoSrc = computed(() => {
   flex: 0 0 30px;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  background: rgba(37, 99, 235, 9%);
+  border: 1px solid rgba(37, 99, 235, 10%);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 58%);
   color: #2563eb;
 }
 
@@ -715,11 +800,23 @@ const logoSrc = computed(() => {
   }
 }
 
+@keyframes login-orbit-breathe {
+  0%,
+  100% {
+    opacity: 0.84;
+  }
+
+  50% {
+    opacity: 0.58;
+  }
+}
+
 .dark {
   .login-left-bg {
     background:
-      radial-gradient(circle at 50% 46%, rgba(37, 99, 235, 24%), transparent 36%),
-      radial-gradient(circle at 70% 25%, rgba(124, 58, 237, 20%), transparent 30%),
+      radial-gradient(circle at 50% 46%, rgba(37, 99, 235, 30%), transparent 36%),
+      radial-gradient(circle at 70% 22%, rgba(124, 58, 237, 22%), transparent 31%),
+      radial-gradient(circle at 20% 78%, rgba(6, 182, 212, 10%), transparent 32%),
       linear-gradient(135deg, #050914 0%, #02040a 58%, #071022 100%);
     border-right-color: rgba(255, 255, 255, 6%);
     color: #f8fbff;
@@ -735,17 +832,17 @@ const logoSrc = computed(() => {
 
   .login-grid {
     background-image:
-      linear-gradient(rgba(37, 99, 235, 10%) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(37, 99, 235, 10%) 1px, transparent 1px);
+      linear-gradient(rgba(37, 99, 235, 9%) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(37, 99, 235, 9%) 1px, transparent 1px);
   }
 
   .login-visual-inner {
-    border-color: rgba(125, 211, 252, 10%);
+    border-color: rgba(125, 211, 252, 11%);
     background:
-      linear-gradient(180deg, rgba(15, 23, 42, 66%), rgba(2, 6, 23, 58%)),
-      radial-gradient(circle at 50% 42%, rgba(37, 99, 235, 20%), transparent 48%);
+      radial-gradient(circle at 50% 43%, rgba(37, 99, 235, 24%), transparent 47%),
+      linear-gradient(180deg, rgba(15, 23, 42, 58%), rgba(2, 6, 23, 42%));
     box-shadow:
-      0 30px 90px rgba(0, 0, 0, 34%),
+      0 34px 96px rgba(0, 0, 0, 36%),
       inset 0 1px 0 rgba(255, 255, 255, 8%);
   }
 
@@ -755,6 +852,18 @@ const logoSrc = computed(() => {
 
   .login-visual-header {
     color: rgba(248, 251, 255, 56%);
+  }
+
+  .login-visual-brand {
+    color: rgba(248, 251, 255, 54%);
+  }
+
+  .login-visual-brand strong {
+    color: #f8fbff;
+  }
+
+  .login-visual-brand small {
+    color: rgba(248, 251, 255, 38%);
   }
 
   .login-mode-pill {
@@ -767,6 +876,10 @@ const logoSrc = computed(() => {
   .login-orbit {
     border-color: rgba(59, 130, 246, 28%);
     box-shadow: 0 0 34px rgba(37, 99, 235, 18%);
+  }
+
+  .login-axis {
+    background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 18%), transparent);
   }
 
   .login-visual-stage::before {
@@ -784,10 +897,12 @@ const logoSrc = computed(() => {
 
   .login-core-visual {
     border-color: rgba(125, 211, 252, 18%);
-    background: rgba(2, 6, 23, 76%);
+    background:
+      radial-gradient(circle, rgba(37, 99, 235, 18%), rgba(2, 6, 23, 24%)),
+      rgba(2, 6, 23, 74%);
     box-shadow:
-      0 28px 90px rgba(37, 99, 235, 26%),
-      0 0 0 10px rgba(37, 99, 235, 8%);
+      0 34px 110px rgba(37, 99, 235, 30%),
+      0 0 0 16px rgba(37, 99, 235, 8%);
   }
 
   .login-core-visual::after {
@@ -796,17 +911,19 @@ const logoSrc = computed(() => {
   }
 
   .login-capability-node {
-    border-color: rgba(125, 211, 252, 10%);
-    background: rgba(15, 23, 42, 62%);
     color: rgba(248, 251, 255, 72%);
-    box-shadow: 0 18px 46px rgba(0, 0, 0, 20%);
+    text-shadow: 0 0 18px rgba(37, 99, 235, 16%);
   }
 
   .login-node-icon {
     border-color: rgba(125, 211, 252, 16%);
-    background: rgba(15, 23, 42, 78%);
+    background:
+      radial-gradient(circle at 35% 25%, rgba(37, 99, 235, 38%), rgba(15, 23, 42, 76%)),
+      rgba(15, 23, 42, 78%);
     color: #7dd3fc;
-    box-shadow: 0 14px 34px rgba(37, 99, 235, 24%);
+    box-shadow:
+      0 16px 40px rgba(37, 99, 235, 26%),
+      0 0 0 8px rgba(37, 99, 235, 9%);
   }
 
   .login-node-copy strong,
@@ -826,11 +943,12 @@ const logoSrc = computed(() => {
   .login-principles {
     border-top-color: rgba(125, 211, 252, 12%);
     border-color: rgba(125, 211, 252, 10%);
-    background: rgba(15, 23, 42, 54%);
+    background: rgba(15, 23, 42, 42%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 6%);
   }
 
   .login-principle-item span {
+    border-color: rgba(125, 211, 252, 12%);
     background: rgba(37, 99, 235, 16%);
     color: #7dd3fc;
   }
@@ -846,47 +964,47 @@ const logoSrc = computed(() => {
 
 @media (max-height: 840px) {
   .login-visual-content {
-    padding-top: 34px;
-    padding-bottom: 28px;
+    padding-top: 28px;
+    padding-bottom: 24px;
   }
 
   .login-visual-inner {
-    min-height: 560px;
+    min-height: 580px;
   }
 
   .login-visual-stage {
-    height: 430px;
+    height: 438px;
   }
 
   .login-core-visual {
-    width: 270px;
-    height: 270px;
+    width: 318px;
+    height: 318px;
   }
 
   .login-orbit-outer {
-    width: 490px;
-    height: 292px;
+    width: 548px;
+    height: 318px;
   }
 
   .login-orbit-middle {
-    width: 408px;
-    height: 244px;
+    width: 462px;
+    height: 270px;
   }
 
   .login-orbit-inner {
-    width: 300px;
-    height: 188px;
+    width: 346px;
+    height: 210px;
   }
 
   .login-capability-node {
-    width: 154px;
+    width: 162px;
     min-height: 62px;
   }
 
   .login-node-icon {
-    width: 36px;
-    height: 36px;
-    flex-basis: 36px;
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
   }
 
   .login-node-copy em {
@@ -896,12 +1014,12 @@ const logoSrc = computed(() => {
 
 @media (max-width: 1280px) {
   .login-visual-content {
-    padding-right: 48px;
-    padding-left: 38px;
+    padding-right: 36px;
+    padding-left: 30px;
   }
 
   .login-capability-node {
-    width: 148px;
+    width: 154px;
   }
 
   .login-node-copy em {
@@ -916,7 +1034,7 @@ const logoSrc = computed(() => {
   }
 
   .login-visual-inner {
-    width: min(100%, 620px);
+    width: min(100%, 720px);
   }
 }
 
@@ -926,8 +1044,8 @@ const logoSrc = computed(() => {
   }
 
   .login-visual-inner {
-    width: min(100%, 500px);
-    min-height: 560px;
+    width: min(100%, 560px);
+    min-height: 570px;
     padding: 18px;
   }
 
@@ -936,30 +1054,29 @@ const logoSrc = computed(() => {
   }
 
   .login-core-visual {
-    width: 270px;
-    height: 270px;
-  }
-
-  .login-orbit-outer {
-    width: 490px;
+    width: 292px;
     height: 292px;
   }
 
+  .login-orbit-outer {
+    width: 496px;
+    height: 288px;
+  }
+
   .login-orbit-middle {
-    width: 408px;
-    height: 244px;
+    width: 414px;
+    height: 242px;
   }
 
   .login-orbit-inner {
-    width: 300px;
-    height: 188px;
+    width: 312px;
+    height: 190px;
   }
 
   .login-capability-node {
-    width: 136px;
+    width: 138px;
     min-height: 58px;
     gap: 8px;
-    padding: 8px;
   }
 
   .login-node-icon {
@@ -984,6 +1101,13 @@ const logoSrc = computed(() => {
 @media (max-width: 1120px) {
   .login-principles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-core-visual,
+  .login-orbit {
+    animation: none;
   }
 }
 </style>
