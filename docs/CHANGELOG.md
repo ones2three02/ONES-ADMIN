@@ -1,5 +1,14 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.35 - 2026-07-01
+
+- 系统管理新增 `接口管理` 页面，按 Vben 现有后台风格展示接口治理状态、接口总数、写操作、权限缺失、废弃接口和接口资源清单。
+- 前端新增接口资源 API client，支持查询 `/system/api-resources`、`/summary` 和 `/governance`，并提供路径、模块、方法、访问策略、风险等级、生命周期和权限缺失筛选。
+- 后端动态菜单初始化新增 `/system/api-resources` 菜单页，并将 `system:api:list`、`system:api:publish` 权限挂到接口管理页面下，避免接口治理能力只存在于后端接口。
+- 新增前端 Playwright 接口管理冒烟用例，验证登录后可访问接口管理页、看到治理摘要和接口资源清单。
+- 补充企业级接口管理调研结论：Backstage 借鉴 API Catalog 的可发现性，Gravitee 借鉴 API 生命周期和集中目录，oasdiff 借鉴破坏性变更门禁，Spectral 借鉴规则化 API lint；ONES-ADMIN 当前继续以自有接口资源治理闭环落地。
+- 产品版本递增至 `v0.0.35`。
+
 ## v0.0.34 - 2026-06-30
 
 - 前端 Playwright 配置修复本地 E2E 端口契约，测试服务显式使用 `5555`，避免 `.env` 默认端口导致登录冒烟用例启动超时。

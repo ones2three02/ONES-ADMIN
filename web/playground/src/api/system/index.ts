@@ -1,3 +1,4 @@
+export * from './api-resource';
 export * from './dept';
 export * from './menu';
 export * from './overview';

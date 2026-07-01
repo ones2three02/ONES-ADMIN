@@ -48,6 +48,15 @@ const routes: RouteRecordRaw[] = [
         },
         component: () => import('#/views/system/dept/list.vue'),
       },
+      {
+        path: '/system/api-resources',
+        name: 'SystemApiResources',
+        meta: {
+          icon: 'lucide:network',
+          title: $t('system.apiResource.title'),
+        },
+        component: () => import('#/views/system/api-resource/list.vue'),
+      },
     ],
   },
 ];

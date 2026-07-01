@@ -255,16 +255,19 @@ public class SystemDataInitializer implements ApplicationRunner {
         ensureMenu(dept.getId(), "SystemDeptDelete", "删除部门", "/system/dept#delete",
                 null, null, "system:dept:delete", "carbon:trash-can", "button", 43);
 
+        SystemMenuEntity apiResources = ensureMenu(system.getId(), "SystemApiResources", "接口管理", "/system/api-resources",
+                "/system/api-resource/list", null, "system:api:list", "lucide:network", "menu", 50);
+        ensureMenu(apiResources.getId(), "SystemApiResourceList", "接口资源查询", "/system/api-resources#list",
+                null, null, "system:api:list", "lucide:list-filter", "button", 51);
+        ensureMenu(apiResources.getId(), "SystemApiResourcePublish", "接口资源发布", "/system/api-resources#publish",
+                null, null, "system:api:publish", "lucide:badge-check", "button", 52);
+
         ensureMenu(system.getId(), "SystemAuditLoginLog", "登录日志查询", "/system#audit-login-log",
-                null, null, "system:audit:login-log", "lucide:shield-check", "button", 50);
+                null, null, "system:audit:login-log", "lucide:shield-check", "button", 60);
         ensureMenu(system.getId(), "SystemAuditOperationLog", "操作日志查询", "/system#audit-operation-log",
-                null, null, "system:audit:operation-log", "lucide:scroll-text", "button", 51);
-        ensureMenu(system.getId(), "SystemApiResourceList", "接口资源查询", "/system#api-resource-list",
-                null, null, "system:api:list", "lucide:network", "button", 52);
-        ensureMenu(system.getId(), "SystemApiResourcePublish", "接口资源发布", "/system#api-resource-publish",
-                null, null, "system:api:publish", "lucide:badge-check", "button", 53);
+                null, null, "system:audit:operation-log", "lucide:scroll-text", "button", 61);
         ensureMenu(system.getId(), "SystemFileUpload", "文件上传", "/system#file-upload",
-                null, null, "system:file:upload", "lucide:upload", "button", 54);
+                null, null, "system:file:upload", "lucide:upload", "button", 62);
     }
 
     private SystemMenuEntity ensureMenu(

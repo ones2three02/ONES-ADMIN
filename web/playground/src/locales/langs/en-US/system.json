@@ -23,6 +23,9 @@
     "operation": "Operation",
     "parentDept": "Parent Department"
   },
+  "apiResource": {
+    "title": "API Management"
+  },
   "menu": {
     "title": "Menu Management",
     "parent": "Parent Menu",

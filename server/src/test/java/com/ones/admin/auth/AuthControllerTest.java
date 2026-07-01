@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -66,6 +67,7 @@ class AuthControllerTest {
 
         mockMvc.perform(get("/api/system/menus/routes").header("Authorization", "Bearer " + tokenValue))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].component").value("BasicLayout"));
+                .andExpect(jsonPath("$.data[0].component").value("BasicLayout"))
+                .andExpect(jsonPath("$..path", hasItem("/system/api-resources")));
     }
 }
