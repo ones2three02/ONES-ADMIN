@@ -70,6 +70,16 @@
       }
     }
   },
+  "loginPanel": {
+    "title": "安全登录",
+    "subtitle": "使用统一身份进入 ONES-ADMIN 企业级管理平台，所有登录行为都会进入安全审计链路。",
+    "authTitle": "统一认证",
+    "authDescription": "账号与权限联动",
+    "lockTitle": "锁定保护",
+    "lockDescription": "失败自动防护",
+    "auditTitle": "审计追踪",
+    "auditDescription": "追踪ID可定位"
+  },
   "loginSuccess": "登录成功",
   "loginSuccessDesc": "欢迎回来",
   "loginSubtitle": "请输入账号信息，进入 ONES-ADMIN 企业级管理平台",

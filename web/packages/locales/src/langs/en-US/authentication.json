@@ -70,6 +70,16 @@
       }
     }
   },
+  "loginPanel": {
+    "title": "Secure Login",
+    "subtitle": "Use unified identity to enter the ONES-ADMIN enterprise platform. Every sign-in is linked to the security audit trail.",
+    "authTitle": "Unified Auth",
+    "authDescription": "Account and access",
+    "lockTitle": "Lock Guard",
+    "lockDescription": "Failure protection",
+    "auditTitle": "Audit Trace",
+    "auditDescription": "Trace ID ready"
+  },
   "loginSuccess": "Login Successful",
   "loginSuccessDesc": "Welcome Back",
   "loginSubtitle": "Enter your account details to access the ONES-ADMIN enterprise platform",

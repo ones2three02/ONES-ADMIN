@@ -33,9 +33,7 @@ export async function completeSliderCaptcha(page: Page) {
   await page.mouse.move(targetX, targetY, { steps: 20 }); // 拖动到目标位置
   await page.mouse.up(); // 松开鼠标
 
-  // 在拖动后进行断言，检查action是否在预期位置,
-  const newActionBoundingBox = await sliderCaptchaAction.boundingBox();
-  expect(newActionBoundingBox?.x).toBeGreaterThan(actionBoundingBox.x);
+  // 验证真实通过态，避免和滑块完成后的动画或复位位置耦合。
   await expect(sliderCaptcha).toContainText(/Passed|验证通过/);
 }
 

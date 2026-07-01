@@ -13,6 +13,15 @@ test.describe('Auth Login Page Tests', () => {
     expect(title).toContain('ONES-ADMIN');
   });
 
+  test('should present enterprise login surface', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: '安全登录' })).toBeVisible();
+    await expect(page.getByText('统一认证', { exact: true })).toBeVisible();
+    await expect(page.getByText('锁定保护', { exact: true })).toBeVisible();
+    await expect(page.getByText('审计追踪', { exact: true })).toBeVisible();
+    await expect(page.getByText('创建账号', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('其他登录方式', { exact: true })).toHaveCount(0);
+  });
+
   // 测试用例: 成功登录
   test('should successfully login with valid credentials', async ({ page }) => {
     await authLogin(page);
