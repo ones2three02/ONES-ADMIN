@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.37 - 2026-07-01
+
+- 后端接口管理新增 `/api/system/api-resources/governance/report` 聚合报告接口，一次性返回应用版本、生成时间、治理汇总、治理结果、规则目录、Manifest 和基于最新快照的 Gate 干跑结果。
+- 接口治理报告沿用 `system:api:list` 权限，便于 Jenkins、后续接口管理页和人工巡检消费同一份机器可读报告。
+- 前端接口资源 API client 补充治理报告类型与请求函数，为接口管理页继续扩展 Manifest、Gate 和规则目录视图打底。
+- 产品版本递增至 `v0.0.37`。
+
 ## v0.0.36 - 2026-07-01
 
 - 后端新增 Maven Enforcer 构建运行时门禁，在 `validate` 阶段要求 JDK 21+ 和 Maven 3.9.0+，避免 Jenkins 或本地误用 Java 8 时出现难以定位的 Spring class version 报错。

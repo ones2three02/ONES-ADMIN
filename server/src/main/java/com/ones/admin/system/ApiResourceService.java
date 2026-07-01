@@ -20,6 +20,7 @@ import com.ones.admin.system.dto.ApiResourceManifestSnapshotPublishResponse;
 import com.ones.admin.system.dto.ApiResourceManifestSnapshotQuery;
 import com.ones.admin.system.dto.ApiResourceManifestSnapshotResponse;
 import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
+import com.ones.admin.system.dto.ApiResourceGovernanceReportResponse;
 import com.ones.admin.system.dto.ApiResourceGovernanceRuleResponse;
 import com.ones.admin.system.dto.ApiResourceManifestDiffResponse;
 import com.ones.admin.system.dto.ApiResourceManifestGateRequest;
@@ -49,6 +50,8 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HexFormat;
@@ -273,7 +276,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.36}") String applicationVersion
+            @Value("${ones.version:v0.0.37}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -358,6 +361,18 @@ public class ApiResourceService {
                 OPERATION_ID_PATTERN_TEXT,
                 API_VERSION_PATTERN_TEXT,
                 rules
+        );
+    }
+
+    public ApiResourceGovernanceReportResponse generateGovernanceReport() {
+        return new ApiResourceGovernanceReportResponse(
+                applicationVersion,
+                OffsetDateTime.now(ZoneOffset.UTC).toString(),
+                summarize(),
+                checkGovernance(),
+                listGovernanceRules(),
+                generateManifest(),
+                gateManifestWithLatestSnapshot(new ApiResourceManifestLatestGateRequest(false, null))
         );
     }
 

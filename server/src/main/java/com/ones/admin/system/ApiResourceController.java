@@ -8,6 +8,7 @@ import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.system.dto.ApiResourceGovernanceResponse;
+import com.ones.admin.system.dto.ApiResourceGovernanceReportResponse;
 import com.ones.admin.system.dto.ApiResourceGovernanceRuleResponse;
 import com.ones.admin.system.dto.ApiResourceManifestDiffResponse;
 import com.ones.admin.system.dto.ApiResourceManifestGateRequest;
@@ -79,6 +80,13 @@ public class ApiResourceController {
     @Operation(summary = "查询接口治理规则目录")
     public ApiResult<ApiResourceGovernanceRuleResponse> listApiResourceGovernanceRules() {
         return ApiResult.ok(apiResourceService.listGovernanceRules());
+    }
+
+    @GetMapping("/governance/report")
+    @SaCheckPermission("system:api:list")
+    @Operation(summary = "生成接口治理报告")
+    public ApiResult<ApiResourceGovernanceReportResponse> generateApiResourceGovernanceReport() {
+        return ApiResult.ok(apiResourceService.generateGovernanceReport());
     }
 
     @GetMapping("/manifest")

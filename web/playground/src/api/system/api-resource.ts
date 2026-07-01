@@ -76,6 +76,91 @@ export namespace SystemApiResourceApi {
     severity: 'ERROR' | 'WARN';
     summary?: string;
   }
+
+  export interface ApiResourceGovernanceRule {
+    blocking: boolean;
+    category: string;
+    description: string;
+    remediation: string;
+    ruleCode: string;
+    severity: 'ERROR' | 'INFO' | 'WARN';
+  }
+
+  export interface ApiResourceGovernanceRules {
+    apiVersionPattern: string;
+    operationIdPattern: string;
+    permissionCodePattern: string;
+    rules: ApiResourceGovernanceRule[];
+  }
+
+  export interface ApiResourceManifest {
+    applicationVersion: string;
+    checksum: string;
+    checksumAlgorithm: string;
+    resources: ApiResourceManifestResource[];
+    total: number;
+  }
+
+  export interface ApiResourceManifestResource {
+    apiKey: string;
+    authType: string;
+    deprecated: boolean;
+    handler: string;
+    lifecycle: string;
+    method: string;
+    operationId: string;
+    owner?: string;
+    path: string;
+    permissionCodes: string[];
+    permissionMode?: string;
+    repeatSubmitProtected: boolean;
+    replacementApiKey?: string;
+    riskLevel: string;
+    sinceVersion?: string;
+    sunsetVersion?: string;
+    writeOperation: boolean;
+  }
+
+  export interface ApiResourceManifestGate {
+    breakingChangeCount: number;
+    checks: ApiResourceManifestGateCheck[];
+    currentVersion?: string;
+    governanceErrorCount: number;
+    governanceWarningCount: number;
+    passed: boolean;
+    previousVersion?: string;
+    reasons: string[];
+    requiredManualReview: boolean;
+    reviewReasonRequired: boolean;
+    status: string;
+  }
+
+  export interface ApiResourceManifestGateCheck {
+    blocking: boolean;
+    checkCode: string;
+    message: string;
+    passed: boolean;
+    remediation: string;
+    severity: 'ERROR' | 'INFO' | 'WARN';
+  }
+
+  export interface ApiResourceManifestLatestGate {
+    baselineAvailable: boolean;
+    baselineChecksum?: string;
+    baselineSnapshotId?: number;
+    baselineVersion?: string;
+    gate: ApiResourceManifestGate;
+  }
+
+  export interface ApiResourceGovernanceReport {
+    applicationVersion: string;
+    generatedAt: string;
+    governance: ApiResourceGovernance;
+    latestGate: ApiResourceManifestLatestGate;
+    manifest: ApiResourceManifest;
+    rules: ApiResourceGovernanceRules;
+    summary: ApiResourceSummary;
+  }
 }
 
 interface PageResult<T> {
@@ -125,5 +210,11 @@ export async function getApiResourceSummary() {
 export async function getApiResourceGovernance() {
   return requestClient.get<SystemApiResourceApi.ApiResourceGovernance>(
     '/system/api-resources/governance',
+  );
+}
+
+export async function getApiResourceGovernanceReport() {
+  return requestClient.get<SystemApiResourceApi.ApiResourceGovernanceReport>(
+    '/system/api-resources/governance/report',
   );
 }

@@ -329,6 +329,39 @@ class ApiResourceControllerTest {
     }
 
     @Test
+    void generateApiResourceGovernanceReportForCiAndFrontend() throws Exception {
+        String token = login("admin", "admin123");
+
+        String response = mockMvc.perform(get("/api/system/api-resources/governance/report")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.37"))
+                .andExpect(jsonPath("$.data.summary.total").value(49))
+                .andExpect(jsonPath("$.data.governance.passed").value(true))
+                .andExpect(jsonPath("$.data.governance.total").value(49))
+                .andExpect(jsonPath("$.data.manifest.total").value(49))
+                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.37"))
+                .andExpect(jsonPath("$.data.latestGate.gate.checks[0].checkCode").value("API_GOVERNANCE_ERROR"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode report = objectMapper.readTree(response).path("data");
+        assertThat(report.path("generatedAt").asText()).isNotBlank();
+        assertThat(report.at("/rules/rules").size()).isGreaterThanOrEqualTo(15);
+        assertThat(report.path("manifest").path("checksum").asText()).matches("^[a-f0-9]{64}$");
+        JsonNode reportResource = findResource(
+                report.path("manifest").path("resources"),
+                "GET",
+                "/api/system/api-resources/governance/report"
+        );
+        assertThat(reportResource.path("operationId").asText())
+                .isEqualTo("ApiResourceController_generateApiResourceGovernanceReport");
+        assertThat(permissionCodes(reportResource)).containsExactly("system:api:list");
+    }
+
+    @Test
     void exportApiResourcesAsCsv() throws Exception {
         String token = login("admin", "admin123");
 
@@ -368,9 +401,9 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.36"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.37"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
-                .andExpect(jsonPath("$.data.total").value(48))
+                .andExpect(jsonPath("$.data.total").value(49))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -427,10 +460,10 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.36"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.37"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
-                .andExpect(jsonPath("$.data.snapshot.total").value(48))
-                .andExpect(jsonPath("$.data.snapshot.manifest.total").value(48))
+                .andExpect(jsonPath("$.data.snapshot.total").value(49))
+                .andExpect(jsonPath("$.data.snapshot.manifest.total").value(49))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -526,7 +559,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.36"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.37"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))
@@ -655,6 +688,11 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
 
         mockMvc.perform(get("/api/system/api-resources/governance/rules")
+                        .header("Authorization", "Bearer " + operatorToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+
+        mockMvc.perform(get("/api/system/api-resources/governance/report")
                         .header("Authorization", "Bearer " + operatorToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
