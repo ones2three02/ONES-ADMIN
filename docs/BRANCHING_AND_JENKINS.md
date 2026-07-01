@@ -33,7 +33,8 @@ ONES-ADMIN 使用 `main + develop + 短生命周期分支` 的企业级分支模
 
 ### feature/* 或 Pull Request
 
-- 后端：`mvn test`
+- 后端构建节点配置 JDK 21+；Maven Enforcer 会在 `validate` 阶段提前拦截错误 JDK 或 Maven 版本。
+- 后端：`./mvnw test`
 - 前端：`pnpm -F @vben/playground run typecheck`
 - 前端：`pnpm -F @vben/playground run build`
 - 不部署，只作为质量门禁。
@@ -41,6 +42,7 @@ ONES-ADMIN 使用 `main + develop + 短生命周期分支` 的企业级分支模
 ### develop
 
 - 执行完整构建与测试。
+- 后端使用 JDK 21+ 和项目内 `./mvnw`，避免 Jenkins 节点默认 Java 版本漂移。
 - 生成开发环境制品。
 - 自动部署到开发环境。
 - 适合连接开发数据库、开发 Redis、开发 RabbitMQ。

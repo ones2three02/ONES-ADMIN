@@ -1,11 +1,11 @@
 # ONES-ADMIN 后端工程化审计与优化路线
 
-更新时间：2026-06-30
+更新时间：2026-07-01
 当前分支：develop
 
 ## 1. 调研来源
 
-本轮重点参考了以下开源企业后台项目，调研渠道为 agent-reach GitHub/dev 路由与 GitHub CLI，访问日期为 2026-06-30。
+本轮重点参考了以下开源企业后台项目，调研渠道为 agent-reach GitHub/dev 路由与 GitHub CLI，访问日期为 2026-07-01。
 
 | 项目 | 后端特征 | 可借鉴重点 |
 | --- | --- | --- |
@@ -43,12 +43,14 @@
 - Spectral 强调 OpenAPI 契约可规则化 lint，oasdiff 强调 method+path 级别识别接口差异；ONES-ADMIN 的接口扫描必须避免 `ALL` 泛匹配接口，否则 Manifest Diff、网关路由和客户端生成都会失去稳定契约。
 - Spectral/Optic 的 API lint 思路要求规范以规则编码沉淀，oasdiff 的差异治理要求版本元数据可比较；ONES-ADMIN 的 `sinceVersion`、`sunsetVersion` 必须遵循统一产品版本格式，避免接口目录只有文本而无法进入 Jenkins 审计。
 - ONES-ADMIN 当前保持 Spring Boot 3 + Sa-Token + MyBatis-Plus，不跟随 Cool Admin Java 切换 MyBatis-Flex；后续只吸收它的模块边界和初始化治理思想。
+- 本轮复核的接口管理开源标杆中，Backstage 适合借鉴 API Catalog 的可发现性与 Owner/Lifecycle 元数据，Gravitee 适合借鉴 API 生命周期与集中管理，Apicurio 适合借鉴 API/Schema Registry，SmartAdmin/CoolAdmin 继续作为后端安全、模块边界和初始化治理参考。
 
 ## 2. 当前后端基线
 
 已具备：
 
 - Spring Boot 3.5.x + Java 21。
+- Maven Enforcer 已在 `validate` 阶段强制校验 JDK 21+ 和 Maven 3.9.0+，避免 Jenkins 或本机误用 Java 8 时才在测试阶段暴露 class version 报错。
 - Sa-Token 登录认证，`/api/**` 默认登录保护。
 - MyBatis-Plus 数据访问。
 - 用户、角色、菜单、部门基础 RBAC。
@@ -142,8 +144,8 @@
   - 每条接口治理违规项均返回 `remediation` 修复建议，便于 Jenkins 输出可执行治理动作，也便于后续接口管理页直接展示整改指引。
   - 新增权限点 `system:api:list` 和 `system:api:publish`，超级管理员启动时自动补齐授权，接口查询与接口发布分权治理。
   - 新增文件上传权限点 `system:file:upload`，文件上传不再只是登录态即可访问。
-  - 审计日志、接口资源、文件上传等暂未落前端页面的权限，以菜单 button 节点挂入授权树，避免出现无页面组件的空路由。
-  - 暂不新增前端菜单，避免出现无页面组件的空路由；后续按 Vben 风格补接口管理页后再挂菜单。
+  - 接口管理已按 Vben 风格落地前端页面，并通过动态菜单挂载 `/system/api-resources`，`system:api:list` 与 `system:api:publish` 按页面按钮权限分权治理。
+  - 审计日志、文件上传等暂未落前端页面的权限，继续以菜单 button 节点挂入授权树，避免出现无页面组件的空路由。
 - 主要 Controller 补充 `@Tag`、`@Operation`，接口管理更清晰。
 - 文件上传改为配置化治理：
   - 上传目录、公开访问前缀、最大文件大小、允许后缀均可配置。
@@ -175,6 +177,10 @@
   - 登录日志支持按用户名、成功状态、IP、时间范围分页筛选。
   - 操作日志支持按用户、方法、路径、成功状态、响应码、TraceId、时间范围分页筛选。
 - 补充后端测试，覆盖登录、用户、文件上传、参数校验、TraceId、OpenAPI、登录日志、操作日志、防重复提交。
+- 新增 Maven Enforcer 构建运行时门禁：
+  - `validate` 阶段要求 JDK 21 或更高版本。
+  - `validate` 阶段要求 Maven 3.9.0 或更高版本。
+  - Jenkins 和本地开发建议优先使用项目内 `./mvnw`，并显式配置 `JAVA_HOME` 指向 JDK 21。
 
 ## 4. 后续优化路线
 
@@ -182,7 +188,7 @@
 
 - 扩展错误码目录：认证、权限、用户、角色、菜单、文件、系统等模块单独枚举。
 - 将统一分页模型逐步推广到用户、角色、菜单、部门、文件等列表接口，并规范分页接口命名。
-- 为接口资源清单增加导出、权限缺口治理建议、废弃接口下线计划，并在前端按 Vben 选型风格落地接口管理页。
+- 将接口管理页继续扩展到 Manifest 快照、Diff、Gate 检查项和规则目录视图，让前端能完整承接 Jenkins/人工巡检的接口治理闭环。
 - 为审计日志查询增加前端页面、导出、保留周期和清理策略。
 - 为防重复提交增加后台配置页、按接口覆盖默认间隔、Redis 不可用告警。
 
@@ -210,6 +216,7 @@
 - `develop`：持续集成、测试环境部署、日常开发合入。
 - `main`：稳定版本、正式环境部署来源。
 - Jenkins 先接 `develop` 做后端测试与构建：
+  - 后端构建节点必须配置 JDK 21+，Maven Enforcer 会在 `validate` 阶段提前拦截错误 JDK 或 Maven 版本
   - `cd server && ./mvnw test`
   - 检查 Flyway 迁移测试通过，确保 `flyway_schema_history` 有迁移记录
   - 登录测试账号后调用 `/api/system/api-resources/governance`，要求 `passed=true` 且 `errorCount=0`

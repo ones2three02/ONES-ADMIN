@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.36 - 2026-07-01
+
+- 后端新增 Maven Enforcer 构建运行时门禁，在 `validate` 阶段要求 JDK 21+ 和 Maven 3.9.0+，避免 Jenkins 或本地误用 Java 8 时出现难以定位的 Spring class version 报错。
+- README 和后端工程化审计文档补充 Java 21 / Maven Enforcer 基线，明确 Jenkins 应优先使用项目内 `./mvnw` 并配置 JDK 21。
+- 补充企业级接口管理调研结论：Backstage API Catalog 强调接口资产可发现性，Gravitee/Apicurio 强调接口生命周期与 API/Schema 注册，SmartAdmin/CoolAdmin 继续作为后端工程化、安全和模块边界参考。
+- 产品版本递增至 `v0.0.36`。
+
 ## v0.0.35 - 2026-07-01
 
 - 系统管理新增 `接口管理` 页面，按 Vben 现有后台风格展示接口治理状态、接口总数、写操作、权限缺失、废弃接口和接口资源清单。
