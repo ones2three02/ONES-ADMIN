@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { authLogin } from './common/auth';
+import { authLogin, completeSliderCaptcha } from './common/auth';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -16,5 +16,17 @@ test.describe('Auth Login Page Tests', () => {
   // 测试用例: 成功登录
   test('should successfully login with valid credentials', async ({ page }) => {
     await authLogin(page);
+  });
+
+  test('should show trace id when login fails', async ({ page }) => {
+    await page.locator(`input[name='username']`).fill('admin');
+    await page.locator(`input[name='password']`).fill('wrong-password');
+    await completeSliderCaptcha(page);
+
+    await page.waitForTimeout(300);
+    await page.getByRole('button', { name: 'login' }).click();
+
+    await expect(page.locator('.ant-message')).toContainText('用户名或密码错误');
+    await expect(page.locator('.ant-message')).toContainText('追踪ID');
   });
 });

@@ -2,14 +2,7 @@ import type { Page } from '@playwright/test';
 
 import { expect } from '@playwright/test';
 
-export async function authLogin(page: Page) {
-  // 确保登录表单正常
-  const usernameInput = await page.locator(`input[name='username']`);
-  await expect(usernameInput).toBeVisible();
-
-  const passwordInput = await page.locator(`input[name='password']`);
-  await expect(passwordInput).toBeVisible();
-
+export async function completeSliderCaptcha(page: Page) {
   const sliderCaptcha = await page.locator(`div[name='captcha']`);
   const sliderCaptchaAction = await page.locator(`div[name='captcha-action']`);
   await expect(sliderCaptcha).toBeVisible();
@@ -44,6 +37,17 @@ export async function authLogin(page: Page) {
   const newActionBoundingBox = await sliderCaptchaAction.boundingBox();
   expect(newActionBoundingBox?.x).toBeGreaterThan(actionBoundingBox.x);
   await expect(sliderCaptcha).toContainText(/Passed|验证通过/);
+}
+
+export async function authLogin(page: Page) {
+  // 确保登录表单正常
+  const usernameInput = await page.locator(`input[name='username']`);
+  await expect(usernameInput).toBeVisible();
+
+  const passwordInput = await page.locator(`input[name='password']`);
+  await expect(passwordInput).toBeVisible();
+
+  await completeSliderCaptcha(page);
 
   // 到这里已经校验成功，点击进行登录
   await page.waitForTimeout(300);

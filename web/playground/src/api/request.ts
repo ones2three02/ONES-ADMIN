@@ -73,6 +73,13 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     return token ? `Bearer ${token}` : null;
   }
 
+  function formatErrorMessage(messageText: string, traceId?: string) {
+    if (!traceId) {
+      return messageText;
+    }
+    return `${messageText}（追踪ID：${traceId}）`;
+  }
+
   // 请求头处理
   client.addRequestInterceptor({
     fulfilled: async (config) => {
@@ -111,8 +118,9 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       // 兼容后端常见错误字段 error/message
       const responseData = error?.response?.data ?? {};
       const errorMessage = responseData?.error ?? responseData?.message ?? '';
+      const traceId = responseData?.traceId;
       // 如果没有错误信息，则会根据状态码进行提示
-      message.error(errorMessage || msg);
+      message.error(formatErrorMessage(errorMessage || msg, traceId));
     }),
   );
 
