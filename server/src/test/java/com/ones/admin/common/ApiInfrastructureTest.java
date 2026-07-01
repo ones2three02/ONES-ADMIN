@@ -36,7 +36,8 @@ class ApiInfrastructureTest {
                         .header(TraceIdFilter.TRACE_ID_HEADER, "test-trace-123456"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(TraceIdFilter.TRACE_ID_HEADER, "test-trace-123456"))
-                .andExpect(jsonPath("$.code").value(0));
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.traceId").value("test-trace-123456"));
     }
 
     @Test
@@ -45,11 +46,13 @@ class ApiInfrastructureTest {
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header(TraceIdFilter.TRACE_ID_HEADER, "validation-trace-123456")
                         .content(body))
                 .andExpect(status().isBadRequest())
-                .andExpect(header().string(TraceIdFilter.TRACE_ID_HEADER, not(blankOrNullString())))
+                .andExpect(header().string(TraceIdFilter.TRACE_ID_HEADER, "validation-trace-123456"))
                 .andExpect(jsonPath("$.code").value(CommonErrorCode.PARAM_ERROR.code()))
-                .andExpect(jsonPath("$.message", containsString("username")));
+                .andExpect(jsonPath("$.message", containsString("username")))
+                .andExpect(jsonPath("$.traceId").value("validation-trace-123456"));
     }
 
     @Test
@@ -57,6 +60,6 @@ class ApiInfrastructureTest {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.info.title").value("ONES-ADMIN 后端接口"))
-                .andExpect(jsonPath("$.info.version").value("v0.0.38"));
+                .andExpect(jsonPath("$.info.version").value("v0.0.39"));
     }
 }

@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.39 - 2026-07-01
+
+- 后端统一响应 `ApiResult` 新增 `traceId` 字段，成功响应和异常响应都与 `X-Trace-Id` 响应头保持一致，便于前端报错、后端日志和审计记录串联排查。
+- `TraceIdFilter` 暴露当前请求 traceId 读取方法，继续复用现有 MDC 与操作审计链路，不新增额外中间件依赖。
+- 接口基础设施测试补充成功响应和参数校验错误响应的 traceId 断言，避免后续统一响应改造破坏可观测性契约。
+- 补充企业级可观测性参考：OpenTelemetry Java instrumentation 强调 Java 服务链路追踪和自动埋点，ONES-ADMIN 当前先保持轻量 traceId 契约，后续可平滑升级标准分布式追踪。
+- 产品版本递增至 `v0.0.39`。
+
 ## v0.0.38 - 2026-07-01
 
 - 前端接口管理页接入 `/api/system/api-resources/governance/report` 聚合报告，统一消费后端治理汇总、规则目录和最新发布门禁干跑结果。

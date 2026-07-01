@@ -24,6 +24,10 @@ public class TraceIdFilter extends OncePerRequestFilter {
 
     private static final Pattern SAFE_TRACE_ID = Pattern.compile("^[A-Za-z0-9_.-]{8,64}$");
 
+    public static String currentTraceId() {
+        return MDC.get(TRACE_ID_MDC_KEY);
+    }
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
