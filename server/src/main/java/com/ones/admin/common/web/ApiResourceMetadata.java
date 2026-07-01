@@ -11,6 +11,8 @@ public @interface ApiResourceMetadata {
 
     String owner() default "";
 
+    String audience() default "";
+
     String sinceVersion() default "";
 
     ApiLifecycleStatus lifecycle() default ApiLifecycleStatus.UNSPECIFIED;

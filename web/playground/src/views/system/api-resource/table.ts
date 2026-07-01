@@ -41,6 +41,20 @@ export function useGridFormSchema(): VbenFormSchema[] {
       component: 'Select',
       componentProps: {
         allowClear: true,
+        options: [
+          { label: '管理后台', value: 'ADMIN_PORTAL' },
+          { label: '架构治理', value: 'ARCHITECTURE_GOVERNANCE' },
+          { label: '安全审计', value: 'SECURITY_AUDITOR' },
+          { label: '运维平台', value: 'OPS_PLATFORM' },
+        ],
+      },
+      fieldName: 'audience',
+      label: '调用方',
+    },
+    {
+      component: 'Select',
+      componentProps: {
+        allowClear: true,
         options: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((method) => ({
           label: method,
           value: method,
@@ -209,6 +223,11 @@ export function useColumns(): VxeTableGridColumns {
       field: 'owner',
       title: 'Owner',
       width: 140,
+    },
+    {
+      field: 'audience',
+      minWidth: 150,
+      title: '调用方',
     },
     {
       field: 'sinceVersion',

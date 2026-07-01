@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "系统管理-概览")
 @ApiResourceMetadata(
         owner = "系统平台组",
+        audience = "ADMIN_PORTAL",
         sinceVersion = "v0.0.1",
         lifecycle = ApiLifecycleStatus.ACTIVE,
         riskLevel = ApiRiskLevel.LOW

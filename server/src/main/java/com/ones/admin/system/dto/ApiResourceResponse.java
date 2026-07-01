@@ -26,6 +26,7 @@ public record ApiResourceResponse(
         String operationId,
         String handler,
         String owner,
+        String audience,
         String sinceVersion,
         String lifecycle,
         String riskLevel,

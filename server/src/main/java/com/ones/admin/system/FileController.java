@@ -32,6 +32,7 @@ import java.util.UUID;
 @Tag(name = "系统管理-文件")
 @ApiResourceMetadata(
         owner = "系统平台组",
+        audience = "ADMIN_PORTAL",
         sinceVersion = "v0.0.3",
         lifecycle = ApiLifecycleStatus.ACTIVE,
         riskLevel = ApiRiskLevel.MEDIUM

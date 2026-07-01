@@ -28,6 +28,7 @@ import java.util.List;
 @Tag(name = "系统管理-时区")
 @ApiResourceMetadata(
         owner = "基础体验组",
+        audience = "ADMIN_PORTAL",
         sinceVersion = "v0.0.1",
         lifecycle = ApiLifecycleStatus.ACTIVE,
         riskLevel = ApiRiskLevel.LOW

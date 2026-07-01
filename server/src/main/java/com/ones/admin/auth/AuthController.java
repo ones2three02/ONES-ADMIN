@@ -32,6 +32,7 @@ import java.util.List;
 @Tag(name = "认证中心")
 @ApiResourceMetadata(
         owner = "认证与安全组",
+        audience = "ADMIN_PORTAL",
         sinceVersion = "v0.0.1",
         lifecycle = ApiLifecycleStatus.ACTIVE,
         riskLevel = ApiRiskLevel.HIGH

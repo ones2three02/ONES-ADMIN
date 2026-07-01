@@ -19,6 +19,7 @@ import java.util.Map;
 @Tag(name = "系统健康")
 @ApiResourceMetadata(
         owner = "运维平台组",
+        audience = "OPS_PLATFORM",
         sinceVersion = "v0.0.1",
         lifecycle = ApiLifecycleStatus.ACTIVE,
         riskLevel = ApiRiskLevel.LOW

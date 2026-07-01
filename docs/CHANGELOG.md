@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.41 - 2026-07-01
+
+- 后端接口资源元数据新增 `audience` 受众字段，接口列表、Manifest、CSV 导出和 Manifest 指纹均纳入调用方信息，便于研发、运维、审计和集成方按接口服务对象治理资产。
+- 接口治理规则目录新增 `MISSING_API_AUDIENCE`，要求接口通过 `@ApiResourceMetadata(audience = "...")` 明确主要调用方；现有接口补齐 `ADMIN_PORTAL`、`ARCHITECTURE_GOVERNANCE`、`SECURITY_AUDITOR`、`OPS_PLATFORM` 等受众标识。
+- 接口管理页新增调用方筛选项和表格列，后端接口目录能力同步落到前端可视化，不只停留在 API 响应体。
+- 补充企业级接口管理参考：Backstage 强调 Developer Portal/API Catalog 可发现性，Gravitee 偏完整 API Management，Kong/APISIX/Tyk 偏网关与策略资产化；ONES-ADMIN 当前优先补齐接口目录元数据闭环。
+- 产品版本递增至 `v0.0.41`。
+
 ## v0.0.40 - 2026-07-01
 
 - 前端请求错误提示接入后端统一响应 `traceId`，业务错误弹窗会附带 `追踪ID`，便于用户截图报障后快速关联后端日志、审计记录和接口响应。

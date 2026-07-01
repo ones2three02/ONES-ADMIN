@@ -23,6 +23,7 @@ import java.util.List;
 @ApiAccessPolicy(value = ApiAuthType.LOGIN, reason = "当前用户菜单和动态路由由登录态上下文生成，不需要额外按钮权限")
 @ApiResourceMetadata(
         owner = "前端平台组",
+        audience = "ADMIN_PORTAL",
         sinceVersion = "v0.0.1",
         lifecycle = ApiLifecycleStatus.ACTIVE,
         riskLevel = ApiRiskLevel.MEDIUM

@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @ApiResourceMetadata(
         owner = "审计与安全组",
+        audience = "SECURITY_AUDITOR",
         sinceVersion = "v0.0.4",
         lifecycle = ApiLifecycleStatus.ACTIVE,
         riskLevel = ApiRiskLevel.MEDIUM

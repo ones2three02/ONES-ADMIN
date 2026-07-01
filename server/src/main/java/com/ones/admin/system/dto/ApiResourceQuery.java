@@ -11,6 +11,7 @@ public class ApiResourceQuery extends PageQuery {
     private String handler;
     private String authType;
     private String owner;
+    private String audience;
     private String lifecycle;
     private String riskLevel;
     private Boolean writeOperation;
@@ -71,6 +72,14 @@ public class ApiResourceQuery extends PageQuery {
 
     public void setOwner(String owner) {
         this.owner = owner;
+    }
+
+    public String getAudience() {
+        return audience;
+    }
+
+    public void setAudience(String audience) {
+        this.audience = audience;
     }
 
     public String getLifecycle() {

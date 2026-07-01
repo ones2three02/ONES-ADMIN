@@ -14,6 +14,7 @@ export namespace SystemApiResourceApi {
     module: string;
     operationId: string;
     owner?: string;
+    audience?: string;
     path: string;
     permissionAssignable: boolean;
     permissionCodeStandard: boolean;
@@ -110,6 +111,7 @@ export namespace SystemApiResourceApi {
     method: string;
     operationId: string;
     owner?: string;
+    audience?: string;
     path: string;
     permissionCodes: string[];
     permissionMode?: string;
@@ -173,6 +175,7 @@ interface PageResult<T> {
 }
 
 interface ApiResourceListParams {
+  audience?: string;
   authType?: string;
   lifecycle?: string;
   method?: string;

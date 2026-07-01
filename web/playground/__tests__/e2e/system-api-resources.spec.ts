@@ -26,5 +26,11 @@ test.describe('System API Resources Page', () => {
     await expect(
       pageContent.getByText('/api/system/api-resources', { exact: true }),
     ).toBeVisible();
+    await expect(
+      pageContent.locator('thead').getByText('调用方', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      pageContent.locator('tbody').getByText('ADMIN_PORTAL').first(),
+    ).toBeVisible();
   });
 });

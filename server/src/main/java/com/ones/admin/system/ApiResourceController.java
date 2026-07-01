@@ -42,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 @Tag(name = "系统管理-接口资源")
 @ApiResourceMetadata(
         owner = "架构治理组",
+        audience = "ARCHITECTURE_GOVERNANCE",
         sinceVersion = "v0.0.7",
         lifecycle = ApiLifecycleStatus.ACTIVE,
         riskLevel = ApiRiskLevel.MEDIUM

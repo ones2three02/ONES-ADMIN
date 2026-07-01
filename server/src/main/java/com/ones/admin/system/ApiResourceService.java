@@ -79,7 +79,7 @@ public class ApiResourceService {
     private static final Pattern API_VERSION_PATTERN = Pattern.compile(API_VERSION_PATTERN_TEXT);
     private static final String CSV_HEADER = "apiKey,operationId,method,path,handler,module,summary,authType,permissionCodes,"
             + "permissionMode,requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
-            + "writeOperation,repeatSubmitProtected,deprecated,owner,sinceVersion,lifecycle,riskLevel,"
+            + "writeOperation,repeatSubmitProtected,deprecated,owner,audience,sinceVersion,lifecycle,riskLevel,"
             + "sunsetVersion,replacementApiKey,"
             + "accessPolicyExplicit,accessPolicyReason";
     private static final List<GovernanceRule> GOVERNANCE_RULES = List.of(
@@ -210,6 +210,13 @@ public class ApiResourceService {
                     "在 @ApiResourceMetadata 中补充 owner，明确接口资产负责人"
             ),
             new GovernanceRule(
+                    "MISSING_API_AUDIENCE",
+                    "WARN",
+                    "CATALOG",
+                    "接口缺少受众元数据",
+                    "在 @ApiResourceMetadata 中补充 audience，明确接口主要调用方，例如 ADMIN_PORTAL、OPS_PLATFORM、INTEGRATION_CLIENT"
+            ),
+            new GovernanceRule(
                     "MISSING_API_SINCE_VERSION",
                     "WARN",
                     "CATALOG",
@@ -276,7 +283,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.40}") String applicationVersion
+            @Value("${ones.version:v0.0.41}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -749,6 +756,7 @@ public class ApiResourceService {
                 String.valueOf(previous.repeatSubmitProtected()),
                 String.valueOf(current.repeatSubmitProtected()));
         addFieldChange(changes, "owner", previous.owner(), current.owner());
+        addFieldChange(changes, "audience", previous.audience(), current.audience());
         addFieldChange(changes, "sinceVersion", previous.sinceVersion(), current.sinceVersion());
         addFieldChange(changes, "lifecycle", previous.lifecycle(), current.lifecycle());
         addFieldChange(changes, "riskLevel", previous.riskLevel(), current.riskLevel());
@@ -948,6 +956,7 @@ public class ApiResourceService {
                         operationId(handlerMethod),
                         handlerName(handlerMethod),
                         resourceMetadata.owner(),
+                        resourceMetadata.audience(),
                         resourceMetadata.sinceVersion(),
                         resourceMetadata.lifecycle(),
                         resourceMetadata.riskLevel(),
@@ -973,6 +982,7 @@ public class ApiResourceService {
                 resource.writeOperation(),
                 resource.repeatSubmitProtected(),
                 resource.owner(),
+                resource.audience(),
                 resource.sinceVersion(),
                 resource.lifecycle(),
                 resource.riskLevel(),
@@ -1008,6 +1018,7 @@ public class ApiResourceService {
                 String.valueOf(resource.writeOperation()),
                 String.valueOf(resource.repeatSubmitProtected()),
                 nullToEmpty(resource.owner()),
+                nullToEmpty(resource.audience()),
                 nullToEmpty(resource.sinceVersion()),
                 nullToEmpty(resource.lifecycle()),
                 nullToEmpty(resource.riskLevel()),
@@ -1040,6 +1051,7 @@ public class ApiResourceService {
                 .append(resource.repeatSubmitProtected()).append(',')
                 .append(resource.deprecated()).append(',')
                 .append(csvValue(resource.owner())).append(',')
+                .append(csvValue(resource.audience())).append(',')
                 .append(csvValue(resource.sinceVersion())).append(',')
                 .append(csvValue(resource.lifecycle())).append(',')
                 .append(csvValue(resource.riskLevel())).append(',')
@@ -1138,6 +1150,8 @@ public class ApiResourceService {
         return new ResourceMetadata(
                 firstText(methodMetadata == null ? null : methodMetadata.owner(),
                         classMetadata == null ? null : classMetadata.owner()),
+                firstText(methodMetadata == null ? null : methodMetadata.audience(),
+                        classMetadata == null ? null : classMetadata.audience()),
                 firstText(methodMetadata == null ? null : methodMetadata.sinceVersion(),
                         classMetadata == null ? null : classMetadata.sinceVersion()),
                 lifecycleName(methodMetadata, classMetadata),
@@ -1423,6 +1437,14 @@ public class ApiResourceService {
                     "接口缺少负责人元数据"
             ));
         }
+        if (!hasText(resource.audience())) {
+            violations.add(toViolation(
+                    resource,
+                    "MISSING_API_AUDIENCE",
+                    "WARN",
+                    "接口缺少受众元数据"
+            ));
+        }
         if (!hasText(resource.sinceVersion())) {
             violations.add(toViolation(
                     resource,
@@ -1543,6 +1565,7 @@ public class ApiResourceService {
                 && containsIfPresent(query.getHandler(), resource.handler())
                 && equalsIgnoreCaseIfPresent(query.getAuthType(), resource.authType())
                 && containsIfPresent(query.getOwner(), resource.owner())
+                && containsIfPresent(query.getAudience(), resource.audience())
                 && equalsIgnoreCaseIfPresent(query.getLifecycle(), resource.lifecycle())
                 && equalsIgnoreCaseIfPresent(query.getRiskLevel(), resource.riskLevel())
                 && equalsIfPresent(query.getWriteOperation(), resource.writeOperation())
@@ -1613,6 +1636,7 @@ public class ApiResourceService {
 
     private record ResourceMetadata(
             String owner,
+            String audience,
             String sinceVersion,
             String lifecycle,
             String riskLevel,
