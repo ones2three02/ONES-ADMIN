@@ -78,7 +78,8 @@
     "lockTitle": "Lock Guard",
     "lockDescription": "Failure protection",
     "auditTitle": "Audit Trace",
-    "auditDescription": "Trace ID ready"
+    "auditDescription": "Trace ID ready",
+    "guardTip": "Repeated failures trigger temporary lockout and every sign-in is audited."
   },
   "loginSuccess": "Login Successful",
   "loginSuccessDesc": "Welcome Back",

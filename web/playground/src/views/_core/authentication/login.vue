@@ -1,10 +1,11 @@
 <script lang="ts" setup>
 import type { VbenFormSchema } from '@vben/common-ui';
-import type { BasicOption, Recordable } from '@vben/types';
+import type { Recordable } from '@vben/types';
 
 import { computed, markRaw, useTemplateRef } from 'vue';
 
 import { AuthenticationLogin, SliderCaptcha, z } from '@vben/common-ui';
+import { IconifyIcon } from '@vben/icons';
 import { $t } from '@vben/locales';
 
 import { useAuthStore } from '#/store';
@@ -13,66 +14,12 @@ defineOptions({ name: 'Login' });
 
 const authStore = useAuthStore();
 
-const USER_OPTIONS: BasicOption[] = [
-  {
-    label: 'Admin',
-    value: 'admin',
-  },
-];
-
 const formSchema = computed((): VbenFormSchema[] => {
   return [
-    {
-      component: 'VbenSelect',
-      // componentProps(_values, form) {
-      //   return {
-      //     'onUpdate:modelValue': (value: string) => {
-      //       const findItem = USER_OPTIONS.find(
-      //         (item) => item.value === value,
-      //       );
-      //       if (findItem) {
-      //         form.setValues({
-      //           password: '123456',
-      //           username: findItem.label,
-      //         });
-      //       }
-      //     },
-      //     options: USER_OPTIONS,
-      //     placeholder: $t('authentication.selectAccount'),
-      //   };
-      // },
-      componentProps: {
-        options: USER_OPTIONS,
-        placeholder: $t('authentication.selectAccount'),
-      },
-      fieldName: 'selectAccount',
-      label: $t('authentication.selectAccount'),
-      rules: z
-        .string()
-        .min(1, { message: $t('authentication.selectAccount') })
-        .optional()
-        .default('admin'),
-    },
     {
       component: 'VbenInput',
       componentProps: {
         placeholder: $t('authentication.usernameTip'),
-      },
-      dependencies: {
-        trigger(values, form) {
-          if (values.selectAccount) {
-            const findUser = USER_OPTIONS.find(
-              (item) => item.value === values.selectAccount,
-            );
-            if (findUser) {
-              form.setValues({
-                password: 'admin123',
-                username: findUser.value,
-              });
-            }
-          }
-        },
-        triggerFields: ['selectAccount'],
       },
       fieldName: 'username',
       label: $t('authentication.username'),
@@ -103,14 +50,17 @@ const loginRef =
 const enterpriseStatusItems = computed(() => [
   {
     description: $t('authentication.loginPanel.authDescription'),
+    icon: 'lucide:key-round',
     title: $t('authentication.loginPanel.authTitle'),
   },
   {
     description: $t('authentication.loginPanel.lockDescription'),
+    icon: 'lucide:shield-alert',
     title: $t('authentication.loginPanel.lockTitle'),
   },
   {
     description: $t('authentication.loginPanel.auditDescription'),
+    icon: 'lucide:scan-search',
     title: $t('authentication.loginPanel.auditTitle'),
   },
 ]);
@@ -140,9 +90,16 @@ async function onSubmit(params: Recordable<any>) {
   >
     <template #title>
       <div class="enterprise-login-heading">
+        <div class="enterprise-login-brand">
+          <img alt="ONES SYSTEM" src="/brand/ones-1s-app-icon-192.png" />
+          <div>
+            <strong>ONES-ADMIN</strong>
+            <small>1S SYSTEM ENTERPRISE CONSOLE</small>
+          </div>
+        </div>
         <div class="enterprise-login-eyebrow">
           <span></span>
-          ONES-ADMIN ACCESS
+          SECURE ACCESS
         </div>
         <h2>{{ $t('authentication.loginPanel.title') }}</h2>
         <p>{{ $t('authentication.loginPanel.subtitle') }}</p>
@@ -152,12 +109,18 @@ async function onSubmit(params: Recordable<any>) {
             :key="item.title"
             class="enterprise-login-status-item"
           >
-            <span class="enterprise-login-status-dot"></span>
+            <span class="enterprise-login-status-icon">
+              <IconifyIcon :icon="item.icon" class="size-4" />
+            </span>
             <div>
               <strong>{{ item.title }}</strong>
               <small>{{ item.description }}</small>
             </div>
           </div>
+        </div>
+        <div class="enterprise-login-guard">
+          <IconifyIcon class="size-4" icon="lucide:shield-check" />
+          <span>{{ $t('authentication.loginPanel.guardTip') }}</span>
         </div>
       </div>
     </template>
@@ -166,7 +129,48 @@ async function onSubmit(params: Recordable<any>) {
 
 <style scoped>
 .enterprise-login-heading {
-  margin-bottom: 26px;
+  margin-bottom: 28px;
+}
+
+.enterprise-login-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.enterprise-login-brand img {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  box-shadow:
+    0 16px 36px hsl(var(--primary) / 18%),
+    0 0 0 1px hsl(var(--border));
+}
+
+.enterprise-login-brand div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.enterprise-login-brand strong {
+  color: hsl(var(--foreground));
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.1;
+}
+
+.enterprise-login-brand small {
+  overflow: hidden;
+  margin-top: 5px;
+  color: hsl(var(--muted-foreground));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .enterprise-login-eyebrow {
@@ -190,12 +194,12 @@ async function onSubmit(params: Recordable<any>) {
 }
 
 .enterprise-login-heading h2 {
-  margin: 0 0 12px;
+  margin: 0 0 13px;
   color: hsl(var(--foreground));
-  font-size: 34px;
-  font-weight: 800;
+  font-size: 38px;
+  font-weight: 900;
   letter-spacing: 0;
-  line-height: 1.15;
+  line-height: 1.08;
 }
 
 .enterprise-login-heading p {
@@ -208,35 +212,37 @@ async function onSubmit(params: Recordable<any>) {
 .enterprise-login-status {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
-  overflow: hidden;
-  margin-top: 18px;
-  border: 1px solid hsl(var(--border));
-  border-radius: 10px;
-  background: hsl(var(--background) / 62%);
-  box-shadow: 0 18px 44px hsl(var(--primary) / 7%);
+  gap: 10px;
+  margin-top: 22px;
 }
 
 .enterprise-login-status-item {
   display: flex;
   min-width: 0;
   align-items: flex-start;
-  gap: 8px;
-  padding: 11px 12px;
+  gap: 9px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  padding: 11px 12px 12px;
+  background:
+    linear-gradient(180deg, hsl(var(--background) / 78%), hsl(var(--background) / 48%)),
+    hsl(var(--background));
+  box-shadow:
+    0 14px 34px hsl(var(--primary) / 7%),
+    inset 0 1px 0 hsl(var(--foreground) / 5%);
 }
 
-.enterprise-login-status-item + .enterprise-login-status-item {
-  border-left: 1px solid hsl(var(--border));
-}
-
-.enterprise-login-status-dot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 7px;
-  margin-top: 4px;
+.enterprise-login-status-icon {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
-  background: hsl(var(--primary));
-  box-shadow: 0 0 14px hsl(var(--primary) / 52%);
+  background: hsl(var(--primary) / 12%);
+  color: hsl(var(--primary));
+  box-shadow: 0 0 18px hsl(var(--primary) / 18%);
 }
 
 .enterprise-login-status-item strong {
@@ -260,14 +266,32 @@ async function onSubmit(params: Recordable<any>) {
   white-space: nowrap;
 }
 
+.enterprise-login-guard {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  border: 1px solid hsl(var(--primary) / 14%);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: hsl(var(--primary) / 6%);
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.enterprise-login-guard svg {
+  flex: 0 0 auto;
+  color: hsl(var(--primary));
+}
+
 @media (max-width: 480px) {
-  .enterprise-login-status {
-    grid-template-columns: 1fr;
+  .enterprise-login-heading h2 {
+    font-size: 32px;
   }
 
-  .enterprise-login-status-item + .enterprise-login-status-item {
-    border-top: 1px solid hsl(var(--border));
-    border-left: 0;
+  .enterprise-login-status {
+    grid-template-columns: 1fr;
   }
 }
 </style>

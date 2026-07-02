@@ -45,6 +45,9 @@ export async function authLogin(page: Page) {
   const passwordInput = await page.locator(`input[name='password']`);
   await expect(passwordInput).toBeVisible();
 
+  await usernameInput.fill('admin');
+  await passwordInput.fill('admin123');
+
   await completeSliderCaptcha(page);
 
   // 到这里已经校验成功，点击进行登录

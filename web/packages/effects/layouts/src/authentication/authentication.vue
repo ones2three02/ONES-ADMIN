@@ -303,10 +303,10 @@ const logoSrc = computed(() => {
 .login-left-bg {
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 40%, rgba(37, 99, 235, 18%), transparent 35%),
+    radial-gradient(circle at 50% 42%, rgba(37, 99, 235, 20%), transparent 36%),
     radial-gradient(circle at 78% 18%, rgba(99, 102, 241, 14%), transparent 30%),
-    radial-gradient(circle at 20% 80%, rgba(6, 182, 212, 10%), transparent 32%),
-    linear-gradient(135deg, #fbfdff 0%, #f4f8ff 45%, #edf5ff 100%);
+    radial-gradient(circle at 20% 80%, rgba(6, 182, 212, 11%), transparent 32%),
+    linear-gradient(135deg, #fcfdff 0%, #f5f9ff 46%, #eef6ff 100%);
   border-right: 1px solid rgba(37, 99, 235, 10%);
   color: #0b1536;
 }
@@ -329,7 +329,7 @@ const logoSrc = computed(() => {
 }
 
 .login-visual-content {
-  padding: 42px 58px 34px 44px;
+  padding: 34px 48px 30px 42px;
 }
 
 .login-visual-inner {
@@ -337,20 +337,20 @@ const logoSrc = computed(() => {
   z-index: 1;
   display: flex;
   box-sizing: border-box;
-  width: min(100%, 860px);
-  height: min(86vh, 760px);
-  min-height: 640px;
+  width: min(100%, 880px);
+  height: min(88vh, 780px);
+  min-height: 650px;
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
   border: 1px solid rgba(37, 99, 235, 10%);
-  border-radius: 30px;
-  padding: 22px 30px 24px;
+  border-radius: 24px;
+  padding: 22px 32px 24px;
   background:
-    radial-gradient(circle at 50% 45%, rgba(37, 99, 235, 12%), transparent 48%),
-    linear-gradient(180deg, rgba(255, 255, 255, 72%), rgba(255, 255, 255, 42%));
+    radial-gradient(circle at 50% 45%, rgba(37, 99, 235, 13%), transparent 48%),
+    linear-gradient(180deg, rgba(255, 255, 255, 78%), rgba(255, 255, 255, 46%));
   box-shadow:
-    0 32px 90px rgba(37, 99, 235, 13%),
+    0 34px 96px rgba(37, 99, 235, 12%),
     inset 0 1px 0 rgba(255, 255, 255, 76%);
   backdrop-filter: blur(20px);
 }
@@ -426,8 +426,9 @@ const logoSrc = computed(() => {
 .login-visual-stage {
   position: relative;
   isolation: isolate;
-  height: 510px;
+  height: 520px;
   margin-top: 2px;
+  overflow: hidden;
 }
 
 .login-visual-stage::before {
@@ -435,8 +436,8 @@ const logoSrc = computed(() => {
   top: 55%;
   left: 50%;
   z-index: -1;
-  width: 490px;
-  height: 178px;
+  width: 560px;
+  height: 202px;
   border-radius: 50%;
   background:
     radial-gradient(circle, rgba(37, 99, 235, 24%), transparent 62%),
@@ -452,8 +453,8 @@ const logoSrc = computed(() => {
   top: 50%;
   left: 50%;
   z-index: -1;
-  width: 680px;
-  height: 406px;
+  width: 560px;
+  height: 376px;
   border-radius: 50%;
   background:
     linear-gradient(90deg, transparent 49.6%, rgba(37, 99, 235, 16%) 50%, transparent 50.4%),
@@ -474,7 +475,7 @@ const logoSrc = computed(() => {
 }
 
 .login-axis-x {
-  width: 660px;
+  width: 620px;
   height: 1px;
   transform: translate(-50%, -50%);
 }
@@ -553,43 +554,46 @@ const logoSrc = computed(() => {
   top: 50%;
   left: 50%;
   z-index: 1;
-  width: 386px;
-  height: 386px;
+  width: 454px;
+  height: 390px;
   overflow: hidden;
-  border: 1px solid rgba(37, 99, 235, 16%);
-  border-radius: 999px;
-  background:
-    radial-gradient(circle, rgba(255, 255, 255, 64%), rgba(255, 255, 255, 10%)),
-    rgba(255, 255, 255, 28%);
-  box-shadow:
-    0 38px 110px rgba(37, 99, 235, 24%),
-    0 0 0 16px rgba(255, 255, 255, 26%),
-    inset 0 1px 0 rgba(255, 255, 255, 62%);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   animation: login-core-float 5s ease-in-out infinite;
-  mask-image: radial-gradient(circle, black 0%, black 66%, transparent 78%);
+  mask-image: radial-gradient(ellipse at 50% 55%, black 0%, black 52%, rgba(0, 0, 0, 72%) 64%, transparent 80%);
   transform: translate(-50%, -50%);
 }
 
 .login-core-visual::before {
   position: absolute;
-  inset: 62%;
+  top: 64%;
+  left: 50%;
   z-index: 1;
-  width: 68%;
+  width: 76%;
   height: 24%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(37, 99, 235, 24%), transparent 68%);
-  filter: blur(8px);
+  background:
+    radial-gradient(circle, rgba(37, 99, 235, 30%), transparent 64%),
+    radial-gradient(circle, rgba(6, 182, 212, 18%), transparent 70%);
+  filter: blur(14px);
   transform: translate(-50%, -50%);
   content: '';
 }
 
 .login-core-visual::after {
   position: absolute;
-  inset: 40px;
-  border: 1px solid rgba(125, 211, 252, 20%);
+  top: 12%;
+  left: 50%;
+  z-index: -1;
+  width: 76%;
+  height: 72%;
   border-radius: 999px;
-  box-shadow: inset 0 0 34px rgba(37, 99, 235, 20%);
+  background: radial-gradient(circle, rgba(37, 99, 235, 18%), transparent 66%);
+  filter: blur(34px);
   pointer-events: none;
+  transform: translateX(-50%);
   content: '';
 }
 
@@ -597,7 +601,8 @@ const logoSrc = computed(() => {
 .login-core-visual svg {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  filter: drop-shadow(0 34px 52px rgba(37, 99, 235, 24%));
 }
 
 .login-capability-node {
@@ -896,18 +901,12 @@ const logoSrc = computed(() => {
   }
 
   .login-core-visual {
-    border-color: rgba(125, 211, 252, 18%);
-    background:
-      radial-gradient(circle, rgba(37, 99, 235, 18%), rgba(2, 6, 23, 24%)),
-      rgba(2, 6, 23, 74%);
-    box-shadow:
-      0 34px 110px rgba(37, 99, 235, 30%),
-      0 0 0 16px rgba(37, 99, 235, 8%);
+    background: transparent;
+    box-shadow: none;
   }
 
   .login-core-visual::after {
-    border-color: rgba(125, 211, 252, 18%);
-    box-shadow: inset 0 0 34px rgba(37, 99, 235, 26%);
+    background: radial-gradient(circle, rgba(37, 99, 235, 24%), transparent 66%);
   }
 
   .login-capability-node {
@@ -977,8 +976,8 @@ const logoSrc = computed(() => {
   }
 
   .login-core-visual {
-    width: 318px;
-    height: 318px;
+    width: 382px;
+    height: 326px;
   }
 
   .login-orbit-outer {
@@ -1054,8 +1053,8 @@ const logoSrc = computed(() => {
   }
 
   .login-core-visual {
-    width: 292px;
-    height: 292px;
+    width: 330px;
+    height: 286px;
   }
 
   .login-orbit-outer {
