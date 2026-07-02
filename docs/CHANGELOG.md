@@ -1,5 +1,11 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.45 - 2026-07-02
+
+- 新增 HRMS 企业级人力系统调研与一期范围建议，沉淀 Frappe HR、OrangeHRM、IceHrm、Odoo Employees 等参考来源和模块边界。
+- 修正前端技术选型文档，明确当前主线为 `vbenjs/vue-vben-admin` 新版 playground、Vben 组件体系和 Ant Design Vue 风格，不再沿用早期 Element Plus 描述。
+- 产品版本递增至 `v0.0.45`。
+
 ## v0.0.44 - 2026-07-02
 
 - 增强接口治理报告，新增接口负责人、主要调用方、治理规则和治理分类聚合字段。

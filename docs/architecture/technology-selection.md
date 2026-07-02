@@ -6,23 +6,24 @@ ONES-ADMIN 面向企业级后端管理系统，首要目标不是堆满功能，
 
 ## 前端选型
 
-首版采用 Vue3 + Vite + TypeScript + Element Plus + Pinia + Vue Router。
+首版采用 Vue3 + Vite + TypeScript + Vben Admin 5.x + Ant Design Vue 体系 + Pinia + Vue Router。
 
 候选项目对比：
 
 | 项目 | 优点 | 风险 | 适合借鉴 |
 | --- | --- | --- | --- |
-| Vben Admin | 工程化成熟、社区体量大、Vue3/Vite/TS 基础好 | 功能体系较大，直接照搬成本高 | 工程结构、权限路由、布局设计 |
+| Vben Admin | 工程化成熟、社区体量大、Vue3/Vite/TS 基础好，当前演示站 `www.vben.pro` 对应新版风格 | 功能体系较大，直接照搬成本高 | 工程结构、权限路由、布局设计、Ant Design Vue 后台控件风格 |
 | Cool Admin | 模块化、插件化、CRUD 效率突出 | 框架特有约定较多 | 插件体系、快速 CRUD 思路 |
 | Art Design Pro | 视觉体验和交互完成度较高 | 企业后台工程纵深不如 Vben | UI 质感、页面细节 |
 
-推荐策略：以 Vben 的工程化和 `web-ele` 视觉范式作为主要参考，吸收 Cool Admin 的模块化/插件化/CRUD 思路，再借鉴 Art Design Pro 的页面细节。首版先落地一个轻量但真实可运行的 Vue3 管理端，不直接复制任何一个框架。
+推荐策略：以前端仓库实际接入的 [vbenjs/vue-vben-admin](https://github.com/vbenjs/vue-vben-admin) 新版工程为主线，保持 Vben playground 的页面结构、布局节奏、表格表单和 Ant Design Vue 组件风格；吸收 Cool Admin 的模块化/插件化/CRUD 思路，再借鉴 Art Design Pro 的页面细节，但不另起一套自定义后台审美。
 
 当前前端实现要求：
 
-- 布局、色彩 token、侧栏、顶栏、标签栏、工作台信息密度对齐 Vben Admin `apps/web-ele`。
-- 使用 Element Plus 作为控件体系，但不另起一套自定义后台审美。
-- 后续新增页面优先复用当前页面头、查询工具条、表格、弹窗表单模式。
+- 布局、色彩 token、侧栏、顶栏、标签栏、工作台信息密度对齐 Vben Admin 新版 playground 和 `www.vben.pro` 演示风格。
+- 使用 `@vben/common-ui`、`@vben/icons`、`antdv-next`、`vxe-table` 等现有组件体系，不自行设计一套与选型割裂的控件风格。
+- 后续新增页面优先复用当前系统管理页的页面头、查询工具条、表格、弹窗表单、卡片密度和按钮权限模式。
+- 登录页允许融入 ONES / 1S 品牌视觉，但表单、认证流程、语言切换、主题切换等结构必须保留 Vben 认证布局基线。
 
 ## 后端选型
 
