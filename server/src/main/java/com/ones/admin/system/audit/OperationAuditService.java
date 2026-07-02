@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.ones.admin.common.event.SystemEventPayload;
 import com.ones.admin.common.event.SystemEventPublisher;
+import com.ones.admin.common.web.CsvExportUtils;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.system.dto.OperationLogQuery;
 import com.ones.admin.system.dto.OperationLogResponse;
@@ -18,6 +19,9 @@ import java.util.Map;
 
 @Service
 public class OperationAuditService {
+
+    private static final String CSV_HEADER = "id,userId,method,path,module,operation,permissionCode,success,"
+            + "responseCode,errorMessage,traceId,ip,userAgent,durationMs,createdAt";
 
     private final SystemOperationLogMapper operationLogMapper;
     private final SystemEventPublisher eventPublisher;
@@ -79,6 +83,29 @@ public class OperationAuditService {
                 .map(this::toResponse)
                 .toList();
         return PageResult.of(page, records);
+    }
+
+    public String exportCsv(OperationLogQuery query) {
+        StringBuilder csv = new StringBuilder(CSV_HEADER).append('\n');
+        operationLogMapper.selectList(buildQueryWrapper(query))
+                .forEach(log -> csv.append(CsvExportUtils.row(
+                        log.getId(),
+                        log.getUserId(),
+                        log.getMethod(),
+                        log.getPath(),
+                        log.getModule(),
+                        log.getOperation(),
+                        log.getPermissionCode(),
+                        Boolean.TRUE.equals(log.getSuccess()),
+                        log.getResponseCode(),
+                        log.getErrorMessage(),
+                        log.getTraceId(),
+                        log.getIp(),
+                        log.getUserAgent(),
+                        log.getDurationMs(),
+                        log.getCreatedAt()
+                )).append('\n'));
+        return csv.toString();
     }
 
     private LambdaQueryWrapper<SystemOperationLogEntity> buildQueryWrapper(OperationLogQuery query) {

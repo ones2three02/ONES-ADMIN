@@ -15,10 +15,15 @@ import com.ones.admin.system.dto.OperationLogResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/system/audit")
@@ -51,10 +56,31 @@ public class AuditLogController {
         return ApiResult.ok(loginAuditService.queryPage(query));
     }
 
+    @GetMapping("/login-logs/export")
+    @SaCheckPermission("system:audit:login-log")
+    @Operation(summary = "导出登录日志")
+    public ResponseEntity<String> exportLoginLogs(@Valid LoginLogQuery query) {
+        return csvResponse("ones-login-logs.csv", loginAuditService.exportCsv(query));
+    }
+
     @GetMapping("/operation-logs")
     @SaCheckPermission("system:audit:operation-log")
     @Operation(summary = "查询操作日志")
     public ApiResult<PageResult<OperationLogResponse>> listOperationLogs(@Valid OperationLogQuery query) {
         return ApiResult.ok(operationAuditService.queryPage(query));
+    }
+
+    @GetMapping("/operation-logs/export")
+    @SaCheckPermission("system:audit:operation-log")
+    @Operation(summary = "导出操作日志")
+    public ResponseEntity<String> exportOperationLogs(@Valid OperationLogQuery query) {
+        return csvResponse("ones-operation-logs.csv", operationAuditService.exportCsv(query));
+    }
+
+    private ResponseEntity<String> csvResponse(String filename, String body) {
+        return ResponseEntity.ok()
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(body);
     }
 }

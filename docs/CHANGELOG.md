@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.46 - 2026-07-02
+
+- 后端新增登录日志 CSV 导出接口 `/api/system/audit/login-logs/export`，沿用登录日志查询筛选条件和 `system:audit:login-log` 权限。
+- 后端新增操作日志 CSV 导出接口 `/api/system/audit/operation-logs/export`，沿用操作日志查询筛选条件和 `system:audit:operation-log` 权限。
+- 新增通用 CSV 导出工具，统一处理逗号、换行、引号和公式注入防护，降低审计留档文件在表格软件中打开时的安全风险。
+- 产品版本递增至 `v0.0.46`。
+
 ## v0.0.45 - 2026-07-02
 
 - 新增 HRMS 企业级人力系统调研与一期范围建议，沉淀 Frappe HR、OrangeHRM、IceHrm、Odoo Employees 等参考来源和模块边界。

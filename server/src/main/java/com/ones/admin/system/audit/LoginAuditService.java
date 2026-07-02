@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ones.admin.common.event.SystemEventPayload;
 import com.ones.admin.common.event.SystemEventPublisher;
+import com.ones.admin.common.web.CsvExportUtils;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.system.dto.LoginLogQuery;
 import com.ones.admin.system.dto.LoginLogResponse;
@@ -18,6 +19,8 @@ import java.util.Map;
 
 @Service
 public class LoginAuditService {
+
+    private static final String CSV_HEADER = "id,username,userId,success,failureReason,ip,userAgent,traceId,createdAt";
 
     private final SystemLoginLogMapper loginLogMapper;
     private final SystemEventPublisher eventPublisher;
@@ -45,6 +48,23 @@ public class LoginAuditService {
                 .map(this::toResponse)
                 .toList();
         return PageResult.of(page, records);
+    }
+
+    public String exportCsv(LoginLogQuery query) {
+        StringBuilder csv = new StringBuilder(CSV_HEADER).append('\n');
+        loginLogMapper.selectList(buildQueryWrapper(query))
+                .forEach(log -> csv.append(CsvExportUtils.row(
+                        log.getId(),
+                        log.getUsername(),
+                        log.getUserId(),
+                        Boolean.TRUE.equals(log.getSuccess()),
+                        log.getFailureReason(),
+                        log.getIp(),
+                        log.getUserAgent(),
+                        log.getTraceId(),
+                        log.getCreatedAt()
+                )).append('\n'));
+        return csv.toString();
     }
 
     private void record(

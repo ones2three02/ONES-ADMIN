@@ -15,10 +15,13 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -34,7 +37,7 @@ class AuditLogControllerTest {
 
     @Test
     void loginAttemptsAreAudited() throws Exception {
-        String failedUsername = "ghost-audit";
+        String failedUsername = "=ghost-audit";
         String failedBody = objectMapper.writeValueAsString(new LoginRequest(failedUsername, "wrong-password"));
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -58,6 +61,16 @@ class AuditLogControllerTest {
                 .andExpect(jsonPath("$.data.list[*].username", hasItem(failedUsername)))
                 .andExpect(jsonPath("$.data.list[*].success", hasItem(false)))
                 .andExpect(jsonPath("$.data.list[*].traceId", hasItem(notNullValue())));
+
+        mockMvc.perform(get("/api/system/audit/login-logs/export")
+                        .param("username", failedUsername)
+                        .param("success", "false")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", containsString("text/csv")))
+                .andExpect(header().string("Content-Disposition", containsString("ones-login-logs.csv")))
+                .andExpect(content().string(containsString("id,username,userId,success")))
+                .andExpect(content().string(containsString("'=ghost-audit")));
     }
 
     @Test
@@ -99,6 +112,18 @@ class AuditLogControllerTest {
                 .andExpect(jsonPath("$.data.list[*].path", hasItem("/api/system/users")))
                 .andExpect(jsonPath("$.data.list[*].operation", hasItem("新增用户")))
                 .andExpect(jsonPath("$.data.list[*].permissionCode", hasItem("system:user:create")));
+
+        mockMvc.perform(get("/api/system/audit/operation-logs/export")
+                        .param("path", "/api/system/users")
+                        .param("success", "true")
+                        .param("traceId", createTraceId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", containsString("text/csv")))
+                .andExpect(header().string("Content-Disposition", containsString("ones-operation-logs.csv")))
+                .andExpect(content().string(containsString("id,userId,method,path,module,operation")))
+                .andExpect(content().string(containsString("system:user:create")))
+                .andExpect(content().string(containsString(createTraceId)));
     }
 
     @Test
