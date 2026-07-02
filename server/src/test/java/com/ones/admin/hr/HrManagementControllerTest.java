@@ -83,6 +83,22 @@ class HrManagementControllerTest {
                 .andExpect(jsonPath("$.data.employmentStatus").value("RESIGNED"))
                 .andExpect(jsonPath("$.data.leaveDate").value("2026-12-31"));
 
+        mockMvc.perform(get("/api/hr/employees/" + employeeId + "/lifecycle-events")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(4))
+                .andExpect(jsonPath("$.data[0].eventType").value("RESIGN"))
+                .andExpect(jsonPath("$.data[0].eventDate").value("2026-12-31"))
+                .andExpect(jsonPath("$.data[0].beforeStatus").value("ACTIVE"))
+                .andExpect(jsonPath("$.data[0].afterStatus").value("RESIGNED"))
+                .andExpect(jsonPath("$.data[0].summary").value("员工离职"))
+                .andExpect(jsonPath("$.data[0].detail.reason").value("个人原因离职"))
+                .andExpect(jsonPath("$.data[1].eventType").value("REGULARIZE"))
+                .andExpect(jsonPath("$.data[2].eventType").value("TRANSFER"))
+                .andExpect(jsonPath("$.data[2].detail.reason").value("组织架构调整"))
+                .andExpect(jsonPath("$.data[3].eventType").value("ONBOARD"))
+                .andExpect(jsonPath("$.data[3].detail.employeeNo").value("E" + suffix));
+
         mockMvc.perform(post("/api/hr/employees/" + employeeId + "/transfer")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)

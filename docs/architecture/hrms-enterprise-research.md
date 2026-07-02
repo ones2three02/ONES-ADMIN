@@ -1,6 +1,6 @@
 # HRMS 企业级人力系统调研与一期范围建议
 
-更新时间：2026-07-02
+更新时间：2026-07-03
 
 本文是 HRMS 设计前的调研输入。`v0.0.50` 已补充正式一期设计稿，见 [HRMS 一期企业级设计方案](hrms-phase-one-design.md)。
 
@@ -82,3 +82,17 @@
 从 `v0.0.49` 起，`/api/system/api-resources/governance/report` 会在 `recommendedActions` 中输出 `DESIGN_HRMS_PHASE_ONE` 动作，提示 HRMS 一期正式设计需要承接本调研结论。
 
 这样做的目的不是把 HRMS 立即写进系统接口，而是让 Jenkins、接口管理页和人工巡检能持续看到“下一步企业支撑能力”的设计责任，避免 HRMS 停留在一次性调研文档里。`v0.0.50` 已用正式设计稿承接该动作。
+
+## 7. v0.0.54 复核补充
+
+本轮继续使用 agent-reach 的 GitHub CLI 路由和网页检索，复核时间为 2026-07-03。
+
+| 项目 | 当前公开状态 | 对 v0.0.54 的落地启发 |
+| --- | --- | --- |
+| [frappe/hrms](https://github.com/frappe/hrms) | GitHub 显示为 Open Source HR and Payroll Software，2026-07-02 仍在更新，Star 约 8.1k | Frappe HRMS 强调员工与薪酬、人事流程一体化，ONES-ADMIN 需要把员工生命周期从“写入事件”推进到“可查询时间线”，作为详情页和审计的基础 |
+| [orangehrm/orangehrm](https://github.com/orangehrm/orangehrm) | GitHub 描述为 comprehensive HRM System，2026-06-30 仍在更新，Star 约 1.0k | OrangeHRM 的核心价值在员工管理和报表，ONES-ADMIN 应保证员工档案不仅展示当前状态，还能追溯入职、调岗、转正、离职历史 |
+| [backstage/backstage](https://github.com/backstage/backstage) | GitHub 描述为 building developer portals，2026-07-02 仍在更新，Star 约 33.7k | Backstage 的 API Catalog 思路继续验证接口资产需要 owner、生命周期和可发现性；本次 HRMS 新接口必须同步接入接口治理元数据 |
+| [gravitee-io/gravitee-api-management](https://github.com/gravitee-io/gravitee-api-management) | GitHub 描述为 OpenSource API Management，2026-07-02 仍在更新 | Gravitee 的 API Management 思路说明接口需要发布、订阅和生命周期治理；HRMS 新接口继续走 Manifest/Gate 体系，不做“隐藏接口” |
+| [Kong/kong](https://github.com/Kong/kong) / [apache/apisix](https://github.com/apache/apisix) | GitHub 均保持高活跃，Kong 约 43.7k Star，APISIX 约 16.8k Star | 网关项目强调运行时策略与接口目录一致；HRMS 生命周期时间线接口必须有 Sa-Token 权限码、权限初始化和接口目录元数据闭环 |
+
+结论：`v0.0.54` 不扩大到合同、考勤、薪酬等大范围模块，而是优先补齐“员工生命周期时间线查询”。这个能力能把 `v0.0.51-v0.0.52` 已写入的生命周期事件转化为可审计、可展示、可被前端详情页消费的企业级能力。

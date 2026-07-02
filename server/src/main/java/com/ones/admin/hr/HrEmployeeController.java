@@ -8,6 +8,7 @@ import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.hr.dto.HrEmployeeCreateRequest;
+import com.ones.admin.hr.dto.HrEmployeeLifecycleEventResponse;
 import com.ones.admin.hr.dto.HrEmployeeQuery;
 import com.ones.admin.hr.dto.HrEmployeeRegularizeRequest;
 import com.ones.admin.hr.dto.HrEmployeeResignRequest;
@@ -22,6 +23,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/hr/employees")
@@ -53,6 +56,14 @@ public class HrEmployeeController {
     @Operation(operationId = "HrEmployeeController_getEmployee", summary = "查询员工详情")
     public ApiResult<HrEmployeeResponse> getEmployee(@PathVariable Long id) {
         return ApiResult.ok(employeeService.getEmployee(id));
+    }
+
+    @GetMapping("/{id}/lifecycle-events")
+    @SaCheckPermission("hr:employee:lifecycle")
+    @Operation(operationId = "HrEmployeeController_listEmployeeLifecycleEvents", summary = "查询员工生命周期事件")
+    @ApiResourceMetadata(sinceVersion = "v0.0.54", riskLevel = ApiRiskLevel.MEDIUM)
+    public ApiResult<List<HrEmployeeLifecycleEventResponse>> listLifecycleEvents(@PathVariable Long id) {
+        return ApiResult.ok(employeeService.listLifecycleEvents(id));
     }
 
     @PostMapping

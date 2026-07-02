@@ -1,6 +1,6 @@
 # ONES-ADMIN 后端工程化审计与优化路线
 
-更新时间：2026-07-02
+更新时间：2026-07-03
 当前分支：develop
 
 ## 1. 调研来源
@@ -17,12 +17,14 @@
 | [backstage/backstage](https://github.com/backstage/backstage) | 开发者门户、软件目录、API Catalog、Owner 与生命周期治理 | API 资产目录、负责人、生命周期、稳定接口身份 |
 | [gravitee-io/gravitee-api-management](https://github.com/gravitee-io/gravitee-api-management) | Java 开源 API Management | API 生命周期、发布治理、订阅与网关策略 |
 | [apache/apisix](https://github.com/apache/apisix) | 云原生 API Gateway | 网关策略、路由治理、插件化能力边界 |
+| [Kong/kong](https://github.com/Kong/kong) | API/AI Gateway、插件化策略、流量治理，2026-07-02 仍保持高活跃 | 策略目录化、网关能力边界、接口治理与运行时权限策略分层 |
+| [frappe/hrms](https://github.com/frappe/hrms) | Open Source HR and Payroll Software，2026-07-02 仍保持更新 | 员工生命周期、薪酬和 HR 流程的一体化建模，提示 ONES-ADMIN 不能只做员工当前状态 CRUD |
+| [orangehrm/orangehrm](https://github.com/orangehrm/orangehrm) | 综合 HRM 系统，2026-06-30 仍保持更新 | 员工管理、报表和 HR Administration 需要可追溯的员工事件时间线 |
 | [apiman/apiman](https://github.com/apiman/apiman) | Java API Management，可扩展策略插件 | API 管理策略、扩展点和治理边界 |
 | [TykTechnologies/tyk](https://github.com/TykTechnologies/tyk) | Go API Gateway，支持 REST、GraphQL、TCP、gRPC | API 网关、鉴权、流量治理思路 |
 | [pb33f/openapi-changes](https://github.com/pb33f/openapi-changes) | OpenAPI 破坏性变更检测 CLI | CI/CD 契约变更报告、破坏性变更识别 |
 | [oasdiff/oasdiff](https://github.com/oasdiff/oasdiff) | OpenAPI Diff 与 Breaking Changes | Manifest Diff 与发布门禁设计 |
 | [OpenAPITools/openapi-diff](https://github.com/OpenAPITools/openapi-diff) | Java OpenAPI 差异比较工具 | Java 生态契约差异检测 |
-| [Kong/kong](https://github.com/Kong/kong) | API/AI Gateway、插件化策略、流量治理 | 策略目录化、网关能力边界、接口治理与运行时策略分层 |
 | [stoplightio/spectral](https://github.com/stoplightio/spectral) | OpenAPI/AsyncAPI 规则化 lint 工具 | 规则编码、检查结果、CI 报告可机器解析 |
 | [opticdev/optic](https://github.com/opticdev/optic) | OpenAPI lint、diff、testing | API 设计质量、破坏性变更预防、接口文档准确性 |
 | [APIParkLab/APIPark](https://github.com/APIParkLab/APIPark) | AI/API 网关、开放平台、API 申请审批、调用统计 | API 申请审批、调用统计、开放平台体验 |
@@ -85,7 +87,7 @@
 - 高风险写接口已接入防重复提交保护，正式环境默认使用 Redis 存储防重票据；登录接口继续由失败次数和临时锁定策略保护。
 - 文件存储已抽象为 `FileStorageService`，默认本地目录存储，可通过配置切换到 MinIO。
 - 登录日志、操作日志落库后可发布统一系统事件，默认关闭外发，可通过配置切换到 RabbitMQ。
-- HRMS 已完成一期企业级设计稿，并在 v0.0.51 开始落地 Phase 1A：新增 `hr_` 基础表迁移、岗位/职级/员工基础接口、独立 HR 错误码、Swagger 分组、权限初始化和授权树挂载。v0.0.52 已继续落地员工调岗、转正、离职生命周期动作。
+- HRMS 已完成一期企业级设计稿，并在 v0.0.51 开始落地 Phase 1A：新增 `hr_` 基础表迁移、岗位/职级/员工基础接口、独立 HR 错误码、Swagger 分组、权限初始化和授权树挂载。v0.0.52 已继续落地员工调岗、转正、离职生命周期动作，v0.0.54 已补齐员工生命周期时间线查询接口，形成“写事件 + 查事件 + 权限治理”的审计闭环。
 - MySQL、Redis、RabbitMQ、MinIO 配置通过环境变量注入，本地敏感配置不提交 Git。
 
 主要缺口：

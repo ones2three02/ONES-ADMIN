@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.54 - 2026-07-03
+
+- HRMS Phase 1C 开始落地，新增 `GET /api/hr/employees/{id}/lifecycle-events` 员工生命周期时间线接口，使用独立权限 `hr:employee:lifecycle`。
+- 员工生命周期事件按事件日期、创建时间和事件 ID 倒序返回，并将事件明细 JSON 解析为结构化 `detail`，便于前端详情页展示入职、调岗、转正、离职全过程。
+- 权限初始化和授权树补齐员工生命周期查询节点，确保 Sa-Token 权限、菜单授权、接口治理和超级管理员授权闭环。
+- 复核 Backstage、Gravitee、Kong、APISIX、Frappe HRMS、OrangeHRM 等开源项目状态，继续将 API Catalog、API Management 和 HRMS 员工生命周期理念沉淀到后端工程化路线。
+- 产品版本递增至 `v0.0.54`。
+
 ## v0.0.53 - 2026-07-02
 
 - 登录页按 ONES/1S 品牌规范继续升级，保留 Vben `AuthPageLayout` 与 `AuthenticationLogin` 组件体系，左侧承载完整 1S 核心视觉、能力节点和品牌理念。

@@ -3,11 +3,13 @@ package com.ones.admin.hr;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ones.admin.common.exception.BusinessException;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.hr.dto.HrEmployeeCreateRequest;
+import com.ones.admin.hr.dto.HrEmployeeLifecycleEventResponse;
 import com.ones.admin.hr.dto.HrEmployeeQuery;
 import com.ones.admin.hr.dto.HrEmployeeRegularizeRequest;
 import com.ones.admin.hr.dto.HrEmployeeResignRequest;
@@ -41,6 +43,8 @@ public class HrEmployeeService {
 
     private static final Set<String> EMPLOYMENT_TYPES = Set.of("FULL_TIME", "PART_TIME", "INTERN", "OUTSOURCED");
     private static final Set<String> EMPLOYMENT_STATUSES = Set.of("ACTIVE", "PROBATION", "SUSPENDED", "RESIGNED");
+    private static final TypeReference<Map<String, Object>> LIFECYCLE_DETAIL_TYPE = new TypeReference<>() {
+    };
 
     private final HrEmployeeMapper employeeMapper;
     private final HrEmployeeJobMapper employeeJobMapper;
@@ -79,6 +83,18 @@ public class HrEmployeeService {
 
     public HrEmployeeResponse getEmployee(Long id) {
         return toResponse(getRequiredEmployee(id));
+    }
+
+    public List<HrEmployeeLifecycleEventResponse> listLifecycleEvents(Long employeeId) {
+        getRequiredEmployee(employeeId);
+        return lifecycleEventMapper.selectList(new LambdaQueryWrapper<HrEmployeeLifecycleEventEntity>()
+                        .eq(HrEmployeeLifecycleEventEntity::getEmployeeId, employeeId)
+                        .orderByDesc(HrEmployeeLifecycleEventEntity::getEventDate)
+                        .orderByDesc(HrEmployeeLifecycleEventEntity::getCreatedAt)
+                        .orderByDesc(HrEmployeeLifecycleEventEntity::getId))
+                .stream()
+                .map(this::toLifecycleEventResponse)
+                .toList();
     }
 
     @Transactional
@@ -466,6 +482,32 @@ public class HrEmployeeService {
                 employee.getCreatedAt(),
                 employee.getUpdatedAt()
         );
+    }
+
+    private HrEmployeeLifecycleEventResponse toLifecycleEventResponse(HrEmployeeLifecycleEventEntity event) {
+        return new HrEmployeeLifecycleEventResponse(
+                event.getId(),
+                event.getEmployeeId(),
+                event.getEventType(),
+                event.getEventDate(),
+                event.getBeforeStatus(),
+                event.getAfterStatus(),
+                event.getSummary(),
+                readLifecycleDetail(event.getDetailJson()),
+                event.getCreatedBy(),
+                event.getCreatedAt()
+        );
+    }
+
+    private Map<String, Object> readLifecycleDetail(String detailJson) {
+        if (!hasText(detailJson)) {
+            return Map.of();
+        }
+        try {
+            return objectMapper.readValue(detailJson, LIFECYCLE_DETAIL_TYPE);
+        } catch (JsonProcessingException ex) {
+            throw new BusinessException("员工生命周期事件明细解析失败");
+        }
     }
 
     private Long currentUserId() {
