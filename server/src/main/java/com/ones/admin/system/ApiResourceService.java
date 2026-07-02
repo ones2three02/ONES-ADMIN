@@ -268,6 +268,56 @@ public class ApiResourceService {
     );
     private static final Map<String, GovernanceRule> GOVERNANCE_RULE_BY_CODE = GOVERNANCE_RULES.stream()
             .collect(Collectors.toUnmodifiableMap(GovernanceRule::ruleCode, Function.identity()));
+    private static final List<ApiResourceGovernanceReportResponse.ReferenceBenchmark> REFERENCE_BENCHMARKS = List.of(
+            new ApiResourceGovernanceReportResponse.ReferenceBenchmark(
+                    "Backstage",
+                    "API_CATALOG",
+                    "https://github.com/backstage/backstage",
+                    "借鉴 API Catalog 的 Owner、Lifecycle、可发现性和开发者门户视图"
+            ),
+            new ApiResourceGovernanceReportResponse.ReferenceBenchmark(
+                    "Gravitee API Management",
+                    "API_MANAGEMENT",
+                    "https://github.com/gravitee-io/gravitee-api-management",
+                    "借鉴 API 生命周期、集中发布治理和管理端/消费端边界"
+            ),
+            new ApiResourceGovernanceReportResponse.ReferenceBenchmark(
+                    "Kong",
+                    "API_GATEWAY",
+                    "https://github.com/Kong/kong",
+                    "借鉴网关策略、插件化治理和运行时策略资产化"
+            ),
+            new ApiResourceGovernanceReportResponse.ReferenceBenchmark(
+                    "Apache APISIX",
+                    "API_GATEWAY",
+                    "https://github.com/apache/apisix",
+                    "借鉴云原生网关、路由策略和插件化治理"
+            ),
+            new ApiResourceGovernanceReportResponse.ReferenceBenchmark(
+                    "Tyk",
+                    "API_GATEWAY",
+                    "https://github.com/TykTechnologies/tyk",
+                    "借鉴多协议 API 网关、鉴权、限流和调用侧治理"
+            ),
+            new ApiResourceGovernanceReportResponse.ReferenceBenchmark(
+                    "Frappe HR",
+                    "HRMS",
+                    "https://github.com/frappe/hrms",
+                    "HRMS 按员工生命周期拆模块，覆盖员工、考勤、排班、请假、绩效、薪酬"
+            ),
+            new ApiResourceGovernanceReportResponse.ReferenceBenchmark(
+                    "OrangeHRM",
+                    "HRMS",
+                    "https://github.com/orangehrm/orangehrm",
+                    "HRMS 一期应具备员工管理、报表分析、招聘、入职、请假和时间追踪扩展边界"
+            ),
+            new ApiResourceGovernanceReportResponse.ReferenceBenchmark(
+                    "IceHrm",
+                    "HRMS",
+                    "https://github.com/gamonoid/icehrm",
+                    "借鉴中小企业 HRIS 的实用路线，先主数据与请假考勤，再扩薪酬报表"
+            )
+    );
 
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
     private final SystemPermissionMapper permissionMapper;
@@ -283,7 +333,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.48}") String applicationVersion
+            @Value("${ones.version:v0.0.49}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -394,15 +444,89 @@ public class ApiResourceService {
     }
 
     public ApiResourceGovernanceReportResponse generateGovernanceReport() {
+        ApiResourceSummaryResponse summary = summarize();
+        ApiResourceGovernanceResponse governance = checkGovernance();
+        ApiResourceGovernanceRuleResponse rules = listGovernanceRules();
+        ApiResourceManifestResponse manifest = generateManifest();
+        ApiResourceManifestLatestGateResponse latestGate = gateManifestWithLatestSnapshot(
+                new ApiResourceManifestLatestGateRequest(false, null)
+        );
         return new ApiResourceGovernanceReportResponse(
                 applicationVersion,
                 OffsetDateTime.now(ZoneOffset.UTC).toString(),
-                summarize(),
-                checkGovernance(),
-                listGovernanceRules(),
-                generateManifest(),
-                gateManifestWithLatestSnapshot(new ApiResourceManifestLatestGateRequest(false, null))
+                summary,
+                governance,
+                rules,
+                manifest,
+                latestGate,
+                REFERENCE_BENCHMARKS,
+                recommendActions(summary, governance, latestGate)
         );
+    }
+
+    private List<ApiResourceGovernanceReportResponse.RecommendedAction> recommendActions(
+            ApiResourceSummaryResponse summary,
+            ApiResourceGovernanceResponse governance,
+            ApiResourceManifestLatestGateResponse latestGate
+    ) {
+        List<ApiResourceGovernanceReportResponse.RecommendedAction> actions = new ArrayList<>();
+        if (governance.errorCount() > 0) {
+            actions.add(new ApiResourceGovernanceReportResponse.RecommendedAction(
+                    "FIX_BLOCKING_GOVERNANCE_ERRORS",
+                    "P0",
+                    "API_GOVERNANCE",
+                    "修复阻断级接口治理错误",
+                    "当前接口治理存在 " + governance.errorCount() + " 个 ERROR 级问题，发布前必须逐项修复。",
+                    "GET /api/system/api-resources/governance 返回 passed=true"
+            ));
+        }
+        if (governance.warningCount() > 0) {
+            actions.add(new ApiResourceGovernanceReportResponse.RecommendedAction(
+                    "TRACK_GOVERNANCE_WARNINGS",
+                    "P1",
+                    "API_GOVERNANCE",
+                    "跟踪接口治理警告",
+                    "当前接口治理存在 " + governance.warningCount() + " 个 WARN 级问题，应纳入迭代看板持续收敛。",
+                    "GET /api/system/api-resources/governance 的 warningCount 持续下降"
+            ));
+        }
+        if (summary.permissionMissingCount() > 0) {
+            actions.add(new ApiResourceGovernanceReportResponse.RecommendedAction(
+                    "REGISTER_MISSING_PERMISSIONS",
+                    "P0",
+                    "PERMISSION",
+                    "补齐接口权限点",
+                    "当前仍有 " + summary.permissionMissingCount() + " 个接口缺少权限点或显式访问策略，需要补齐权限注册和授权树挂载。",
+                    "GET /api/system/api-resources/summary 返回 permissionMissingCount=0"
+            ));
+        }
+        if (latestGate != null && latestGate.gate() != null && !latestGate.gate().passed()) {
+            actions.add(new ApiResourceGovernanceReportResponse.RecommendedAction(
+                    "REVIEW_MANIFEST_GATE",
+                    "P0",
+                    "RELEASE",
+                    "处理 Manifest 发布门禁阻断",
+                    "最新快照门禁状态为 " + latestGate.gate().status() + "，需要处理治理错误或破坏性接口契约变更。",
+                    "POST /api/system/api-resources/manifest/gate/latest 返回 gate.passed=true"
+            ));
+        }
+        actions.add(new ApiResourceGovernanceReportResponse.RecommendedAction(
+                "ARCHIVE_MANIFEST_SNAPSHOT",
+                "P1",
+                "RELEASE",
+                "归档接口 Manifest 快照",
+                "发布通过后将接口 Manifest 以应用版本资产落库，便于下一次发布做 Diff 与 Gate。",
+                "POST /api/system/api-resources/manifest/snapshots 返回 published=true 或既有快照"
+        ));
+        actions.add(new ApiResourceGovernanceReportResponse.RecommendedAction(
+                "DESIGN_HRMS_PHASE_ONE",
+                "P1",
+                "HRMS",
+                "输出 HRMS 一期正式设计",
+                "按方案 B 推进主数据、合同与花名册边界，补齐表结构、权限点、接口清单、页面清单、审计要求和测试策略。",
+                "docs/architecture/hrms-enterprise-research.md 中的一期边界被正式设计文档承接"
+        ));
+        return actions;
     }
 
     public ApiResourceManifestResponse generateManifest() {

@@ -354,12 +354,12 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.48"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.49"))
                 .andExpect(jsonPath("$.data.summary.total").value(53))
                 .andExpect(jsonPath("$.data.governance.passed").value(true))
                 .andExpect(jsonPath("$.data.governance.total").value(53))
                 .andExpect(jsonPath("$.data.manifest.total").value(53))
-                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.48"))
+                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.49"))
                 .andExpect(jsonPath("$.data.latestGate.gate.checks[0].checkCode").value("API_GOVERNANCE_ERROR"))
                 .andReturn()
                 .getResponse()
@@ -385,6 +385,24 @@ class ApiResourceControllerTest {
         assertThat(reportResource.path("operationId").asText())
                 .isEqualTo("ApiResourceController_generateApiResourceGovernanceReport");
         assertThat(permissionCodes(reportResource)).containsExactly("system:api:list");
+        assertThat(report.path("referenceBenchmarks").isArray()).isTrue();
+        assertThat(report.path("referenceBenchmarks").size()).isGreaterThanOrEqualTo(6);
+        JsonNode backstage = findReferenceBenchmark(report.path("referenceBenchmarks"), "Backstage");
+        assertThat(backstage.path("category").asText()).isEqualTo("API_CATALOG");
+        assertThat(backstage.path("url").asText()).isEqualTo("https://github.com/backstage/backstage");
+        JsonNode frappeHr = findReferenceBenchmark(report.path("referenceBenchmarks"), "Frappe HR");
+        assertThat(frappeHr.path("category").asText()).isEqualTo("HRMS");
+        assertThat(frappeHr.path("url").asText()).isEqualTo("https://github.com/frappe/hrms");
+        assertThat(report.path("recommendedActions").isArray()).isTrue();
+        assertThat(report.path("recommendedActions").size()).isGreaterThanOrEqualTo(2);
+        JsonNode archiveAction = findRecommendedAction(
+                report.path("recommendedActions"),
+                "ARCHIVE_MANIFEST_SNAPSHOT"
+        );
+        assertThat(archiveAction.path("category").asText()).isEqualTo("RELEASE");
+        JsonNode hrmsAction = findRecommendedAction(report.path("recommendedActions"), "DESIGN_HRMS_PHASE_ONE");
+        assertThat(hrmsAction.path("priority").asText()).isEqualTo("P1");
+        assertThat(hrmsAction.path("category").asText()).isEqualTo("HRMS");
     }
 
     @Test
@@ -427,7 +445,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.48"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.49"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(53))
                 .andReturn()
@@ -487,7 +505,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.48"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.49"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.snapshot.total").value(53))
                 .andExpect(jsonPath("$.data.snapshot.manifest.total").value(53))
@@ -586,7 +604,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.48"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.49"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))
@@ -894,6 +912,20 @@ class ApiResourceControllerTest {
                 .filter(node -> audience.equals(node.path("audience").asText()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("未找到接口调用方：" + audience));
+    }
+
+    private JsonNode findReferenceBenchmark(JsonNode benchmarks, String project) {
+        return StreamSupport.stream(benchmarks.spliterator(), false)
+                .filter(node -> project.equals(node.path("project").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到参考基准：" + project));
+    }
+
+    private JsonNode findRecommendedAction(JsonNode actions, String actionCode) {
+        return StreamSupport.stream(actions.spliterator(), false)
+                .filter(node -> actionCode.equals(node.path("actionCode").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到推荐动作：" + actionCode));
     }
 
     private long findLifecycleCount(JsonNode summary, String lifecycle) {

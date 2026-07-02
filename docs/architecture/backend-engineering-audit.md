@@ -5,7 +5,7 @@
 
 ## 1. 调研来源
 
-本轮重点参考了以下开源企业后台项目，调研渠道为 agent-reach GitHub/dev 路由与 GitHub CLI，访问日期为 2026-07-01。
+本轮重点参考了以下开源企业后台项目，调研渠道为 agent-reach GitHub/dev 路由与 GitHub CLI，访问日期为 2026-07-01 至 2026-07-02。
 
 | 项目 | 后端特征 | 可借鉴重点 |
 | --- | --- | --- |
@@ -66,6 +66,7 @@
 - 已提供接口资源 Manifest 发布门禁，可综合接口治理错误、破坏性接口变更和人工确认原因输出发布准入结果。
 - Manifest Gate 已输出机器可读 `checks` 检查项，Jenkins 可按 `checkCode`、`passed`、`blocking` 和 `remediation` 生成稳定门禁报告。
 - 已提供接口治理聚合报告，一次性返回 summary、governance、rules、manifest 和 latestGate，并补充负责人、调用方、规则命中和治理分类聚合，便于 Jenkins、接口管理页和人工巡检使用同一份接口治理视图。
+- 接口治理聚合报告已补充 `referenceBenchmarks` 和 `recommendedActions`，将接口管理/API 网关/HRMS 参考基准与下一步整改动作结构化输出，便于 Jenkins 和前端直接消费。
 - 已将 `operationId` 纳入接口清单、CSV、Manifest、Manifest 指纹和 Manifest Diff，接口操作标识变化按破坏性变更处理。
 - 已建立 `operationId` 命名规范和唯一性门禁，当前格式为 `^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$`，重复或非法命名会作为治理错误阻断发布。
 - 已建立显式 HTTP 方法治理，`/api/**` 接口不得使用未指定 method 的 `ALL` 泛匹配路由，避免接口契约、网关路由和客户端生成不稳定。
@@ -136,7 +137,7 @@
   - 提供 `/api/system/api-resources/summary` 治理汇总接口，返回接口总数、写操作数、权限缺口数、访问策略数、废弃接口数、认证级别分布和模块分布。
   - 提供 `/api/system/api-resources/governance` 接口治理质量门禁，返回是否通过、错误数、警告数、权限码正则、`operationId` 正则、接口版本正则和违规明细。
   - 提供 `/api/system/api-resources/governance/rules` 接口治理规则目录，返回规则编码、严重级别、是否阻断、规则分类、说明和修复建议。
-  - 提供 `/api/system/api-resources/governance/report` 接口治理聚合报告，返回应用版本、生成时间、治理汇总、治理结果、规则目录、Manifest 和最新快照门禁干跑结果。
+  - 提供 `/api/system/api-resources/governance/report` 接口治理聚合报告，返回应用版本、生成时间、治理汇总、治理结果、规则目录、Manifest、最新快照门禁干跑结果、参考基准和推荐动作。
   - 自动区分 `PUBLIC`、`LOGIN`、`PERMISSION` 三类接口认证级别。
   - 提供 `@ApiAccessPolicy` 显式标记登录态和公开接口的设计意图，减少安全巡检误报。
   - 登录入口和健康检查已补充公开访问策略说明，后续飞书扫码、飞书 SSO 回调等公开入口必须复用同一治理口径。
@@ -229,6 +230,7 @@
   - 检查 Flyway 迁移测试通过，确保 `flyway_schema_history` 有迁移记录
   - 登录测试账号后调用 `/api/system/api-resources/governance`，要求 `passed=true` 且 `errorCount=0`
   - 推荐调用 `/api/system/api-resources/governance/report` 生成聚合治理报告，作为 Jenkins 报告、构建产物和前端接口管理页统一数据源
+  - Jenkins 可读取报告中的 `recommendedActions`，按 `priority`、`category`、`actionCode` 输出本次发布需要执行或跟踪的整改动作
   - 可调用 `/api/system/api-resources/governance/rules` 输出规则目录，作为 Jenkins 报告中 ruleCode 的解释来源
   - Jenkins 应将 `API_METHOD_NOT_EXPLICIT` 视为阻断项，要求所有 `/api/**` 接口使用明确 HTTP 方法，禁止 `ALL` 泛匹配路由
   - Jenkins 应将 `PUBLIC_API_WITHOUT_ACCESS_POLICY` 视为阻断项，要求公开接口补充 `@ApiAccessPolicy(ApiAuthType.PUBLIC, reason = "...")`

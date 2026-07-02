@@ -187,12 +187,30 @@ export namespace SystemApiResourceApi {
     gate: ApiResourceManifestGate;
   }
 
+  export interface ApiResourceReferenceBenchmark {
+    category: 'API_CATALOG' | 'API_GATEWAY' | 'API_MANAGEMENT' | 'HRMS';
+    lesson: string;
+    project: string;
+    url: string;
+  }
+
+  export interface ApiResourceRecommendedAction {
+    actionCode: string;
+    category: 'API_GOVERNANCE' | 'HRMS' | 'PERMISSION' | 'RELEASE';
+    description: string;
+    priority: 'P0' | 'P1' | 'P2';
+    title: string;
+    verification: string;
+  }
+
   export interface ApiResourceGovernanceReport {
     applicationVersion: string;
     generatedAt: string;
     governance: ApiResourceGovernance;
     latestGate: ApiResourceManifestLatestGate;
     manifest: ApiResourceManifest;
+    recommendedActions: ApiResourceRecommendedAction[];
+    referenceBenchmarks: ApiResourceReferenceBenchmark[];
     rules: ApiResourceGovernanceRules;
     summary: ApiResourceSummary;
   }

@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.49 - 2026-07-02
+
+- 后端接口治理聚合报告新增 `referenceBenchmarks`，结构化输出 Backstage、Gravitee、Kong、APISIX、Tyk、Frappe HR、OrangeHRM、IceHrm 等参考基准和可借鉴点。
+- 后端接口治理聚合报告新增 `recommendedActions`，按治理错误、治理警告、权限缺口、Manifest Gate 和 HRMS 一期设计输出机器可读整改动作。
+- 前端接口资源 API 类型同步新增参考基准与推荐动作字段，为后续接口管理页展示报告动作清单打底。
+- 补充接口治理报告测试断言，确保 Jenkins 和前端后续消费参考基准、推荐动作时有稳定契约。
+- 产品版本递增至 `v0.0.49`。
+
 ## v0.0.48 - 2026-07-02
 
 - 登录页继续按 Vben 认证布局升级为更正式的 ONES / 1S 企业级入口，右侧新增品牌登录卡片、状态项图标和安全锁定提示。
