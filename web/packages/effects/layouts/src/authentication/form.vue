@@ -77,7 +77,7 @@ defineProps<{
 .auth-form-view[data-side='right'] {
   border-left: 1px solid hsl(var(--border) / 72%);
   background:
-    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--background-deep) / 38%) 100%),
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--background-deep) / 34%) 100%),
     hsl(var(--background));
 }
 
@@ -90,27 +90,40 @@ defineProps<{
 .side-content[data-side='left'] {
   position: relative;
   box-sizing: border-box;
-  max-width: 500px;
-  border: 1px solid hsl(var(--border) / 82%);
-  border-radius: 28px;
-  padding: 36px;
+  max-width: 520px;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border) / 72%);
+  border-radius: 24px;
+  padding: 38px;
   background:
-    linear-gradient(180deg, hsl(var(--background) / 88%), hsl(var(--background) / 74%)),
+    linear-gradient(180deg, hsl(var(--background) / 92%), hsl(var(--background) / 78%)),
     hsl(var(--background));
   box-shadow:
-    0 34px 96px hsl(var(--primary) / 10%),
-    0 12px 34px hsl(var(--foreground) / 4%),
-    inset 0 1px 0 hsl(var(--foreground) / 5%);
+    0 28px 76px hsl(var(--primary) / 8%),
+    0 10px 28px hsl(var(--foreground) / 4%),
+    inset 0 1px 0 hsl(var(--foreground) / 4%);
   backdrop-filter: blur(18px);
 }
 
 .side-content[data-side='right']::before,
 .side-content[data-side='left']::before {
   position: absolute;
-  inset: 14px;
+  inset: 13px;
   z-index: -1;
   border: 1px solid hsl(var(--primary) / 8%);
-  border-radius: 22px;
+  border-radius: 19px;
+  pointer-events: none;
+  content: '';
+}
+
+.side-content[data-side='right']::after,
+.side-content[data-side='left']::after {
+  position: absolute;
+  top: 0;
+  right: 28px;
+  left: 28px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 38%), transparent);
   pointer-events: none;
   content: '';
 }
@@ -119,17 +132,15 @@ defineProps<{
   .auth-form-view[data-side='right'] {
     border-left-color: rgba(255, 255, 255, 6%);
     background:
-      radial-gradient(circle at 10% 8%, rgba(37, 99, 235, 14%), transparent 32%),
-      radial-gradient(circle at 100% 72%, rgba(6, 182, 212, 9%), transparent 30%),
-      linear-gradient(180deg, #111318 0%, #0d1017 100%);
+      linear-gradient(180deg, #11151d 0%, #0d1119 100%);
   }
 
   .side-content[data-side='right'],
   .side-content[data-side='left'] {
     border-color: rgba(255, 255, 255, 8%);
     background:
-      linear-gradient(180deg, rgba(25, 28, 36, 84%), rgba(17, 19, 24, 74%)),
-      rgba(17, 19, 24, 86%);
+      linear-gradient(180deg, rgba(25, 30, 40, 86%), rgba(17, 20, 28, 76%)),
+      rgba(17, 19, 24, 88%);
     box-shadow:
       0 36px 110px rgba(0, 0, 0, 26%),
       0 18px 56px rgba(37, 99, 235, 8%),

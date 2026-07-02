@@ -12,7 +12,9 @@ export interface PlaygroundPreferencesExtension {
   reportTitle: string;
 }
 
-const ONES_BRAND_LOGO = '/brand/ones-1s-app-icon.png';
+const ONES_BRAND_LOGO_LIGHT = '/brand/ones-1s-app-icon-light.png';
+const ONES_BRAND_LOGO_DARK = '/brand/ones-1s-app-icon-dark.png';
+const LEGACY_ONES_BRAND_LOGO = '/brand/ones-1s-app-icon.png';
 const LEGACY_VBEN_LOGO =
   'https://unpkg.com/@vbenjs/static-source@0.1.7/source/logo-v1.webp';
 
@@ -29,16 +31,19 @@ export const overridesPreferences = defineOverridesPreferences({
   copyright: appCopyrightPreferences,
   logo: {
     fit: 'contain',
-    source: ONES_BRAND_LOGO,
-    sourceDark: ONES_BRAND_LOGO,
+    source: ONES_BRAND_LOGO_LIGHT,
+    sourceDark: ONES_BRAND_LOGO_DARK,
   },
 });
 
 export function migrateBrandPreferences() {
-  const shouldReplaceSource = preferences.logo.source === LEGACY_VBEN_LOGO;
+  const shouldReplaceSource =
+    preferences.logo.source === LEGACY_VBEN_LOGO ||
+    preferences.logo.source === LEGACY_ONES_BRAND_LOGO;
   const shouldReplaceDarkSource =
     !preferences.logo.sourceDark ||
-    preferences.logo.sourceDark === LEGACY_VBEN_LOGO;
+    preferences.logo.sourceDark === LEGACY_VBEN_LOGO ||
+    preferences.logo.sourceDark === LEGACY_ONES_BRAND_LOGO;
 
   if (!shouldReplaceSource && !shouldReplaceDarkSource) {
     return;
@@ -47,8 +52,8 @@ export function migrateBrandPreferences() {
   updatePreferences({
     logo: {
       fit: 'contain',
-      ...(shouldReplaceSource ? { source: ONES_BRAND_LOGO } : {}),
-      ...(shouldReplaceDarkSource ? { sourceDark: ONES_BRAND_LOGO } : {}),
+      ...(shouldReplaceSource ? { source: ONES_BRAND_LOGO_LIGHT } : {}),
+      ...(shouldReplaceDarkSource ? { sourceDark: ONES_BRAND_LOGO_DARK } : {}),
     },
   });
 }

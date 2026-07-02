@@ -2,12 +2,12 @@
 
 ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
-当前产品版本：`v0.0.52`
+当前产品版本：`v0.0.53`
 
 ## 当前能力
 
 - 后端：Spring Boot 3.5.9、Java 21、Maven Enforcer、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、Flyway、MySQL、Redis、RabbitMQ、MinIO、统一响应、统一异常、TraceId 链路追踪、登录认证、角色权限、动态菜单、用户 CRUD、HRMS 岗位/职级/员工基础接口、HRMS 员工调岗/转正/离职生命周期、接口资源治理、接口治理聚合报告、接口管理参考基准、接口治理推荐动作、HRMS 一期企业级设计、接口版本元数据治理、接口生命周期治理、接口受众治理、高风险写接口策略治理、公开接口访问策略治理、接口治理修复建议、Actuator、Swagger UI。
-- 前端：Vue3、Vite、TypeScript、Element Plus、Pinia、Vue Router、Axios 请求拦截、错误提示 TraceId 展示、Vben 风格企业级安全登录页、ONES 1S 品牌视觉面板、管理布局、工作台、用户管理页、接口管理页、接口调用方筛选与展示、发布门禁与治理规则视图、Playwright 登录冒烟用例。
+- 前端：Vue3、Vite、TypeScript、Element Plus、Pinia、Vue Router、Axios 请求拦截、错误提示 TraceId 展示、Vben 风格企业级安全登录页、ONES/1S 核心视觉与白天/夜间品牌资源、飞书优先的紧凑企业登录入口、管理布局、工作台、用户管理页、接口管理页、接口调用方筛选与展示、发布门禁与治理规则视图、Playwright 登录冒烟用例。
 - 认证：`Authorization: Bearer <token>`，由 Sa-Token 签发与校验。
 - 演示账号：`admin / admin123`
 
@@ -71,6 +71,22 @@ pnpm dev
 
 访问：`http://localhost:5173`
 
+### 飞书与企业 SSO 登录配置
+
+登录页按飞书优先展示企业登录入口。前端只负责发起授权跳转，飞书回调、授权码换取用户信息、账号绑定和 Sa-Token 签发必须由后端完成，避免 App Secret 暴露到浏览器。
+
+可在 `web/playground/.env.development` 或生产注入配置中设置：
+
+```text
+VITE_GLOB_AUTH_FEISHU_APP_ID=
+VITE_GLOB_AUTH_FEISHU_REDIRECT_URI=
+VITE_GLOB_AUTH_FEISHU_AUTH_URL=
+VITE_GLOB_AUTH_SSO_NAME=
+VITE_GLOB_AUTH_SSO_URL=
+```
+
+优先级：如果配置了 `VITE_GLOB_AUTH_FEISHU_AUTH_URL`，前端直接使用该授权地址；否则在同时配置 `VITE_GLOB_AUTH_FEISHU_APP_ID` 和 `VITE_GLOB_AUTH_FEISHU_REDIRECT_URI` 时，按飞书开放平台 OAuth 授权入口生成跳转地址。企业 SSO 只有配置 `VITE_GLOB_AUTH_SSO_URL` 后才展示入口。
+
 ## 验证命令
 
 ```bash
@@ -131,5 +147,5 @@ pnpm build
 1. 持续补充 Flyway 增量迁移脚本和数据库变更回滚说明。
 2. 将 Sa-Token 会话存储切换到 Redis，支持分布式部署。
 3. 完成角色、菜单、部门、岗位、字典、操作日志等企业后台基础模块。
-4. 增加飞书、企业微信、钉钉第三方登录适配层。
+4. 完成飞书 OAuth 回调、用户绑定和企业 SSO 后端适配层，再扩展企业微信、钉钉等其他第三方入口。
 5. 增加多租户、数据权限、代码生成、工作流与监控告警。

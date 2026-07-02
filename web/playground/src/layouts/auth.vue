@@ -9,7 +9,8 @@ import { $t } from '#/locales';
 const appName = computed(() => preferences.app.name);
 const logo = computed(() => preferences.logo.source);
 const logoDark = computed(() => preferences.logo.sourceDark);
-const sloganImage = computed(() => '/brand/ones-1s-slogan.png');
+const sloganImage = computed(() => '/brand/ones-1s-slogan-light.png');
+const sloganImageDark = computed(() => '/brand/ones-1s-slogan-dark.png');
 const brandFeatures = computed(() => [
   {
     description: $t('authentication.visual.features.execution.description'),
@@ -107,6 +108,7 @@ const clickLogo = () => {};
     :page-description="$t('authentication.pageDesc')"
     :page-title="$t('authentication.pageTitle')"
     :slogan-image="sloganImage"
+    :slogan-image-dark="sloganImageDark"
     :click-logo="clickLogo"
   >
     <!-- 自定义工具栏 -->

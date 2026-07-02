@@ -49,6 +49,7 @@ interface Props {
   pageTitle?: string;
   pageDescription?: string;
   sloganImage?: string;
+  sloganImageDark?: string;
   toolbar?: boolean;
   copyright?: boolean;
   toolbarList?: ToolbarType[];
@@ -69,6 +70,7 @@ const props = withDefaults(defineProps<Props>(), {
   pageDescription: '',
   pageTitle: '',
   sloganImage: '',
+  sloganImageDark: '',
   toolbar: true,
   toolbarList: () => ['color', 'language', 'layout', 'theme'],
   clickLogo: () => {},
@@ -95,6 +97,11 @@ const modeLabel = computed(() =>
 );
 const modeText = computed(() =>
   isDark.value ? props.darkModeText : props.lightModeText,
+);
+const sloganImageSrc = computed(() =>
+  isDark.value && props.sloganImageDark
+    ? props.sloganImageDark
+    : props.sloganImage,
 );
 
 function getFeaturePlacementClass(placement: BrandFeaturePlacement = 'top') {
@@ -225,8 +232,8 @@ const logoSrc = computed(() => {
               </div>
 
               <div class="login-core-visual">
-                <template v-if="sloganImage">
-                  <img :alt="appName" :src="sloganImage" />
+                <template v-if="sloganImageSrc">
+                  <img :alt="appName" :src="sloganImageSrc" />
                 </template>
                 <SloganIcon v-else :alt="appName" />
               </div>
@@ -303,10 +310,10 @@ const logoSrc = computed(() => {
 .login-left-bg {
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 42%, rgba(37, 99, 235, 20%), transparent 36%),
+    radial-gradient(circle at 50% 42%, rgba(37, 99, 235, 22%), transparent 36%),
     radial-gradient(circle at 78% 18%, rgba(99, 102, 241, 14%), transparent 30%),
     radial-gradient(circle at 20% 80%, rgba(6, 182, 212, 11%), transparent 32%),
-    linear-gradient(135deg, #fcfdff 0%, #f5f9ff 46%, #eef6ff 100%);
+    linear-gradient(135deg, #fdfeff 0%, #f6faff 44%, #edf6ff 100%);
   border-right: 1px solid rgba(37, 99, 235, 10%);
   color: #0b1536;
 }
@@ -739,10 +746,12 @@ const logoSrc = computed(() => {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
-  border: 1px solid rgba(37, 99, 235, 9%);
+  border: 1px solid rgba(37, 99, 235, 10%);
   border-radius: 16px;
   padding: 10px;
-  background: rgba(255, 255, 255, 44%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 62%), rgba(255, 255, 255, 36%)),
+    rgba(255, 255, 255, 44%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 58%),
     0 16px 46px rgba(37, 99, 235, 8%);
