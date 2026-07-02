@@ -11,8 +11,29 @@ public record ApiResourceGovernanceResponse(
         String permissionCodePattern,
         String operationIdPattern,
         String apiVersionPattern,
+        List<RuleSummary> ruleSummaries,
+        List<CategorySummary> categorySummaries,
         List<Violation> violations
 ) {
+
+    public record RuleSummary(
+            String ruleCode,
+            String severity,
+            String category,
+            boolean blocking,
+            long count,
+            String description,
+            String remediation
+    ) {
+    }
+
+    public record CategorySummary(
+            String category,
+            long violationCount,
+            long errorCount,
+            long warningCount
+    ) {
+    }
 
     public record Violation(
             String ruleCode,

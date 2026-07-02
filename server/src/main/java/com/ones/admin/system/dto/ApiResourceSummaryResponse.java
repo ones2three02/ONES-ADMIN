@@ -11,6 +11,8 @@ public record ApiResourceSummaryResponse(
         List<AuthTypeStat> authTypes,
         List<LifecycleStat> lifecycles,
         List<RiskLevelStat> riskLevels,
+        List<OwnerStat> owners,
+        List<AudienceStat> audiences,
         List<ModuleStat> modules
 ) {
 
@@ -29,6 +31,24 @@ public record ApiResourceSummaryResponse(
     public record RiskLevelStat(
             String riskLevel,
             long count
+    ) {
+    }
+
+    public record OwnerStat(
+            String owner,
+            long total,
+            long writeOperationCount,
+            long permissionMissingCount,
+            long highRiskCount
+    ) {
+    }
+
+    public record AudienceStat(
+            String audience,
+            long total,
+            long publicCount,
+            long permissionCount,
+            long writeOperationCount
     ) {
     }
 

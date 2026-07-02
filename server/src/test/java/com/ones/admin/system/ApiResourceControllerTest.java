@@ -257,6 +257,8 @@ class ApiResourceControllerTest {
         assertThat(governance.path("total").asLong()).isGreaterThan(0);
         assertThat(governance.path("violationCount").asLong())
                 .isEqualTo(governance.path("warningCount").asLong());
+        assertThat(governance.path("ruleSummaries").isArray()).isTrue();
+        assertThat(governance.path("categorySummaries").isArray()).isTrue();
         assertThat(ruleCodes(governance.path("violations")))
                 .doesNotContain(
                         "PUBLIC_API_WITHOUT_ACCESS_POLICY",
@@ -352,12 +354,12 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.43"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.44"))
                 .andExpect(jsonPath("$.data.summary.total").value(49))
                 .andExpect(jsonPath("$.data.governance.passed").value(true))
                 .andExpect(jsonPath("$.data.governance.total").value(49))
                 .andExpect(jsonPath("$.data.manifest.total").value(49))
-                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.43"))
+                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.44"))
                 .andExpect(jsonPath("$.data.latestGate.gate.checks[0].checkCode").value("API_GOVERNANCE_ERROR"))
                 .andReturn()
                 .getResponse()
@@ -367,6 +369,14 @@ class ApiResourceControllerTest {
         assertThat(report.path("generatedAt").asText()).isNotBlank();
         assertThat(report.at("/rules/rules").size()).isGreaterThanOrEqualTo(15);
         assertThat(report.path("manifest").path("checksum").asText()).matches("^[a-f0-9]{64}$");
+        JsonNode systemOwner = findOwnerStat(report.path("summary").path("owners"), "系统平台组");
+        assertThat(systemOwner.path("total").asLong()).isGreaterThanOrEqualTo(20);
+        assertThat(systemOwner.path("writeOperationCount").asLong()).isGreaterThanOrEqualTo(1);
+        JsonNode adminPortalAudience = findAudienceStat(report.path("summary").path("audiences"), "ADMIN_PORTAL");
+        assertThat(adminPortalAudience.path("total").asLong()).isGreaterThanOrEqualTo(20);
+        assertThat(adminPortalAudience.path("publicCount").asLong()).isGreaterThanOrEqualTo(1);
+        assertThat(report.at("/governance/ruleSummaries").isArray()).isTrue();
+        assertThat(report.at("/governance/categorySummaries").isArray()).isTrue();
         JsonNode reportResource = findResource(
                 report.path("manifest").path("resources"),
                 "GET",
@@ -417,7 +427,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.43"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.44"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(49))
                 .andReturn()
@@ -477,7 +487,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.43"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.44"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.snapshot.total").value(49))
                 .andExpect(jsonPath("$.data.snapshot.manifest.total").value(49))
@@ -576,7 +586,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.43"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.44"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))
@@ -870,6 +880,20 @@ class ApiResourceControllerTest {
                 .filter(node -> module.equals(node.path("module").asText()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("未找到模块：" + module));
+    }
+
+    private JsonNode findOwnerStat(JsonNode owners, String owner) {
+        return StreamSupport.stream(owners.spliterator(), false)
+                .filter(node -> owner.equals(node.path("owner").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到接口负责人：" + owner));
+    }
+
+    private JsonNode findAudienceStat(JsonNode audiences, String audience) {
+        return StreamSupport.stream(audiences.spliterator(), false)
+                .filter(node -> audience.equals(node.path("audience").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到接口调用方：" + audience));
     }
 
     private long findLifecycleCount(JsonNode summary, String lifecycle) {

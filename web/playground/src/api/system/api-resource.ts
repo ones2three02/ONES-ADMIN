@@ -36,6 +36,13 @@ export namespace SystemApiResourceApi {
 
   export interface ApiResourceSummary {
     authTypes: Array<{ authType: string; count: number }>;
+    audiences: Array<{
+      audience: string;
+      permissionCount: number;
+      publicCount: number;
+      total: number;
+      writeOperationCount: number;
+    }>;
     deprecatedCount: number;
     explicitAccessPolicyCount: number;
     lifecycles: Array<{ count: number; lifecycle: string }>;
@@ -48,6 +55,13 @@ export namespace SystemApiResourceApi {
       total: number;
       writeOperationCount: number;
     }>;
+    owners: Array<{
+      highRiskCount: number;
+      owner: string;
+      permissionMissingCount: number;
+      total: number;
+      writeOperationCount: number;
+    }>;
     permissionMissingCount: number;
     riskLevels: Array<{ count: number; riskLevel: string }>;
     total: number;
@@ -56,13 +70,32 @@ export namespace SystemApiResourceApi {
 
   export interface ApiResourceGovernance {
     apiVersionPattern: string;
+    categorySummaries: ApiResourceGovernanceCategorySummary[];
     errorCount: number;
     operationIdPattern: string;
     passed: boolean;
     permissionCodePattern: string;
+    ruleSummaries: ApiResourceGovernanceRuleSummary[];
     total: number;
     violationCount: number;
     violations: ApiResourceViolation[];
+    warningCount: number;
+  }
+
+  export interface ApiResourceGovernanceRuleSummary {
+    blocking: boolean;
+    category: string;
+    count: number;
+    description: string;
+    remediation: string;
+    ruleCode: string;
+    severity: 'ERROR' | 'INFO' | 'WARN';
+  }
+
+  export interface ApiResourceGovernanceCategorySummary {
+    category: string;
+    errorCount: number;
+    violationCount: number;
     warningCount: number;
   }
 

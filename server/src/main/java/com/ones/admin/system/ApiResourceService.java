@@ -283,7 +283,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.43}") String applicationVersion
+            @Value("${ones.version:v0.0.44}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -339,6 +339,26 @@ public class ApiResourceService {
                 .map(entry -> toModuleStat(entry.getKey(), entry.getValue()))
                 .sorted(Comparator.comparing(ApiResourceSummaryResponse.ModuleStat::module))
                 .toList();
+        List<ApiResourceSummaryResponse.OwnerStat> owners = resources.stream()
+                .collect(Collectors.groupingBy(resource -> blankToDefault(resource.owner(), "未归属")))
+                .entrySet()
+                .stream()
+                .map(entry -> toOwnerStat(entry.getKey(), entry.getValue()))
+                .sorted(Comparator
+                        .comparingLong(ApiResourceSummaryResponse.OwnerStat::total)
+                        .reversed()
+                        .thenComparing(ApiResourceSummaryResponse.OwnerStat::owner))
+                .toList();
+        List<ApiResourceSummaryResponse.AudienceStat> audiences = resources.stream()
+                .collect(Collectors.groupingBy(resource -> blankToDefault(resource.audience(), "未声明")))
+                .entrySet()
+                .stream()
+                .map(entry -> toAudienceStat(entry.getKey(), entry.getValue()))
+                .sorted(Comparator
+                        .comparingLong(ApiResourceSummaryResponse.AudienceStat::total)
+                        .reversed()
+                        .thenComparing(ApiResourceSummaryResponse.AudienceStat::audience))
+                .toList();
         return new ApiResourceSummaryResponse(
                 resources.size(),
                 resources.stream().filter(ApiResourceResponse::writeOperation).count(),
@@ -348,6 +368,8 @@ public class ApiResourceService {
                 authTypes,
                 lifecycles,
                 riskLevels,
+                owners,
+                audiences,
                 modules
         );
     }
@@ -884,6 +906,8 @@ public class ApiResourceService {
                 PERMISSION_CODE_PATTERN_TEXT,
                 OPERATION_ID_PATTERN_TEXT,
                 API_VERSION_PATTERN_TEXT,
+                summarizeRules(violations),
+                summarizeCategories(violations),
                 violations
         );
     }
@@ -1557,6 +1581,80 @@ public class ApiResourceService {
                 .count();
     }
 
+    private List<ApiResourceGovernanceResponse.RuleSummary> summarizeRules(
+            List<ApiResourceGovernanceResponse.Violation> violations
+    ) {
+        return violations.stream()
+                .collect(Collectors.groupingBy(ApiResourceGovernanceResponse.Violation::ruleCode, Collectors.counting()))
+                .entrySet()
+                .stream()
+                .map(entry -> toRuleSummary(entry.getKey(), entry.getValue()))
+                .sorted(Comparator
+                        .comparingInt((ApiResourceGovernanceResponse.RuleSummary summary) ->
+                                severityRank(summary.severity()))
+                        .thenComparing(Comparator
+                                .comparingLong(ApiResourceGovernanceResponse.RuleSummary::count)
+                                .reversed())
+                        .thenComparing(ApiResourceGovernanceResponse.RuleSummary::ruleCode))
+                .toList();
+    }
+
+    private ApiResourceGovernanceResponse.RuleSummary toRuleSummary(String ruleCode, long count) {
+        GovernanceRule rule = GOVERNANCE_RULE_BY_CODE.get(ruleCode);
+        String severity = rule == null ? "WARN" : rule.severity();
+        String category = rule == null ? "UNKNOWN" : rule.category();
+        String description = rule == null ? "未登记接口治理规则：" + ruleCode : rule.description();
+        String remediation = rule == null ? remediation(ruleCode) : rule.remediation();
+        return new ApiResourceGovernanceResponse.RuleSummary(
+                ruleCode,
+                severity,
+                category,
+                "ERROR".equals(severity),
+                count,
+                description,
+                remediation
+        );
+    }
+
+    private List<ApiResourceGovernanceResponse.CategorySummary> summarizeCategories(
+            List<ApiResourceGovernanceResponse.Violation> violations
+    ) {
+        return violations.stream()
+                .collect(Collectors.groupingBy(violation -> categoryOf(violation.ruleCode())))
+                .entrySet()
+                .stream()
+                .map(entry -> {
+                    List<ApiResourceGovernanceResponse.Violation> categoryViolations = entry.getValue();
+                    return new ApiResourceGovernanceResponse.CategorySummary(
+                            entry.getKey(),
+                            categoryViolations.size(),
+                            countSeverity(categoryViolations, "ERROR"),
+                            countSeverity(categoryViolations, "WARN")
+                    );
+                })
+                .sorted(Comparator
+                        .comparingLong(ApiResourceGovernanceResponse.CategorySummary::errorCount)
+                        .reversed()
+                        .thenComparing(Comparator
+                                .comparingLong(ApiResourceGovernanceResponse.CategorySummary::violationCount)
+                                .reversed())
+                        .thenComparing(ApiResourceGovernanceResponse.CategorySummary::category))
+                .toList();
+    }
+
+    private String categoryOf(String ruleCode) {
+        GovernanceRule rule = GOVERNANCE_RULE_BY_CODE.get(ruleCode);
+        return rule == null ? "UNKNOWN" : rule.category();
+    }
+
+    private int severityRank(String severity) {
+        return switch (severity) {
+            case "ERROR" -> 0;
+            case "WARN" -> 1;
+            default -> 2;
+        };
+    }
+
     private boolean matches(ApiResourceQuery query, ApiResourceResponse resource) {
         return equalsIgnoreCaseIfPresent(query.getMethod(), resource.method())
                 && containsIfPresent(query.getPath(), resource.path())
@@ -1615,6 +1713,26 @@ public class ApiResourceService {
                 countAuthType(resources, ApiAuthType.PERMISSION),
                 resources.stream().filter(ApiResourceResponse::writeOperation).count(),
                 resources.stream().filter(ApiResourceResponse::permissionMissing).count()
+        );
+    }
+
+    private ApiResourceSummaryResponse.OwnerStat toOwnerStat(String owner, List<ApiResourceResponse> resources) {
+        return new ApiResourceSummaryResponse.OwnerStat(
+                owner,
+                resources.size(),
+                resources.stream().filter(ApiResourceResponse::writeOperation).count(),
+                resources.stream().filter(ApiResourceResponse::permissionMissing).count(),
+                resources.stream().filter(resource -> ApiRiskLevel.HIGH.name().equals(resource.riskLevel())).count()
+        );
+    }
+
+    private ApiResourceSummaryResponse.AudienceStat toAudienceStat(String audience, List<ApiResourceResponse> resources) {
+        return new ApiResourceSummaryResponse.AudienceStat(
+                audience,
+                resources.size(),
+                countAuthType(resources, ApiAuthType.PUBLIC),
+                countAuthType(resources, ApiAuthType.PERMISSION),
+                resources.stream().filter(ApiResourceResponse::writeOperation).count()
         );
     }
 

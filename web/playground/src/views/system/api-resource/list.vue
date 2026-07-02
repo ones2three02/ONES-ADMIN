@@ -142,6 +142,14 @@ const gateStatus = computed(() => {
 const topViolations = computed(() => {
   return governance.value?.violations.slice(0, 3) ?? [];
 });
+const ownerStats = computed(() => summary.value?.owners.slice(0, 4) ?? []);
+const audienceStats = computed(() => summary.value?.audiences.slice(0, 4) ?? []);
+const governanceRuleSummaries = computed(
+  () => governance.value?.ruleSummaries.slice(0, 4) ?? [],
+);
+const governanceCategorySummaries = computed(
+  () => governance.value?.categorySummaries ?? [],
+);
 
 async function loadOverview() {
   loadingOverview.value = true;
@@ -236,6 +244,161 @@ onMounted(() => {
             <Statistic :title="item.title" :value="item.value" />
             <div class="rounded bg-muted p-2 text-primary">
               <IconifyIcon :icon="item.icon" class="size-5" />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <div
+        v-if="governanceReport"
+        class="mb-4 grid gap-4 xl:grid-cols-2"
+      >
+        <Card variant="borderless">
+          <div class="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2 font-medium">
+                <IconifyIcon class="size-4 text-primary" icon="lucide:users" />
+                目录分布
+              </div>
+              <div class="text-muted-foreground mt-1 text-xs">
+                按负责人和主要调用方归集接口资产，便于权限授权、联调和版本责任追踪。
+              </div>
+            </div>
+            <Tag color="processing">
+              {{ summary?.modules.length ?? 0 }} 个模块
+            </Tag>
+          </div>
+
+          <div class="grid gap-4 lg:grid-cols-2">
+            <div>
+              <div class="text-muted-foreground mb-2 text-xs">接口负责人</div>
+              <div class="space-y-2">
+                <div
+                  v-for="owner in ownerStats"
+                  :key="owner.owner"
+                  class="rounded border border-border p-3"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="truncate text-sm font-medium">
+                      {{ owner.owner }}
+                    </span>
+                    <Tag color="blue">{{ owner.total }} 个</Tag>
+                  </div>
+                  <div class="text-muted-foreground mt-2 flex flex-wrap gap-3 text-xs">
+                    <span>写操作 {{ owner.writeOperationCount }}</span>
+                    <span>高风险 {{ owner.highRiskCount }}</span>
+                    <span>权限缺失 {{ owner.permissionMissingCount }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="text-muted-foreground mb-2 text-xs">主要调用方</div>
+              <div class="space-y-2">
+                <div
+                  v-for="audience in audienceStats"
+                  :key="audience.audience"
+                  class="rounded border border-border p-3"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="truncate text-sm font-medium">
+                      {{ audience.audience }}
+                    </span>
+                    <Tag color="cyan">{{ audience.total }} 个</Tag>
+                  </div>
+                  <div class="text-muted-foreground mt-2 flex flex-wrap gap-3 text-xs">
+                    <span>权限接口 {{ audience.permissionCount }}</span>
+                    <span>公开接口 {{ audience.publicCount }}</span>
+                    <span>写操作 {{ audience.writeOperationCount }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card variant="borderless">
+          <div class="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2 font-medium">
+                <IconifyIcon
+                  class="size-4 text-primary"
+                  icon="lucide:clipboard-check"
+                />
+                治理分布
+              </div>
+              <div class="text-muted-foreground mt-1 text-xs">
+                按规则和治理分类汇总违规结果，给 CI 门禁、接口评审和迭代排期提供统一口径。
+              </div>
+            </div>
+            <Tag :color="governanceStatus.color">
+              {{ governance?.violationCount ?? 0 }} 个问题
+            </Tag>
+          </div>
+
+          <div
+            v-if="governanceCategorySummaries.length === 0"
+            class="rounded border border-dashed border-border p-4"
+          >
+            <div class="flex items-center gap-2 text-sm font-medium">
+              <IconifyIcon class="size-4 text-success" icon="lucide:circle-check" />
+              当前无治理违规
+            </div>
+            <div class="text-muted-foreground mt-2 text-xs">
+              现有接口目录、权限策略、生命周期和文档元数据均满足发布门禁要求。
+            </div>
+          </div>
+
+          <div v-else class="grid gap-4 lg:grid-cols-2">
+            <div>
+              <div class="text-muted-foreground mb-2 text-xs">分类汇总</div>
+              <div class="space-y-2">
+                <div
+                  v-for="category in governanceCategorySummaries"
+                  :key="category.category"
+                  class="rounded border border-border p-3"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="truncate text-sm font-medium">
+                      {{ category.category }}
+                    </span>
+                    <Tag :color="category.errorCount > 0 ? 'error' : 'warning'">
+                      {{ category.violationCount }} 个
+                    </Tag>
+                  </div>
+                  <div class="text-muted-foreground mt-2 flex gap-3 text-xs">
+                    <span>阻断 {{ category.errorCount }}</span>
+                    <span>警告 {{ category.warningCount }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="text-muted-foreground mb-2 text-xs">规则命中</div>
+              <div class="space-y-2">
+                <div
+                  v-for="rule in governanceRuleSummaries"
+                  :key="rule.ruleCode"
+                  class="rounded border border-border p-3"
+                >
+                  <div class="mb-2 flex items-center justify-between gap-2">
+                    <div class="flex min-w-0 items-center gap-2">
+                      <Tag :color="getSeverityColor(rule.severity)">
+                        {{ rule.severity }}
+                      </Tag>
+                      <span class="truncate text-xs font-medium">
+                        {{ rule.ruleCode }}
+                      </span>
+                    </div>
+                    <span class="text-muted-foreground text-xs">
+                      {{ rule.count }} 次
+                    </span>
+                  </div>
+                  <div class="line-clamp-2 text-sm">{{ rule.description }}</div>
+                </div>
+              </div>
             </div>
           </div>
         </Card>

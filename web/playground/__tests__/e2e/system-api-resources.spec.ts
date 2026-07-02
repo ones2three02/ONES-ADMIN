@@ -17,6 +17,9 @@ test.describe('System API Resources Page', () => {
     await expect(pageContent.getByText('接口管理', { exact: true })).toBeVisible();
     await expect(pageContent.getByText('治理状态', { exact: true })).toBeVisible();
     await expect(pageContent.getByText('接口总数', { exact: true })).toBeVisible();
+    await expect(pageContent.getByText('目录分布', { exact: true })).toBeVisible();
+    await expect(pageContent.getByText('治理分布', { exact: true })).toBeVisible();
+    await expect(pageContent.getByText('当前无治理违规')).toBeVisible();
     await expect(
       pageContent.getByText('接口资源清单', { exact: true }),
     ).toBeVisible();

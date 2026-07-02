@@ -65,7 +65,7 @@
 - 已提供接口资源 Manifest Diff，可对比上一版本 Manifest 和当前运行时 Manifest，输出新增、删除、修改和破坏性变更统计。
 - 已提供接口资源 Manifest 发布门禁，可综合接口治理错误、破坏性接口变更和人工确认原因输出发布准入结果。
 - Manifest Gate 已输出机器可读 `checks` 检查项，Jenkins 可按 `checkCode`、`passed`、`blocking` 和 `remediation` 生成稳定门禁报告。
-- 已提供接口治理聚合报告，一次性返回 summary、governance、rules、manifest 和 latestGate，便于 Jenkins、接口管理页和人工巡检使用同一份接口治理视图。
+- 已提供接口治理聚合报告，一次性返回 summary、governance、rules、manifest 和 latestGate，并补充负责人、调用方、规则命中和治理分类聚合，便于 Jenkins、接口管理页和人工巡检使用同一份接口治理视图。
 - 已将 `operationId` 纳入接口清单、CSV、Manifest、Manifest 指纹和 Manifest Diff，接口操作标识变化按破坏性变更处理。
 - 已建立 `operationId` 命名规范和唯一性门禁，当前格式为 `^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$`，重复或非法命名会作为治理错误阻断发布。
 - 已建立显式 HTTP 方法治理，`/api/**` 接口不得使用未指定 method 的 `ALL` 泛匹配路由，避免接口契约、网关路由和客户端生成不稳定。
