@@ -17,6 +17,11 @@ public enum HrErrorCode implements ErrorCode {
     EMPLOYEE_DEPT_NOT_AVAILABLE(4423, "员工部门不存在或已停用"),
     EMPLOYEE_MANAGER_NOT_AVAILABLE(4424, "直属上级不存在或已离职"),
     EMPLOYEE_MANAGER_CANNOT_BE_SELF(4425, "直属上级不能是员工本人"),
+    EMPLOYEE_ALREADY_RESIGNED(4426, "离职员工不能执行该操作"),
+    EMPLOYEE_REGULARIZE_STATUS_INVALID(4427, "只有试用员工可以转正"),
+    EMPLOYEE_RESIGN_DATE_INVALID(4428, "离职日期不能早于入职日期"),
+    EMPLOYEE_TRANSFER_DATE_INVALID(4429, "调岗生效日期不能早于入职日期"),
+    EMPLOYEE_REGULARIZE_DATE_INVALID(4430, "转正日期不能早于入职日期"),
     HR_ENUM_INVALID(4491, "HRMS 枚举值不正确");
 
     private final int code;

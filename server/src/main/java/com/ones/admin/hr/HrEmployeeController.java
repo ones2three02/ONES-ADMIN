@@ -9,7 +9,10 @@ import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.hr.dto.HrEmployeeCreateRequest;
 import com.ones.admin.hr.dto.HrEmployeeQuery;
+import com.ones.admin.hr.dto.HrEmployeeRegularizeRequest;
+import com.ones.admin.hr.dto.HrEmployeeResignRequest;
 import com.ones.admin.hr.dto.HrEmployeeResponse;
+import com.ones.admin.hr.dto.HrEmployeeTransferRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -59,5 +62,41 @@ public class HrEmployeeController {
     @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<HrEmployeeResponse> createEmployee(@Valid @RequestBody HrEmployeeCreateRequest request) {
         return ApiResult.ok(employeeService.createEmployee(request));
+    }
+
+    @PostMapping("/{id}/transfer")
+    @SaCheckPermission("hr:employee:transfer")
+    @Operation(operationId = "HrEmployeeController_transferEmployee", summary = "员工调岗")
+    @RepeatSubmit
+    @ApiResourceMetadata(sinceVersion = "v0.0.52", riskLevel = ApiRiskLevel.HIGH)
+    public ApiResult<HrEmployeeResponse> transferEmployee(
+            @PathVariable Long id,
+            @Valid @RequestBody HrEmployeeTransferRequest request
+    ) {
+        return ApiResult.ok(employeeService.transferEmployee(id, request));
+    }
+
+    @PostMapping("/{id}/regularize")
+    @SaCheckPermission("hr:employee:regularize")
+    @Operation(operationId = "HrEmployeeController_regularizeEmployee", summary = "员工转正")
+    @RepeatSubmit
+    @ApiResourceMetadata(sinceVersion = "v0.0.52", riskLevel = ApiRiskLevel.HIGH)
+    public ApiResult<HrEmployeeResponse> regularizeEmployee(
+            @PathVariable Long id,
+            @Valid @RequestBody HrEmployeeRegularizeRequest request
+    ) {
+        return ApiResult.ok(employeeService.regularizeEmployee(id, request));
+    }
+
+    @PostMapping("/{id}/resign")
+    @SaCheckPermission("hr:employee:resign")
+    @Operation(operationId = "HrEmployeeController_resignEmployee", summary = "员工离职")
+    @RepeatSubmit
+    @ApiResourceMetadata(sinceVersion = "v0.0.52", riskLevel = ApiRiskLevel.HIGH)
+    public ApiResult<HrEmployeeResponse> resignEmployee(
+            @PathVariable Long id,
+            @Valid @RequestBody HrEmployeeResignRequest request
+    ) {
+        return ApiResult.ok(employeeService.resignEmployee(id, request));
     }
 }

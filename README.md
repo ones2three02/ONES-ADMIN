@@ -2,11 +2,11 @@
 
 ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
-当前产品版本：`v0.0.51`
+当前产品版本：`v0.0.52`
 
 ## 当前能力
 
-- 后端：Spring Boot 3.5.9、Java 21、Maven Enforcer、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、Flyway、MySQL、Redis、RabbitMQ、MinIO、统一响应、统一异常、TraceId 链路追踪、登录认证、角色权限、动态菜单、用户 CRUD、HRMS 岗位/职级/员工基础接口、接口资源治理、接口治理聚合报告、接口管理参考基准、接口治理推荐动作、HRMS 一期企业级设计、接口版本元数据治理、接口生命周期治理、接口受众治理、高风险写接口策略治理、公开接口访问策略治理、接口治理修复建议、Actuator、Swagger UI。
+- 后端：Spring Boot 3.5.9、Java 21、Maven Enforcer、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、Flyway、MySQL、Redis、RabbitMQ、MinIO、统一响应、统一异常、TraceId 链路追踪、登录认证、角色权限、动态菜单、用户 CRUD、HRMS 岗位/职级/员工基础接口、HRMS 员工调岗/转正/离职生命周期、接口资源治理、接口治理聚合报告、接口管理参考基准、接口治理推荐动作、HRMS 一期企业级设计、接口版本元数据治理、接口生命周期治理、接口受众治理、高风险写接口策略治理、公开接口访问策略治理、接口治理修复建议、Actuator、Swagger UI。
 - 前端：Vue3、Vite、TypeScript、Element Plus、Pinia、Vue Router、Axios 请求拦截、错误提示 TraceId 展示、Vben 风格企业级安全登录页、ONES 1S 品牌视觉面板、管理布局、工作台、用户管理页、接口管理页、接口调用方筛选与展示、发布门禁与治理规则视图、Playwright 登录冒烟用例。
 - 认证：`Authorization: Bearer <token>`，由 Sa-Token 签发与校验。
 - 演示账号：`admin / admin123`
@@ -114,6 +114,9 @@ pnpm build
 | `GET` | `/api/hr/employees` | 查询 HRMS 员工列表 |
 | `GET` | `/api/hr/employees/{id}` | 查询 HRMS 员工详情 |
 | `POST` | `/api/hr/employees` | 新增 HRMS 员工，并写入任职记录和生命周期事件 |
+| `POST` | `/api/hr/employees/{id}/transfer` | HRMS 员工调岗，并写入任职记录和生命周期事件 |
+| `POST` | `/api/hr/employees/{id}/regularize` | HRMS 员工转正，并写入生命周期事件 |
+| `POST` | `/api/hr/employees/{id}/resign` | HRMS 员工离职，并写入生命周期事件 |
 | `GET` | `/api/health` | 应用健康检查 |
 
 ## 架构文档

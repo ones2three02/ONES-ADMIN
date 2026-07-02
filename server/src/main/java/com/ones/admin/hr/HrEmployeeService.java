@@ -9,7 +9,10 @@ import com.ones.admin.common.exception.BusinessException;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.hr.dto.HrEmployeeCreateRequest;
 import com.ones.admin.hr.dto.HrEmployeeQuery;
+import com.ones.admin.hr.dto.HrEmployeeRegularizeRequest;
+import com.ones.admin.hr.dto.HrEmployeeResignRequest;
 import com.ones.admin.hr.dto.HrEmployeeResponse;
+import com.ones.admin.hr.dto.HrEmployeeTransferRequest;
 import com.ones.admin.hr.entity.HrEmployeeEntity;
 import com.ones.admin.hr.entity.HrEmployeeJobEntity;
 import com.ones.admin.hr.entity.HrEmployeeLifecycleEventEntity;
@@ -25,6 +28,7 @@ import com.ones.admin.system.mapper.SystemDeptMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -114,6 +118,117 @@ public class HrEmployeeService {
         return toResponse(employeeMapper.selectById(employee.getId()));
     }
 
+    @Transactional
+    public HrEmployeeResponse transferEmployee(Long id, HrEmployeeTransferRequest request) {
+        HrEmployeeEntity employee = getRequiredEmployee(id);
+        ensureNotResigned(employee);
+        if (request.effectiveDate().isBefore(employee.getHireDate())) {
+            throw new BusinessException(HrErrorCode.EMPLOYEE_TRANSFER_DATE_INVALID);
+        }
+
+        Map<String, Object> before = employeeSnapshot(employee);
+        Long deptId = requireEnabledDept(request.deptId());
+        Long positionId = requireEnabledPosition(request.positionId());
+        Long gradeId = requireEnabledGrade(request.gradeId());
+        Long managerEmployeeId = requireActiveManager(request.managerEmployeeId(), employee.getId());
+        String employmentType = normalizeEnum(request.employmentType(), employee.getEmploymentType(), EMPLOYMENT_TYPES);
+
+        closeActiveJob(employee.getId(), request.effectiveDate().minusDays(1));
+        employee.setDeptId(deptId);
+        employee.setPositionId(positionId);
+        employee.setGradeId(gradeId);
+        employee.setManagerEmployeeId(managerEmployeeId);
+        employee.setEmploymentType(employmentType);
+        employee.setUpdatedAt(LocalDateTime.now());
+        employeeMapper.updateById(employee);
+
+        HrEmployeeJobEntity job = new HrEmployeeJobEntity();
+        job.setEmployeeId(employee.getId());
+        job.setDeptId(employee.getDeptId());
+        job.setPositionId(employee.getPositionId());
+        job.setGradeId(employee.getGradeId());
+        job.setManagerEmployeeId(employee.getManagerEmployeeId());
+        job.setEmploymentType(employee.getEmploymentType());
+        job.setEffectiveDate(request.effectiveDate());
+        job.setChangeReason(normalizeNullable(request.changeReason()));
+        employeeJobMapper.insert(job);
+
+        createLifecycleEvent(
+                employee,
+                "TRANSFER",
+                request.effectiveDate(),
+                employee.getEmploymentStatus(),
+                employee.getEmploymentStatus(),
+                "员工调岗",
+                before,
+                employeeSnapshot(employee),
+                request.changeReason()
+        );
+        return toResponse(employeeMapper.selectById(employee.getId()));
+    }
+
+    @Transactional
+    public HrEmployeeResponse regularizeEmployee(Long id, HrEmployeeRegularizeRequest request) {
+        HrEmployeeEntity employee = getRequiredEmployee(id);
+        ensureNotResigned(employee);
+        if (!"PROBATION".equals(employee.getEmploymentStatus())) {
+            throw new BusinessException(HrErrorCode.EMPLOYEE_REGULARIZE_STATUS_INVALID);
+        }
+        if (request.regularizeDate().isBefore(employee.getHireDate())) {
+            throw new BusinessException(HrErrorCode.EMPLOYEE_REGULARIZE_DATE_INVALID);
+        }
+
+        Map<String, Object> before = employeeSnapshot(employee);
+        String beforeStatus = employee.getEmploymentStatus();
+        employee.setEmploymentStatus("ACTIVE");
+        employee.setProbationEndDate(request.regularizeDate());
+        employee.setUpdatedAt(LocalDateTime.now());
+        employeeMapper.updateById(employee);
+
+        createLifecycleEvent(
+                employee,
+                "REGULARIZE",
+                request.regularizeDate(),
+                beforeStatus,
+                employee.getEmploymentStatus(),
+                "员工转正",
+                before,
+                employeeSnapshot(employee),
+                request.remark()
+        );
+        return toResponse(employeeMapper.selectById(employee.getId()));
+    }
+
+    @Transactional
+    public HrEmployeeResponse resignEmployee(Long id, HrEmployeeResignRequest request) {
+        HrEmployeeEntity employee = getRequiredEmployee(id);
+        ensureNotResigned(employee);
+        if (request.leaveDate().isBefore(employee.getHireDate())) {
+            throw new BusinessException(HrErrorCode.EMPLOYEE_RESIGN_DATE_INVALID);
+        }
+
+        Map<String, Object> before = employeeSnapshot(employee);
+        String beforeStatus = employee.getEmploymentStatus();
+        closeActiveJob(employee.getId(), request.leaveDate());
+        employee.setEmploymentStatus("RESIGNED");
+        employee.setLeaveDate(request.leaveDate());
+        employee.setUpdatedAt(LocalDateTime.now());
+        employeeMapper.updateById(employee);
+
+        createLifecycleEvent(
+                employee,
+                "RESIGN",
+                request.leaveDate(),
+                beforeStatus,
+                employee.getEmploymentStatus(),
+                "员工离职",
+                before,
+                employeeSnapshot(employee),
+                request.resignationReason()
+        );
+        return toResponse(employeeMapper.selectById(employee.getId()));
+    }
+
     private LambdaQueryWrapper<HrEmployeeEntity> buildEmployeeQuery(HrEmployeeQuery query) {
         LambdaQueryWrapper<HrEmployeeEntity> wrapper = new LambdaQueryWrapper<HrEmployeeEntity>()
                 .orderByDesc(HrEmployeeEntity::getCreatedAt)
@@ -170,6 +285,29 @@ public class HrEmployeeService {
         lifecycleEventMapper.insert(event);
     }
 
+    private void createLifecycleEvent(
+            HrEmployeeEntity employee,
+            String eventType,
+            LocalDate eventDate,
+            String beforeStatus,
+            String afterStatus,
+            String summary,
+            Map<String, Object> before,
+            Map<String, Object> after,
+            String reason
+    ) {
+        HrEmployeeLifecycleEventEntity event = new HrEmployeeLifecycleEventEntity();
+        event.setEmployeeId(employee.getId());
+        event.setEventType(eventType);
+        event.setEventDate(eventDate);
+        event.setBeforeStatus(beforeStatus);
+        event.setAfterStatus(afterStatus);
+        event.setSummary(summary);
+        event.setDetailJson(writeLifecycleDetail(before, after, reason));
+        event.setCreatedBy(currentUserId());
+        lifecycleEventMapper.insert(event);
+    }
+
     private String writeLifecycleDetail(HrEmployeeEntity employee) {
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("employeeNo", employee.getEmployeeNo());
@@ -184,6 +322,48 @@ public class HrEmployeeService {
         } catch (JsonProcessingException ex) {
             throw new BusinessException("员工生命周期事件序列化失败");
         }
+    }
+
+    private String writeLifecycleDetail(Map<String, Object> before, Map<String, Object> after, String reason) {
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("before", before);
+        detail.put("after", after);
+        detail.put("reason", normalizeNullable(reason));
+        try {
+            return objectMapper.writeValueAsString(detail);
+        } catch (JsonProcessingException ex) {
+            throw new BusinessException("员工生命周期事件序列化失败");
+        }
+    }
+
+    private Map<String, Object> employeeSnapshot(HrEmployeeEntity employee) {
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("employeeNo", employee.getEmployeeNo());
+        snapshot.put("realName", employee.getRealName());
+        snapshot.put("deptId", employee.getDeptId());
+        snapshot.put("positionId", employee.getPositionId());
+        snapshot.put("gradeId", employee.getGradeId());
+        snapshot.put("managerEmployeeId", employee.getManagerEmployeeId());
+        snapshot.put("employmentType", employee.getEmploymentType());
+        snapshot.put("employmentStatus", employee.getEmploymentStatus());
+        snapshot.put("hireDate", employee.getHireDate());
+        snapshot.put("probationEndDate", employee.getProbationEndDate());
+        snapshot.put("leaveDate", employee.getLeaveDate());
+        return snapshot;
+    }
+
+    private void closeActiveJob(Long employeeId, LocalDate endDate) {
+        HrEmployeeJobEntity activeJob = employeeJobMapper.selectOne(new LambdaQueryWrapper<HrEmployeeJobEntity>()
+                .eq(HrEmployeeJobEntity::getEmployeeId, employeeId)
+                .isNull(HrEmployeeJobEntity::getEndDate)
+                .orderByDesc(HrEmployeeJobEntity::getEffectiveDate)
+                .last("limit 1"));
+        if (activeJob == null) {
+            return;
+        }
+        activeJob.setEndDate(endDate);
+        activeJob.setUpdatedAt(LocalDateTime.now());
+        employeeJobMapper.updateById(activeJob);
     }
 
     private void assertEmployeeNoAvailable(String employeeNo) {
@@ -244,6 +424,12 @@ public class HrEmployeeService {
             throw new BusinessException(HrErrorCode.EMPLOYEE_MANAGER_NOT_AVAILABLE);
         }
         return managerEmployeeId;
+    }
+
+    private void ensureNotResigned(HrEmployeeEntity employee) {
+        if ("RESIGNED".equals(employee.getEmploymentStatus())) {
+            throw new BusinessException(HrErrorCode.EMPLOYEE_ALREADY_RESIGNED);
+        }
     }
 
     private HrEmployeeResponse toResponse(HrEmployeeEntity employee) {

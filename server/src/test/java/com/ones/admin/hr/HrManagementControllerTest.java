@@ -3,6 +3,9 @@ package com.ones.admin.hr;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ones.admin.auth.dto.LoginRequest;
 import com.ones.admin.hr.dto.HrEmployeeCreateRequest;
+import com.ones.admin.hr.dto.HrEmployeeRegularizeRequest;
+import com.ones.admin.hr.dto.HrEmployeeResignRequest;
+import com.ones.admin.hr.dto.HrEmployeeTransferRequest;
 import com.ones.admin.hr.dto.HrJobGradeSaveRequest;
 import com.ones.admin.hr.dto.HrPositionSaveRequest;
 import org.junit.jupiter.api.Test;
@@ -39,8 +42,10 @@ class HrManagementControllerTest {
 
         long positionId = createPosition(token, "DEV-" + suffix);
         updatePosition(token, positionId, "DEVOPS-" + suffix);
+        long transferPositionId = createPosition(token, "ARCH-" + suffix, "架构师");
         long gradeId = createJobGrade(token, "P6-" + suffix);
         updateJobGrade(token, gradeId, "P7-" + suffix);
+        long transferGradeId = createJobGrade(token, "P8-" + suffix, "P8", 8);
 
         String idCardNumber = "110101199001011234";
         String employeeResponse = createEmployee(token, suffix, positionId, gradeId, idCardNumber);
@@ -57,6 +62,42 @@ class HrManagementControllerTest {
                 .andExpect(jsonPath("$.data.gradeName").value("P7"))
                 .andExpect(jsonPath("$.data.idCardMasked").value("110****1234"));
 
+        transferEmployee(token, employeeId, transferPositionId, transferGradeId);
+        mockMvc.perform(get("/api/hr/employees/" + employeeId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.positionName").value("架构师"))
+                .andExpect(jsonPath("$.data.gradeName").value("P8"));
+
+        regularizeEmployee(token, employeeId);
+        mockMvc.perform(get("/api/hr/employees/" + employeeId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.employmentStatus").value("ACTIVE"))
+                .andExpect(jsonPath("$.data.probationEndDate").value("2026-09-30"));
+
+        resignEmployee(token, employeeId);
+        mockMvc.perform(get("/api/hr/employees/" + employeeId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.employmentStatus").value("RESIGNED"))
+                .andExpect(jsonPath("$.data.leaveDate").value("2026-12-31"));
+
+        mockMvc.perform(post("/api/hr/employees/" + employeeId + "/transfer")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new HrEmployeeTransferRequest(
+                                1L,
+                                transferPositionId,
+                                transferGradeId,
+                                null,
+                                "FULL_TIME",
+                                LocalDate.of(2027, 1, 1),
+                                "离职后调岗应失败"
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HrErrorCode.EMPLOYEE_ALREADY_RESIGNED.code()));
+
         mockMvc.perform(get("/api/hr/employees")
                         .header("Authorization", "Bearer " + token)
                         .param("keyword", "E" + suffix)
@@ -68,9 +109,13 @@ class HrManagementControllerTest {
     }
 
     private long createPosition(String token, String code) throws Exception {
+        return createPosition(token, code, "研发工程师");
+    }
+
+    private long createPosition(String token, String code, String name) throws Exception {
         String body = objectMapper.writeValueAsString(new HrPositionSaveRequest(
                 code,
-                "研发工程师",
+                name,
                 1L,
                 "负责产品研发",
                 true
@@ -106,10 +151,14 @@ class HrManagementControllerTest {
     }
 
     private long createJobGrade(String token, String code) throws Exception {
+        return createJobGrade(token, code, "P6", 6);
+    }
+
+    private long createJobGrade(String token, String code, String name, int rank) throws Exception {
         String body = objectMapper.writeValueAsString(new HrJobGradeSaveRequest(
                 code,
-                "P6",
-                6,
+                name,
+                rank,
                 true
         ));
         String response = mockMvc.perform(post("/api/hr/job-grades")
@@ -138,6 +187,51 @@ class HrManagementControllerTest {
                         .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.gradeName").value("P7"));
+    }
+
+    private void transferEmployee(String token, long employeeId, long positionId, long gradeId) throws Exception {
+        String body = objectMapper.writeValueAsString(new HrEmployeeTransferRequest(
+                1L,
+                positionId,
+                gradeId,
+                null,
+                "FULL_TIME",
+                LocalDate.of(2026, 8, 1),
+                "组织架构调整"
+        ));
+        mockMvc.perform(post("/api/hr/employees/" + employeeId + "/transfer")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.positionName").value("架构师"))
+                .andExpect(jsonPath("$.data.gradeName").value("P8"));
+    }
+
+    private void regularizeEmployee(String token, long employeeId) throws Exception {
+        String body = objectMapper.writeValueAsString(new HrEmployeeRegularizeRequest(
+                LocalDate.of(2026, 9, 30),
+                "试用期表现达标"
+        ));
+        mockMvc.perform(post("/api/hr/employees/" + employeeId + "/regularize")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.employmentStatus").value("ACTIVE"));
+    }
+
+    private void resignEmployee(String token, long employeeId) throws Exception {
+        String body = objectMapper.writeValueAsString(new HrEmployeeResignRequest(
+                LocalDate.of(2026, 12, 31),
+                "个人原因离职"
+        ));
+        mockMvc.perform(post("/api/hr/employees/" + employeeId + "/resign")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.employmentStatus").value("RESIGNED"));
     }
 
     private String createEmployee(
