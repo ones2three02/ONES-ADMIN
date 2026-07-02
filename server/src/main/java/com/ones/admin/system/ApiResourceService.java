@@ -333,7 +333,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.49}") String applicationVersion
+            @Value("${ones.version:v0.0.50}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;

@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.50 - 2026-07-02
+
+- 新增 `docs/architecture/hrms-phase-one-design.md`，将 HRMS 从调研建议推进为一期企业级设计稿。
+- HRMS 一期设计明确采用“主数据 + 合同 + 花名册”方案，覆盖业务范围、表结构草案、接口清单、权限码、事务一致性、敏感数据、审计、前端页面和 Flyway 迁移计划。
+- 复核 Frappe HR、OrangeHRM、IceHrm、OpenHRMS 最新公开仓库状态，并将参考结论沉淀到设计文档。
+- 产品版本递增至 `v0.0.50`。
+
 ## v0.0.49 - 2026-07-02
 
 - 后端接口治理聚合报告新增 `referenceBenchmarks`，结构化输出 Backstage、Gravitee、Kong、APISIX、Tyk、Frappe HR、OrangeHRM、IceHrm 等参考基准和可借鉴点。
