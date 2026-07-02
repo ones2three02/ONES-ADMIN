@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.47 - 2026-07-02
+
+- 后端新增审计日志保留策略配置，登录日志和操作日志默认保留 180 天，可通过环境变量分别覆盖。
+- 后端新增审计保留策略查询接口 `/api/system/audit/retention`，返回过期阈值和待清理数量，便于运维和 Jenkins 发布前巡检。
+- 后端新增过期审计日志清理接口 `/api/system/audit/retention/cleanup`，使用独立权限 `system:audit:retention`，并接入防重复提交和操作审计。
+- 产品版本递增至 `v0.0.47`。
+
 ## v0.0.46 - 2026-07-02
 
 - 后端新增登录日志 CSV 导出接口 `/api/system/audit/login-logs/export`，沿用登录日志查询筛选条件和 `system:audit:login-log` 权限。

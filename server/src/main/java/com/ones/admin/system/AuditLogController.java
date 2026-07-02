@@ -1,13 +1,17 @@
 package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.ones.admin.common.repeatsubmit.RepeatSubmit;
 import com.ones.admin.common.web.ApiLifecycleStatus;
 import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
+import com.ones.admin.system.audit.AuditRetentionService;
 import com.ones.admin.system.audit.LoginAuditService;
 import com.ones.admin.system.audit.OperationAuditService;
+import com.ones.admin.system.dto.AuditRetentionCleanupResponse;
+import com.ones.admin.system.dto.AuditRetentionSummaryResponse;
 import com.ones.admin.system.dto.LoginLogQuery;
 import com.ones.admin.system.dto.LoginLogResponse;
 import com.ones.admin.system.dto.OperationLogQuery;
@@ -20,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -38,15 +43,35 @@ import java.nio.charset.StandardCharsets;
 )
 public class AuditLogController {
 
+    private final AuditRetentionService auditRetentionService;
     private final LoginAuditService loginAuditService;
     private final OperationAuditService operationAuditService;
 
     public AuditLogController(
+            AuditRetentionService auditRetentionService,
             LoginAuditService loginAuditService,
             OperationAuditService operationAuditService
     ) {
+        this.auditRetentionService = auditRetentionService;
         this.loginAuditService = loginAuditService;
         this.operationAuditService = operationAuditService;
+    }
+
+    @GetMapping("/retention")
+    @SaCheckPermission("system:audit:retention")
+    @Operation(summary = "查询审计日志保留策略")
+    @ApiResourceMetadata(sinceVersion = "v0.0.47")
+    public ApiResult<AuditRetentionSummaryResponse> getAuditRetention() {
+        return ApiResult.ok(auditRetentionService.summarize());
+    }
+
+    @PostMapping("/retention/cleanup")
+    @SaCheckPermission("system:audit:retention")
+    @RepeatSubmit(intervalMillis = 30_000, message = "审计日志清理正在执行，请勿重复提交")
+    @Operation(summary = "清理过期审计日志")
+    @ApiResourceMetadata(sinceVersion = "v0.0.47", riskLevel = ApiRiskLevel.HIGH)
+    public ApiResult<AuditRetentionCleanupResponse> cleanupExpiredAuditLogs() {
+        return ApiResult.ok(auditRetentionService.cleanupExpiredLogs());
     }
 
     @GetMapping("/login-logs")

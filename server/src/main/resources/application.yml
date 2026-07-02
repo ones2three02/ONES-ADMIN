@@ -63,7 +63,11 @@ sa-token:
   is-print: false
 
 ones:
-  version: ${ONES_ADMIN_VERSION:v0.0.46}
+  version: ${ONES_ADMIN_VERSION:v0.0.47}
+  audit:
+    retention:
+      login-log-days: ${ONES_AUDIT_LOGIN_LOG_RETENTION_DAYS:180}
+      operation-log-days: ${ONES_AUDIT_OPERATION_LOG_RETENTION_DAYS:180}
   security:
     login:
       max-failed-login-count: ${ONES_LOGIN_MAX_FAILED_COUNT:5}
