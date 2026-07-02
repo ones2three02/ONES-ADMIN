@@ -25,7 +25,7 @@ public class OpenApiConfig {
 
     private final String applicationVersion;
 
-    public OpenApiConfig(@Value("${ones.version:v0.0.50}") String applicationVersion) {
+    public OpenApiConfig(@Value("${ones.version:v0.0.51}") String applicationVersion) {
         this.applicationVersion = applicationVersion;
     }
 
@@ -58,6 +58,14 @@ public class OpenApiConfig {
         return GroupedOpenApi.builder()
                 .group("系统管理接口")
                 .pathsToMatch("/api/system/**", "/api/timezone/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi hrApi() {
+        return GroupedOpenApi.builder()
+                .group("HRMS接口")
+                .pathsToMatch("/api/hr/**")
                 .build();
     }
 

@@ -1,0 +1,39 @@
+package com.ones.admin.hr;
+
+import com.ones.admin.common.code.ErrorCode;
+
+public enum HrErrorCode implements ErrorCode {
+
+    POSITION_NOT_FOUND(4401, "岗位不存在"),
+    POSITION_CODE_EXISTS(4402, "岗位编码已存在"),
+    POSITION_NOT_AVAILABLE(4403, "岗位不存在或已停用"),
+
+    JOB_GRADE_NOT_FOUND(4411, "职级不存在"),
+    JOB_GRADE_CODE_EXISTS(4412, "职级编码已存在"),
+    JOB_GRADE_NOT_AVAILABLE(4413, "职级不存在或已停用"),
+
+    EMPLOYEE_NOT_FOUND(4421, "员工不存在"),
+    EMPLOYEE_NO_EXISTS(4422, "员工编号已存在"),
+    EMPLOYEE_DEPT_NOT_AVAILABLE(4423, "员工部门不存在或已停用"),
+    EMPLOYEE_MANAGER_NOT_AVAILABLE(4424, "直属上级不存在或已离职"),
+    EMPLOYEE_MANAGER_CANNOT_BE_SELF(4425, "直属上级不能是员工本人"),
+    HR_ENUM_INVALID(4491, "HRMS 枚举值不正确");
+
+    private final int code;
+    private final String message;
+
+    HrErrorCode(int code, String message) {
+        this.code = code;
+        this.message = message;
+    }
+
+    @Override
+    public int code() {
+        return code;
+    }
+
+    @Override
+    public String message() {
+        return message;
+    }
+}

@@ -5,7 +5,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@MapperScan("com.ones.admin.system.mapper")
+@MapperScan({
+        "com.ones.admin.system.mapper",
+        "com.ones.admin.hr.mapper"
+})
 public class OnesAdminApplication {
 
     public static void main(String[] args) {
