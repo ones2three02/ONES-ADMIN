@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
@@ -76,6 +77,25 @@ class HrManagementControllerTest {
                 .andExpect(jsonPath("$.data.employmentStatus").value("ACTIVE"))
                 .andExpect(jsonPath("$.data.probationEndDate").value("2026-09-30"));
 
+        long contractId = createEmployeeContract(token, employeeId, suffix);
+        updateEmployeeContract(token, employeeId, contractId, suffix);
+        mockMvc.perform(get("/api/hr/employees/" + employeeId + "/contracts")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].id").value(contractId))
+                .andExpect(jsonPath("$.data[0].employeeId").value(employeeId))
+                .andExpect(jsonPath("$.data[0].employeeNo").value("E" + suffix))
+                .andExpect(jsonPath("$.data[0].realName").value("张三"))
+                .andExpect(jsonPath("$.data[0].contractNo").value("C" + suffix))
+                .andExpect(jsonPath("$.data[0].contractType").value("FIXED_TERM"))
+                .andExpect(jsonPath("$.data[0].status").value("ACTIVE"))
+                .andExpect(jsonPath("$.data[0].startDate").value("2026-07-01"))
+                .andExpect(jsonPath("$.data[0].endDate").value("2029-12-31"))
+                .andExpect(jsonPath("$.data[0].probationMonths").value(3))
+                .andExpect(jsonPath("$.data[0].renewalRemindDate").value("2029-11-30"))
+                .andExpect(jsonPath("$.data[0].remark").value("合同续签信息更新"));
+
         resignEmployee(token, employeeId);
         mockMvc.perform(get("/api/hr/employees/" + employeeId)
                         .header("Authorization", "Bearer " + token))
@@ -122,6 +142,59 @@ class HrManagementControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.total").value(1))
                 .andExpect(jsonPath("$.data.list[0].employeeNo").value("E" + suffix));
+    }
+
+    private long createEmployeeContract(String token, long employeeId, String suffix) throws Exception {
+        Map<String, Object> request = Map.of(
+                "contractNo", "C" + suffix,
+                "contractType", "FIXED_TERM",
+                "status", "ACTIVE",
+                "startDate", "2026-07-01",
+                "endDate", "2029-06-30",
+                "probationMonths", 3,
+                "renewalRemindDate", "2029-05-31",
+                "remark", "首签劳动合同"
+        );
+        String response = mockMvc.perform(post("/api/hr/employees/" + employeeId + "/contracts")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id", notNullValue()))
+                .andExpect(jsonPath("$.data.employeeId").value(employeeId))
+                .andExpect(jsonPath("$.data.contractNo").value("C" + suffix))
+                .andExpect(jsonPath("$.data.contractType").value("FIXED_TERM"))
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.data.startDate").value("2026-07-01"))
+                .andExpect(jsonPath("$.data.endDate").value("2029-06-30"))
+                .andExpect(jsonPath("$.data.renewalRemindDate").value("2029-05-31"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        return objectMapper.readTree(response).at("/data/id").asLong();
+    }
+
+    private void updateEmployeeContract(String token, long employeeId, long contractId, String suffix) throws Exception {
+        Map<String, Object> request = Map.of(
+                "contractNo", "C" + suffix,
+                "contractType", "FIXED_TERM",
+                "status", "ACTIVE",
+                "startDate", "2026-07-01",
+                "endDate", "2029-12-31",
+                "probationMonths", 3,
+                "renewalRemindDate", "2029-11-30",
+                "remark", "合同续签信息更新"
+        );
+        mockMvc.perform(put("/api/hr/employees/" + employeeId + "/contracts/" + contractId)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(contractId))
+                .andExpect(jsonPath("$.data.contractNo").value("C" + suffix))
+                .andExpect(jsonPath("$.data.endDate").value("2029-12-31"))
+                .andExpect(jsonPath("$.data.renewalRemindDate").value("2029-11-30"))
+                .andExpect(jsonPath("$.data.remark").value("合同续签信息更新"));
     }
 
     private long createPosition(String token, String code) throws Exception {

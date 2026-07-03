@@ -2,7 +2,7 @@
 
 更新时间：2026-07-02
 目标版本：v0.0.50 起
-状态：Phase 1A 已在 v0.0.51 开始落地，Phase 1B 员工生命周期动作已在 v0.0.52 开始落地
+状态：Phase 1A 已在 v0.0.51 开始落地，Phase 1B 员工生命周期动作已在 v0.0.52 开始落地，Phase 1C 生命周期时间线已在 v0.0.54 落地，Phase 1D 合同核心接口已在 v0.0.55 开始落地
 
 ## 1. 设计目标
 
@@ -272,8 +272,8 @@ com.ones.admin.hr
 │   ├── entity
 │   └── mapper
 ├── contract
-│   ├── EmployeeContractController.java
-│   ├── EmployeeContractService.java
+│   ├── HrEmployeeContractController.java
+│   ├── HrEmployeeContractService.java
 │   ├── dto
 │   ├── entity
 │   └── mapper
@@ -326,11 +326,11 @@ com.ones.admin.hr
 
 | 方法 | 路径 | operationId | 权限码 | 说明 |
 | --- | --- | --- | --- | --- |
-| `GET` | `/api/hr/employees/{employeeId}/contracts` | `EmployeeContractController_listContracts` | `hr:contract:list` | 员工合同列表 |
-| `POST` | `/api/hr/employees/{employeeId}/contracts` | `EmployeeContractController_createContract` | `hr:contract:create` | 新增合同 |
-| `PUT` | `/api/hr/contracts/{id}` | `EmployeeContractController_updateContract` | `hr:contract:update` | 编辑合同 |
-| `POST` | `/api/hr/contracts/{id}/terminate` | `EmployeeContractController_terminateContract` | `hr:contract:terminate` | 终止合同 |
-| `GET` | `/api/hr/contracts/expiring` | `EmployeeContractController_listExpiringContracts` | `hr:contract:list` | 即将到期合同 |
+| `GET` | `/api/hr/employees/{employeeId}/contracts` | `HrEmployeeContractController_listContracts` | `hr:contract:list` | 员工合同列表 |
+| `POST` | `/api/hr/employees/{employeeId}/contracts` | `HrEmployeeContractController_createContract` | `hr:contract:create` | 新增合同 |
+| `PUT` | `/api/hr/employees/{employeeId}/contracts/{contractId}` | `HrEmployeeContractController_updateContract` | `hr:contract:update` | 编辑合同 |
+| `POST` | `/api/hr/contracts/{id}/terminate` | `HrEmployeeContractController_terminateContract` | `hr:contract:terminate` | 终止合同 |
+| `GET` | `/api/hr/contracts/expiring` | `HrEmployeeContractController_listExpiringContracts` | `hr:contract:list` | 即将到期合同 |
 
 ### 8.4 花名册导入
 
@@ -488,17 +488,21 @@ HRMS
 | 阶段 | 目标 | 交付 |
 | --- | --- | --- |
 | Phase 1A | 后端基础模型 | Flyway 表、实体、Mapper、Service、员工/岗位/职级基础接口 |
-| Phase 1B | 生命周期与合同 | 调岗、转正、离职、合同管理、业务事件 |
-| Phase 1C | 花名册导入导出 | 模板、导入批次、错误行、导出 |
-| Phase 1D | 前端页面 | Vben 风格员工档案、详情、岗位职级、合同、导入页面 |
-| Phase 1E | 治理闭环 | 接口治理、审计、E2E、Jenkins 报告 |
+| Phase 1B | 生命周期动作 | 调岗、转正、离职、业务事件 |
+| Phase 1C | 生命周期时间线 | 员工详情页可消费的生命周期查询接口 |
+| Phase 1D | 合同管理核心接口 | 员工合同列表、新增、编辑 |
+| Phase 1E | 花名册导入导出 | 模板、导入批次、错误行、导出 |
+| Phase 1F | 前端页面 | Vben 风格员工档案、详情、岗位职级、合同、导入页面 |
+| Phase 1G | 治理闭环 | 接口治理、审计、E2E、Jenkins 报告 |
 
 当前进展：
 
 - `v0.0.51` 已完成 Phase 1A 的表结构迁移、岗位接口、职级接口、员工列表/详情/新增接口。
 - `v0.0.52` 已完成 Phase 1B 的员工调岗、转正、离职接口。
+- `v0.0.54` 已完成员工生命周期时间线查询接口，前端员工详情页可直接展示入职、调岗、转正、离职过程。
+- `v0.0.55` 已完成员工合同列表、新增、编辑核心接口，补齐 `hr:contract:list/create/update` 权限闭环。
 - 员工新增、调岗、转正、离职已写入生命周期事件；调岗会维护任职历史。
-- 合同管理、花名册导入导出仍按后续阶段推进。
+- 合同终止、到期提醒、花名册导入导出仍按后续阶段推进。
 
 ## 16. 待确认问题
 

@@ -99,7 +99,10 @@ public class SystemDataInitializer implements ApplicationRunner {
                 ensurePermission("hr:position:update", "岗位编辑"),
                 ensurePermission("hr:job-grade:list", "职级查询"),
                 ensurePermission("hr:job-grade:create", "职级新增"),
-                ensurePermission("hr:job-grade:update", "职级编辑")
+                ensurePermission("hr:job-grade:update", "职级编辑"),
+                ensurePermission("hr:contract:list", "员工合同查询"),
+                ensurePermission("hr:contract:create", "员工合同新增"),
+                ensurePermission("hr:contract:update", "员工合同编辑")
         );
 
         permissions.forEach(permission -> ensureRolePermission(superAdminRole.getId(), permission.getId()));
@@ -311,6 +314,12 @@ public class SystemDataInitializer implements ApplicationRunner {
                 null, null, "hr:job-grade:create", "lucide:layers-3", "button", 81);
         ensureMenu(system.getId(), "HrJobGradeUpdate", "职级编辑", "/system#hr-job-grade-update",
                 null, null, "hr:job-grade:update", "lucide:layers-3", "button", 82);
+        ensureMenu(system.getId(), "HrContractList", "员工合同查询", "/system#hr-contract-list",
+                null, null, "hr:contract:list", "lucide:file-text", "button", 83);
+        ensureMenu(system.getId(), "HrContractCreate", "员工合同新增", "/system#hr-contract-create",
+                null, null, "hr:contract:create", "lucide:file-plus-2", "button", 84);
+        ensureMenu(system.getId(), "HrContractUpdate", "员工合同编辑", "/system#hr-contract-update",
+                null, null, "hr:contract:update", "lucide:file-pen-line", "button", 85);
     }
 
     private SystemMenuEntity ensureMenu(

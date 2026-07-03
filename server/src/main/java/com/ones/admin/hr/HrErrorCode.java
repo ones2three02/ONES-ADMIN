@@ -22,6 +22,9 @@ public enum HrErrorCode implements ErrorCode {
     EMPLOYEE_RESIGN_DATE_INVALID(4428, "离职日期不能早于入职日期"),
     EMPLOYEE_TRANSFER_DATE_INVALID(4429, "调岗生效日期不能早于入职日期"),
     EMPLOYEE_REGULARIZE_DATE_INVALID(4430, "转正日期不能早于入职日期"),
+    EMPLOYEE_CONTRACT_NOT_FOUND(4431, "员工合同不存在"),
+    EMPLOYEE_CONTRACT_NO_EXISTS(4432, "合同编号已存在"),
+    EMPLOYEE_CONTRACT_DATE_INVALID(4433, "合同结束日期不能早于开始日期"),
     HR_ENUM_INVALID(4491, "HRMS 枚举值不正确");
 
     private final int code;

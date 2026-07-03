@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.55 - 2026-07-03
+
+- HRMS Phase 1D 开始落地员工合同管理核心接口，新增员工合同列表、新增、编辑能力，复用既有 `hr_employee_contract` 表。
+- 新增 `hr:contract:list`、`hr:contract:create`、`hr:contract:update` 权限和授权树节点，合同写接口接入 `@RepeatSubmit` 与接口治理元数据。
+- 员工合同新增合同编号唯一校验、合同类型/状态枚举校验、结束日期不能早于开始日期校验，返回员工编号、姓名和合同关键字段，便于员工详情页聚合展示。
+- 接口治理总数更新至 69 个，OpenAPI、Manifest、治理报告和测试断言同步到 `v0.0.55`。
+- 产品版本递增至 `v0.0.55`。
+
 ## v0.0.54 - 2026-07-03
 
 - HRMS Phase 1C 开始落地，新增 `GET /api/hr/employees/{id}/lifecycle-events` 员工生命周期时间线接口，使用独立权限 `hr:employee:lifecycle`。
