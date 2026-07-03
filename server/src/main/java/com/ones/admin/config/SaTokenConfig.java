@@ -33,6 +33,6 @@ public class SaTokenConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/**")
                 .excludePathPatterns(LOGIN_EXCLUDE_PATH_PATTERNS);
         registry.addInterceptor(operationAuditInterceptor)
-                .addPathPatterns("/api/system/**");
+                .addPathPatterns("/api/system/**", "/api/hr/**");
     }
 }

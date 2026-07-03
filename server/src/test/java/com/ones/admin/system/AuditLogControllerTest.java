@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ones.admin.auth.AuthErrorCode;
 import com.ones.admin.auth.dto.LoginRequest;
 import com.ones.admin.common.web.TraceIdFilter;
+import com.ones.admin.hr.dto.HrPositionSaveRequest;
 import com.ones.admin.system.dto.UserCreateRequest;
 import com.ones.admin.system.entity.SystemLoginLogEntity;
 import com.ones.admin.system.entity.SystemOperationLogEntity;
@@ -137,6 +138,44 @@ class AuditLogControllerTest {
                 .andExpect(content().string(containsString("id,userId,method,path,module,operation")))
                 .andExpect(content().string(containsString("system:user:create")))
                 .andExpect(content().string(containsString(createTraceId)));
+    }
+
+    @Test
+    void hrWriteOperationsAreAudited() throws Exception {
+        String token = login();
+        String positionCode = "AUDIT-HR-" + System.nanoTime();
+        String createBody = objectMapper.writeValueAsString(new HrPositionSaveRequest(
+                positionCode,
+                "HR 审计岗位",
+                1L,
+                "用于验证 HRMS 写操作日志",
+                true
+        ));
+
+        String createTraceId = mockMvc.perform(post("/api/hr/positions")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andReturn()
+                .getResponse()
+                .getHeader(TraceIdFilter.TRACE_ID_HEADER);
+
+        mockMvc.perform(get("/api/system/audit/operation-logs")
+                        .param("pageNum", "1")
+                        .param("pageSize", "20")
+                        .param("path", "/api/hr/positions")
+                        .param("success", "true")
+                        .param("traceId", createTraceId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[*].path", hasItem("/api/hr/positions")))
+                .andExpect(jsonPath("$.data.list[*].module", hasItem("HRMS-岗位")))
+                .andExpect(jsonPath("$.data.list[*].operation", hasItem("新增岗位")))
+                .andExpect(jsonPath("$.data.list[*].permissionCode", hasItem("hr:position:create")));
     }
 
     @Test

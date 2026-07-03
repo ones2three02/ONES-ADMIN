@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.61 - 2026-07-03
+
+- 操作审计拦截器覆盖范围从系统写接口扩展到 HRMS 写接口，`/api/hr/**` 的 `POST`、`PUT`、`PATCH`、`DELETE` 请求会统一写入 `sys_operation_log`。
+- 新增 HRMS 写操作审计测试，验证新增岗位后可通过 TraceId 在操作日志中定位路径、模块、操作名称和权限码。
+- 后端工程化文档同步明确 HRMS 生命周期事件不替代操作日志，HRMS 写接口已进入统一审计闭环。
+- 产品版本递增至 `v0.0.61`。
+
 ## v0.0.60 - 2026-07-03
 
 - 接口治理新增 `PUBLIC_API_ACCESS_POLICY_REASON_MISSING` 阻断规则，公开接口即使已声明 `@ApiAccessPolicy(ApiAuthType.PUBLIC)`，也必须填写 `reason` 说明开放原因、调用方和安全补偿措施。

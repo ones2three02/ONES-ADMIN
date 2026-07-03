@@ -77,7 +77,8 @@ public class OperationAuditInterceptor implements HandlerInterceptor {
                 || HttpMethod.PUT.matches(method)
                 || HttpMethod.PATCH.matches(method)
                 || HttpMethod.DELETE.matches(method);
-        return writeMethod && request.getRequestURI().startsWith("/api/system/");
+        String requestUri = request.getRequestURI();
+        return writeMethod && (requestUri.startsWith("/api/system/") || requestUri.startsWith("/api/hr/"));
     }
 
     private Long currentUserId() {
