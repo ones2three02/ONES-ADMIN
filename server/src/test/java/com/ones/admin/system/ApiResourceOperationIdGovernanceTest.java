@@ -391,6 +391,32 @@ class ApiResourceOperationIdGovernanceTest {
         assertThat(violation.path("remediation").asText()).contains("@GetMapping");
     }
 
+    @Test
+    void governanceReportExposesQualityScoreForBrokenApis() throws Exception {
+        String token = login("admin", "admin123");
+
+        String response = mockMvc.perform(get("/api/system/api-resources/governance/report")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.governance.passed").value(false))
+                .andExpect(jsonPath("$.data.qualityScore").isNumber())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode report = objectMapper.readTree(response).path("data");
+        assertThat(report.path("qualityScore").asInt()).isLessThan(100);
+        JsonNode contractDimension = findQualityDimension(report.path("qualityDimensions"), "CONTRACT");
+        assertThat(contractDimension.path("score").asInt()).isLessThan(100);
+        assertThat(contractDimension.path("errorCount").asLong()).isGreaterThan(0);
+        assertThat(contractDimension.path("recommendation").asText()).contains("OpenAPI");
+        JsonNode auditDimension = findQualityDimension(report.path("qualityDimensions"), "AUDIT");
+        assertThat(auditDimension.path("score").asInt()).isLessThan(100);
+        assertThat(auditDimension.path("errorCount").asLong()).isGreaterThan(0);
+        assertThat(auditDimension.path("benchmark").asText()).contains("Gravitee");
+    }
+
     private List<String> ruleCodes(List<JsonNode> violations) {
         return violations.stream()
                 .map(violation -> violation.path("ruleCode").asText())
@@ -417,6 +443,13 @@ class ApiResourceOperationIdGovernanceTest {
                         && ruleCode.equals(violation.path("ruleCode").asText()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("未找到治理违规：" + path + " " + ruleCode));
+    }
+
+    private JsonNode findQualityDimension(JsonNode dimensions, String dimensionCode) {
+        return StreamSupport.stream(dimensions.spliterator(), false)
+                .filter(dimension -> dimensionCode.equals(dimension.path("dimensionCode").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到治理评分维度：" + dimensionCode));
     }
 
     private String login(String username, String password) throws Exception {

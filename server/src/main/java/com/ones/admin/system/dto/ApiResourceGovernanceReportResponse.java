@@ -5,6 +5,8 @@ import java.util.List;
 public record ApiResourceGovernanceReportResponse(
         String applicationVersion,
         String generatedAt,
+        int qualityScore,
+        List<QualityDimension> qualityDimensions,
         ApiResourceSummaryResponse summary,
         ApiResourceGovernanceResponse governance,
         ApiResourceGovernanceRuleResponse rules,
@@ -20,6 +22,20 @@ public record ApiResourceGovernanceReportResponse(
             String category,
             String url,
             String lesson
+    ) {
+    }
+
+    public record QualityDimension(
+            String dimensionCode,
+            String title,
+            String category,
+            int score,
+            long violationCount,
+            long errorCount,
+            long warningCount,
+            boolean passed,
+            String benchmark,
+            String recommendation
     ) {
     }
 

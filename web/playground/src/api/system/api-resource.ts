@@ -1,6 +1,27 @@
 import { requestClient } from '#/api/request';
 
 export namespace SystemApiResourceApi {
+  export type ApiResourceActionCategory =
+    | 'API_GOVERNANCE'
+    | 'AUDIT'
+    | 'CATALOG'
+    | 'CONTRACT'
+    | 'DOCUMENTATION'
+    | 'HRMS'
+    | 'LIFECYCLE'
+    | 'PERMISSION'
+    | 'RELEASE'
+    | 'SECURITY'
+    | 'UNKNOWN';
+
+  export type ApiResourceQualityCategory =
+    | 'AUDIT'
+    | 'CATALOG'
+    | 'CONTRACT'
+    | 'DOCUMENTATION'
+    | 'LIFECYCLE'
+    | 'SECURITY';
+
   export interface ApiResource {
     accessPolicyExplicit: boolean;
     accessPolicyReason?: string;
@@ -12,6 +33,7 @@ export namespace SystemApiResourceApi {
     lifecycle: string;
     method: string;
     module: string;
+    operationAuditProtected: boolean;
     operationId: string;
     owner?: string;
     audience?: string;
@@ -142,6 +164,7 @@ export namespace SystemApiResourceApi {
     handler: string;
     lifecycle: string;
     method: string;
+    operationAuditProtected: boolean;
     operationId: string;
     owner?: string;
     audience?: string;
@@ -203,12 +226,44 @@ export namespace SystemApiResourceApi {
     verification: string;
   }
 
+  export interface ApiResourceActionItem {
+    actionCode: string;
+    apiKey: string;
+    blocking: boolean;
+    category: ApiResourceActionCategory;
+    description: string;
+    module: string;
+    owner: string;
+    priority: 'P0' | 'P1' | 'P2';
+    sourceCode: string;
+    sourceType: 'GATE' | 'GATE_CHECK' | 'GOVERNANCE_RULE' | 'ROADMAP';
+    status: 'DONE' | 'OPEN';
+    title: string;
+    verification: string;
+  }
+
+  export interface ApiResourceQualityDimension {
+    benchmark: string;
+    category: ApiResourceQualityCategory;
+    dimensionCode: ApiResourceQualityCategory;
+    errorCount: number;
+    passed: boolean;
+    recommendation: string;
+    score: number;
+    title: string;
+    violationCount: number;
+    warningCount: number;
+  }
+
   export interface ApiResourceGovernanceReport {
     applicationVersion: string;
+    actionItems: ApiResourceActionItem[];
     generatedAt: string;
     governance: ApiResourceGovernance;
     latestGate: ApiResourceManifestLatestGate;
     manifest: ApiResourceManifest;
+    qualityDimensions: ApiResourceQualityDimension[];
+    qualityScore: number;
     recommendedActions: ApiResourceRecommendedAction[];
     referenceBenchmarks: ApiResourceReferenceBenchmark[];
     rules: ApiResourceGovernanceRules;

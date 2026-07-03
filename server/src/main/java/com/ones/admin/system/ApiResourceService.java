@@ -334,6 +334,50 @@ public class ApiResourceService {
                     "借鉴中小企业 HRIS 的实用路线，先主数据与请假考勤，再扩薪酬报表"
             )
     );
+    private static final List<QualityDimensionDefinition> QUALITY_DIMENSION_DEFINITIONS = List.of(
+            new QualityDimensionDefinition(
+                    "SECURITY",
+                    "安全与访问策略",
+                    "SECURITY",
+                    "Kong / APISIX / Tyk 将认证、授权、限流和风险策略前置到 API 网关与策略层",
+                    "优先修复权限、公开接口白名单、访问策略原因和重复提交防护，确保接口默认安全"
+            ),
+            new QualityDimensionDefinition(
+                    "AUDIT",
+                    "审计追踪",
+                    "AUDIT",
+                    "Gravitee API Management 强调 API 生命周期中的可观测、审计与策略追踪",
+                    "确保非公开写接口进入 OperationAuditInterceptor 覆盖范围，并能通过 TraceId 关联操作日志"
+            ),
+            new QualityDimensionDefinition(
+                    "CONTRACT",
+                    "接口契约稳定性",
+                    "CONTRACT",
+                    "Spectral 与 oasdiff 分别提供 OpenAPI 规则校验和破坏性变更识别能力",
+                    "补齐稳定 operationId、显式 HTTP 方法、OpenAPI 元数据和 Manifest Diff，避免客户端生成和网关路由不稳定"
+            ),
+            new QualityDimensionDefinition(
+                    "LIFECYCLE",
+                    "生命周期治理",
+                    "LIFECYCLE",
+                    "Gravitee API Management 按创建、发布、废弃、下线管理 API 生命周期",
+                    "为废弃接口维护 sunsetVersion、replacementApiKey 和 OpenAPI deprecated 标记，避免无计划下线"
+            ),
+            new QualityDimensionDefinition(
+                    "CATALOG",
+                    "接口资产目录",
+                    "CATALOG",
+                    "Backstage API Catalog 强调 Owner、Lifecycle 和可发现性，支撑开发者门户和服务治理",
+                    "补齐 owner、audience、sinceVersion 和 riskLevel，让接口资产可归属、可检索、可治理"
+            ),
+            new QualityDimensionDefinition(
+                    "DOCUMENTATION",
+                    "接口文档可发现性",
+                    "DOCUMENTATION",
+                    "Backstage Developer Portal 通过统一目录降低跨团队 API 发现和理解成本",
+                    "补齐 @Tag 和 @Operation(summary)，保证 Swagger、接口目录和前端接口管理页语义一致"
+            )
+    );
 
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
     private final SystemPermissionMapper permissionMapper;
@@ -349,7 +393,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.62}") String applicationVersion
+            @Value("${ones.version:v0.0.63}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -467,9 +511,13 @@ public class ApiResourceService {
         ApiResourceManifestLatestGateResponse latestGate = gateManifestWithLatestSnapshot(
                 new ApiResourceManifestLatestGateRequest(false, null)
         );
+        List<ApiResourceGovernanceReportResponse.QualityDimension> qualityDimensions =
+                buildQualityDimensions(governance);
         return new ApiResourceGovernanceReportResponse(
                 applicationVersion,
                 OffsetDateTime.now(ZoneOffset.UTC).toString(),
+                qualityScore(qualityDimensions),
+                qualityDimensions,
                 summary,
                 governance,
                 rules,
@@ -479,6 +527,57 @@ public class ApiResourceService {
                 recommendActions(summary, governance, latestGate),
                 buildActionItems(summary, governance, latestGate)
         );
+    }
+
+    private List<ApiResourceGovernanceReportResponse.QualityDimension> buildQualityDimensions(
+            ApiResourceGovernanceResponse governance
+    ) {
+        Map<String, ApiResourceGovernanceResponse.CategorySummary> summariesByCategory =
+                governance.categorySummaries()
+                        .stream()
+                        .collect(Collectors.toMap(
+                                ApiResourceGovernanceResponse.CategorySummary::category,
+                                Function.identity(),
+                                (first, second) -> first
+                        ));
+        return QUALITY_DIMENSION_DEFINITIONS.stream()
+                .map(definition -> {
+                    ApiResourceGovernanceResponse.CategorySummary summary =
+                            summariesByCategory.get(definition.category());
+                    long violationCount = summary == null ? 0 : summary.violationCount();
+                    long errorCount = summary == null ? 0 : summary.errorCount();
+                    long warningCount = summary == null ? 0 : summary.warningCount();
+                    int score = dimensionScore(errorCount, warningCount);
+                    return new ApiResourceGovernanceReportResponse.QualityDimension(
+                            definition.dimensionCode(),
+                            definition.title(),
+                            definition.category(),
+                            score,
+                            violationCount,
+                            errorCount,
+                            warningCount,
+                            errorCount == 0,
+                            definition.benchmark(),
+                            definition.recommendation()
+                    );
+                })
+                .toList();
+    }
+
+    private int qualityScore(List<ApiResourceGovernanceReportResponse.QualityDimension> dimensions) {
+        if (dimensions.isEmpty()) {
+            return 100;
+        }
+        double average = dimensions.stream()
+                .mapToInt(ApiResourceGovernanceReportResponse.QualityDimension::score)
+                .average()
+                .orElse(100);
+        return (int) Math.round(average);
+    }
+
+    private int dimensionScore(long errorCount, long warningCount) {
+        long penalty = errorCount * 25 + warningCount * 5;
+        return (int) Math.max(0, 100 - penalty);
     }
 
     private List<ApiResourceGovernanceReportResponse.RecommendedAction> recommendActions(
@@ -1840,6 +1939,15 @@ public class ApiResourceService {
             String category,
             String description,
             String remediation
+    ) {
+    }
+
+    private record QualityDimensionDefinition(
+            String dimensionCode,
+            String title,
+            String category,
+            String benchmark,
+            String recommendation
     ) {
     }
 

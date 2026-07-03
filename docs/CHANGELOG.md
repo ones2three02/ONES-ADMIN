@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.63 - 2026-07-03
+
+- 接口治理聚合报告新增 `qualityScore` 与 `qualityDimensions`，按安全、审计、契约、生命周期、目录、文档六个维度输出企业级接口治理评分。
+- 评分维度吸收 Backstage、Gravitee、Kong、APISIX、Tyk、Spectral、oasdiff 等开源项目的接口目录、API 管理、网关策略和 OpenAPI 契约治理思路，便于 Jenkins 与前端接口管理页做趋势跟踪。
+- 前端接口资源 API 类型同步新增治理评分字段，后续页面可直接展示评分条、维度卡或发布阈值。
+- 产品版本递增至 `v0.0.63`。
+
 ## v0.0.62 - 2026-07-03
 
 - 接口资源清单、CSV 导出、Manifest 和 Manifest 指纹新增 `operationAuditProtected`，写接口是否纳入操作审计成为可追踪接口契约。

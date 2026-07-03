@@ -376,12 +376,12 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.62"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.63"))
                 .andExpect(jsonPath("$.data.summary.total").value(76))
                 .andExpect(jsonPath("$.data.governance.passed").value(true))
                 .andExpect(jsonPath("$.data.governance.total").value(76))
                 .andExpect(jsonPath("$.data.manifest.total").value(76))
-                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.62"))
+                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.63"))
                 .andExpect(jsonPath("$.data.latestGate.gate.checks[0].checkCode").value("API_GOVERNANCE_ERROR"))
                 .andReturn()
                 .getResponse()
@@ -389,6 +389,19 @@ class ApiResourceControllerTest {
 
         JsonNode report = objectMapper.readTree(response).path("data");
         assertThat(report.path("generatedAt").asText()).isNotBlank();
+        assertThat(report.path("qualityScore").asInt()).isEqualTo(100);
+        assertThat(report.path("qualityDimensions").isArray()).isTrue();
+        assertThat(report.path("qualityDimensions").size()).isGreaterThanOrEqualTo(6);
+        JsonNode securityDimension = findQualityDimension(report.path("qualityDimensions"), "SECURITY");
+        assertThat(securityDimension.path("score").asInt()).isEqualTo(100);
+        assertThat(securityDimension.path("passed").asBoolean()).isTrue();
+        assertThat(securityDimension.path("benchmark").asText()).contains("Kong");
+        JsonNode auditDimension = findQualityDimension(report.path("qualityDimensions"), "AUDIT");
+        assertThat(auditDimension.path("score").asInt()).isEqualTo(100);
+        assertThat(auditDimension.path("benchmark").asText()).contains("Gravitee");
+        JsonNode contractDimension = findQualityDimension(report.path("qualityDimensions"), "CONTRACT");
+        assertThat(contractDimension.path("score").asInt()).isEqualTo(100);
+        assertThat(contractDimension.path("benchmark").asText()).contains("Spectral");
         assertThat(report.at("/rules/rules").size()).isGreaterThanOrEqualTo(15);
         assertThat(report.path("manifest").path("checksum").asText()).matches("^[a-f0-9]{64}$");
         JsonNode systemOwner = findOwnerStat(report.path("summary").path("owners"), "系统平台组");
@@ -486,7 +499,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.62"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.63"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(76))
                 .andReturn()
@@ -626,7 +639,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.62"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.63"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.snapshot.total").value(76))
                 .andExpect(jsonPath("$.data.snapshot.manifest.total").value(76))
@@ -725,7 +738,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.62"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.63"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))
@@ -1054,6 +1067,13 @@ class ApiResourceControllerTest {
                 .filter(node -> actionCode.equals(node.path("actionCode").asText()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("未找到治理动作项：" + actionCode));
+    }
+
+    private JsonNode findQualityDimension(JsonNode dimensions, String dimensionCode) {
+        return StreamSupport.stream(dimensions.spliterator(), false)
+                .filter(node -> dimensionCode.equals(node.path("dimensionCode").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到治理评分维度：" + dimensionCode));
     }
 
     private List<String> actionCodes(JsonNode actions) {
