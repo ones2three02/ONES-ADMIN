@@ -354,12 +354,12 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.57"))
-                .andExpect(jsonPath("$.data.summary.total").value(71))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.58"))
+                .andExpect(jsonPath("$.data.summary.total").value(76))
                 .andExpect(jsonPath("$.data.governance.passed").value(true))
-                .andExpect(jsonPath("$.data.governance.total").value(71))
-                .andExpect(jsonPath("$.data.manifest.total").value(71))
-                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.57"))
+                .andExpect(jsonPath("$.data.governance.total").value(76))
+                .andExpect(jsonPath("$.data.manifest.total").value(76))
+                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.58"))
                 .andExpect(jsonPath("$.data.latestGate.gate.checks[0].checkCode").value("API_GOVERNANCE_ERROR"))
                 .andReturn()
                 .getResponse()
@@ -445,9 +445,9 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.57"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.58"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
-                .andExpect(jsonPath("$.data.total").value(71))
+                .andExpect(jsonPath("$.data.total").value(76))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -520,6 +520,38 @@ class ApiResourceControllerTest {
         assertThat(terminateContract.path("repeatSubmitProtected").asBoolean()).isTrue();
         assertThat(permissionCodes(terminateContract)).containsExactly("hr:contract:terminate");
 
+        JsonNode rosterTemplate = findResource(firstManifest.path("resources"),
+                "GET", "/api/hr/roster-import/template");
+        assertThat(rosterTemplate.path("owner").asText()).isEqualTo("人力平台组");
+        assertThat(rosterTemplate.path("sinceVersion").asText()).isEqualTo("v0.0.58");
+        assertThat(rosterTemplate.path("riskLevel").asText()).isEqualTo("MEDIUM");
+        assertThat(rosterTemplate.path("writeOperation").asBoolean()).isFalse();
+        assertThat(permissionCodes(rosterTemplate)).containsExactly("hr:roster:import");
+
+        JsonNode rosterImport = findResource(firstManifest.path("resources"),
+                "POST", "/api/hr/roster-import/batches");
+        assertThat(rosterImport.path("sinceVersion").asText()).isEqualTo("v0.0.58");
+        assertThat(rosterImport.path("riskLevel").asText()).isEqualTo("HIGH");
+        assertThat(rosterImport.path("writeOperation").asBoolean()).isTrue();
+        assertThat(rosterImport.path("repeatSubmitProtected").asBoolean()).isTrue();
+        assertThat(permissionCodes(rosterImport)).containsExactly("hr:roster:import");
+
+        JsonNode rosterBatches = findResource(firstManifest.path("resources"),
+                "GET", "/api/hr/roster-import/batches");
+        assertThat(rosterBatches.path("sinceVersion").asText()).isEqualTo("v0.0.58");
+        assertThat(rosterBatches.path("riskLevel").asText()).isEqualTo("MEDIUM");
+        assertThat(permissionCodes(rosterBatches)).containsExactly("hr:roster:list");
+
+        JsonNode rosterBatchDetail = findResource(firstManifest.path("resources"),
+                "GET", "/api/hr/roster-import/batches/{id}");
+        assertThat(rosterBatchDetail.path("sinceVersion").asText()).isEqualTo("v0.0.58");
+        assertThat(permissionCodes(rosterBatchDetail)).containsExactly("hr:roster:list");
+
+        JsonNode rosterErrors = findResource(firstManifest.path("resources"),
+                "GET", "/api/hr/roster-import/batches/{id}/errors");
+        assertThat(rosterErrors.path("sinceVersion").asText()).isEqualTo("v0.0.58");
+        assertThat(permissionCodes(rosterErrors)).containsExactly("hr:roster:list");
+
         JsonNode manifest = findResource(firstManifest.path("resources"), "GET", "/api/system/api-resources/manifest");
         assertThat(manifest.path("handler").asText())
                 .isEqualTo("com.ones.admin.system.ApiResourceController#generateApiResourceManifest");
@@ -541,10 +573,10 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.57"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.58"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
-                .andExpect(jsonPath("$.data.snapshot.total").value(71))
-                .andExpect(jsonPath("$.data.snapshot.manifest.total").value(71))
+                .andExpect(jsonPath("$.data.snapshot.total").value(76))
+                .andExpect(jsonPath("$.data.snapshot.manifest.total").value(76))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -640,7 +672,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.57"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.58"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))

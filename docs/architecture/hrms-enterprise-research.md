@@ -108,3 +108,9 @@
 2026-07-03 通过 agent-reach GitHub/dev 路由复核 [orangehrm/orangehrm](https://github.com/orangehrm/orangehrm) 的员工合同边界，公开代码中存在 `EmploymentContractAPI` 与 `EmpContract`，合同挂在员工 PIM 域下，并以开始日期、结束日期和附件为核心信息。
 
 结论：`v0.0.56` 在员工合同核心 CRUD 之后补齐合同终止和即将到期查询，既保持员工档案聚合边界，也为 HR 前台页面的“合同到期提醒”筛选提供后端能力。附件元数据和签署流程仍后置，避免一期合同域过早膨胀。
+
+## 10. v0.0.58 花名册导入补充
+
+2026-07-03 通过 agent-reach GitHub/dev 路由复核 [frappe/hrms](https://github.com/frappe/hrms) 的 Roster 相关公开代码线索。ONES-ADMIN 本次不复制其实现，只吸收“批量操作必须有可追踪批次、错误可回看、成功数据进入正式员工主数据链路”的边界。
+
+结论：`v0.0.58` 先落地 CSV 模板下载、上传导入、导入批次和错误行查询，不急于引入 Excel 解析依赖。这样一期可以在低复杂度下实现可审计、可回滚排查的批量入职入口；导入成功行复用员工新增服务，避免绕开员工编号唯一性、部门/岗位/职级校验、任职记录和生命周期事件。

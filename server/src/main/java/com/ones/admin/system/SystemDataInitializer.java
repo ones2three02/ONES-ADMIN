@@ -103,7 +103,9 @@ public class SystemDataInitializer implements ApplicationRunner {
                 ensurePermission("hr:contract:list", "员工合同查询"),
                 ensurePermission("hr:contract:create", "员工合同新增"),
                 ensurePermission("hr:contract:update", "员工合同编辑"),
-                ensurePermission("hr:contract:terminate", "员工合同终止")
+                ensurePermission("hr:contract:terminate", "员工合同终止"),
+                ensurePermission("hr:roster:list", "花名册导入批次查询"),
+                ensurePermission("hr:roster:import", "花名册导入")
         );
 
         permissions.forEach(permission -> ensureRolePermission(superAdminRole.getId(), permission.getId()));
@@ -323,6 +325,10 @@ public class SystemDataInitializer implements ApplicationRunner {
                 null, null, "hr:contract:update", "lucide:file-pen-line", "button", 85);
         ensureMenu(system.getId(), "HrContractTerminate", "员工合同终止", "/system#hr-contract-terminate",
                 null, null, "hr:contract:terminate", "lucide:file-x-2", "button", 86);
+        ensureMenu(system.getId(), "HrRosterImportList", "花名册导入批次查询", "/system#hr-roster-import-list",
+                null, null, "hr:roster:list", "lucide:file-search", "button", 87);
+        ensureMenu(system.getId(), "HrRosterImport", "花名册导入", "/system#hr-roster-import",
+                null, null, "hr:roster:import", "lucide:file-up", "button", 88);
     }
 
     private SystemMenuEntity ensureMenu(
