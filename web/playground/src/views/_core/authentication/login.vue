@@ -412,6 +412,10 @@ async function onSubmit(params: Recordable<any>) {
   transform: translateY(-1px);
 }
 
+.ones-auth-login .enterprise-login-methods .enterprise-login-icon-button {
+  border-radius: 999px;
+}
+
 .enterprise-login-icon-button-primary {
   color: hsl(var(--primary));
 }
