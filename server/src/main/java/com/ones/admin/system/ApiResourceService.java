@@ -333,7 +333,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.58}") String applicationVersion
+            @Value("${ones.version:v0.0.59}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -460,7 +460,8 @@ public class ApiResourceService {
                 manifest,
                 latestGate,
                 REFERENCE_BENCHMARKS,
-                recommendActions(summary, governance, latestGate)
+                recommendActions(summary, governance, latestGate),
+                buildActionItems(summary, governance, latestGate)
         );
     }
 
@@ -519,14 +520,106 @@ public class ApiResourceService {
                 "POST /api/system/api-resources/manifest/snapshots 返回 published=true 或既有快照"
         ));
         actions.add(new ApiResourceGovernanceReportResponse.RecommendedAction(
-                "DESIGN_HRMS_PHASE_ONE",
+                "IMPLEMENT_HRMS_ROSTER_FRONTEND",
                 "P1",
                 "HRMS",
-                "输出 HRMS 一期正式设计",
-                "按方案 B 推进主数据、合同与花名册边界，补齐表结构、权限点、接口清单、页面清单、审计要求和测试策略。",
-                "docs/architecture/hrms-enterprise-research.md 中的一期边界被正式设计文档承接"
+                "接入 HRMS 花名册导入前端",
+                "后端已具备模板下载、批量导入、批次和错误行查询接口，下一步需要按 Vben 风格补齐导入任务页面。",
+                "Vben 风格前端页面可完成模板下载、上传导入、批次列表和错误行查看"
         ));
         return actions;
+    }
+
+    private List<ApiResourceGovernanceReportResponse.ActionItem> buildActionItems(
+            ApiResourceSummaryResponse summary,
+            ApiResourceGovernanceResponse governance,
+            ApiResourceManifestLatestGateResponse latestGate
+    ) {
+        List<ApiResourceGovernanceReportResponse.ActionItem> items = new ArrayList<>();
+        items.addAll(governance.violations().stream()
+                .map(this::toGovernanceActionItem)
+                .toList());
+        if (latestGate != null) {
+            boolean baselineAvailable = latestGate.baselineAvailable();
+            items.add(new ApiResourceGovernanceReportResponse.ActionItem(
+                    "PUBLISH_API_MANIFEST_BASELINE",
+                    "P1",
+                    "RELEASE",
+                    baselineAvailable ? "确认接口 Manifest 基线快照" : "发布接口 Manifest 基线快照",
+                    baselineAvailable
+                            ? "当前环境已有接口 Manifest 快照，可作为后续发布门禁对比基线；发布后仍需确认快照已归档到当前版本。"
+                            : "当前环境还没有可用于对比的接口 Manifest 快照，需要先归档当前接口契约作为后续发布门禁基线。",
+                    "GATE",
+                    baselineAvailable ? "BASELINE_SNAPSHOT_AVAILABLE" : "NO_BASELINE_SNAPSHOT",
+                    "架构治理组",
+                    "接口资源",
+                    "POST /api/system/api-resources/manifest/snapshots",
+                    false,
+                    baselineAvailable ? "DONE" : "OPEN",
+                    "POST /api/system/api-resources/manifest/snapshots 返回 saved=true 或既有快照"
+            ));
+        }
+        if (latestGate != null && latestGate.gate() != null && latestGate.gate().diff() != null) {
+            boolean changed = latestGate.gate().diff().changed();
+            items.add(new ApiResourceGovernanceReportResponse.ActionItem(
+                    "ARCHIVE_MANIFEST_DIFF",
+                    "P2",
+                    "RELEASE",
+                    changed ? "归档接口契约变更差异" : "确认接口契约无变更",
+                    changed
+                            ? "当前 Manifest Gate 已识别接口契约变更，需要将 diff.changes 归档到 Jenkins 构建产物，便于版本审计和回滚排查。"
+                            : "当前 Manifest Gate 未识别接口契约变更，仍应在 Jenkins 报告中记录 checksum 和门禁结果。",
+                    "GATE_CHECK",
+                    "MANIFEST_DIFF_ARCHIVE",
+                    "架构治理组",
+                    "接口资源",
+                    "POST /api/system/api-resources/manifest/gate/latest",
+                    false,
+                    changed ? "OPEN" : "DONE",
+                    changed
+                            ? "Jenkins 构建产物中包含 Manifest Diff 明细和当前 checksum"
+                            : "Jenkins 构建产物中包含当前 checksum 和 Manifest Gate 通过记录"
+            ));
+        }
+        if (summary.modules().stream().anyMatch(module -> "HRMS-花名册导入".equals(module.module()))) {
+            items.add(new ApiResourceGovernanceReportResponse.ActionItem(
+                    "IMPLEMENT_HRMS_ROSTER_FRONTEND",
+                    "P1",
+                    "HRMS",
+                    "接入 HRMS 花名册导入前端",
+                    "后端已暴露花名册导入模板、导入批次和错误行接口，前端需要按 Vben / Ant Design Vue 风格补齐页面闭环。",
+                    "ROADMAP",
+                    "HRMS_ROSTER_IMPORT_FRONTEND",
+                    "人力平台组",
+                    "HRMS",
+                    "GET /api/hr/roster-import/batches",
+                    false,
+                    "OPEN",
+                    "Vben 风格页面支持模板下载、CSV 上传、批次列表、导入结果和错误行查看"
+            ));
+        }
+        return items;
+    }
+
+    private ApiResourceGovernanceReportResponse.ActionItem toGovernanceActionItem(
+            ApiResourceGovernanceResponse.Violation violation
+    ) {
+        boolean blocking = "ERROR".equals(violation.severity());
+        return new ApiResourceGovernanceReportResponse.ActionItem(
+                "FIX_" + violation.ruleCode(),
+                blocking ? "P0" : "P1",
+                categoryOf(violation.ruleCode()),
+                violation.summary(),
+                violation.message(),
+                "GOVERNANCE_RULE",
+                violation.ruleCode(),
+                ownerForModule(violation.module()),
+                violation.module(),
+                violation.method() + " " + violation.path(),
+                blocking,
+                "OPEN",
+                violation.remediation()
+        );
     }
 
     public ApiResourceManifestResponse generateManifest() {
@@ -1769,6 +1862,25 @@ public class ApiResourceService {
     private String categoryOf(String ruleCode) {
         GovernanceRule rule = GOVERNANCE_RULE_BY_CODE.get(ruleCode);
         return rule == null ? "UNKNOWN" : rule.category();
+    }
+
+    private String ownerForModule(String module) {
+        if (!hasText(module)) {
+            return "架构治理组";
+        }
+        if (module.startsWith("HRMS")) {
+            return "人力平台组";
+        }
+        if (module.startsWith("系统管理-审计")) {
+            return "审计与安全组";
+        }
+        if (module.startsWith("认证")) {
+            return "认证与安全组";
+        }
+        if (module.startsWith("系统管理") || module.startsWith("系统健康")) {
+            return "系统平台组";
+        }
+        return "架构治理组";
     }
 
     private int severityRank(String severity) {

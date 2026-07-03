@@ -11,7 +11,8 @@ public record ApiResourceGovernanceReportResponse(
         ApiResourceManifestResponse manifest,
         ApiResourceManifestLatestGateResponse latestGate,
         List<ReferenceBenchmark> referenceBenchmarks,
-        List<RecommendedAction> recommendedActions
+        List<RecommendedAction> recommendedActions,
+        List<ActionItem> actionItems
 ) {
 
     public record ReferenceBenchmark(
@@ -28,6 +29,23 @@ public record ApiResourceGovernanceReportResponse(
             String category,
             String title,
             String description,
+            String verification
+    ) {
+    }
+
+    public record ActionItem(
+            String actionCode,
+            String priority,
+            String category,
+            String title,
+            String description,
+            String sourceType,
+            String sourceCode,
+            String owner,
+            String module,
+            String apiKey,
+            boolean blocking,
+            String status,
             String verification
     ) {
     }

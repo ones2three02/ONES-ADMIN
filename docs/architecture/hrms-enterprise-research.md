@@ -79,7 +79,7 @@
 
 ## 6. 接口治理报告联动
 
-从 `v0.0.49` 起，`/api/system/api-resources/governance/report` 会在 `recommendedActions` 中输出 `DESIGN_HRMS_PHASE_ONE` 动作，提示 HRMS 一期正式设计需要承接本调研结论。
+`v0.0.50` 已将本调研承接为正式一期设计稿。`v0.0.59` 起，`/api/system/api-resources/governance/report` 会在 `recommendedActions` 和 `actionItems` 中输出 `IMPLEMENT_HRMS_ROSTER_FRONTEND` 动作，提示后续按 Vben 风格接入花名册模板下载、上传导入、批次列表和错误行查看。
 
 这样做的目的不是把 HRMS 立即写进系统接口，而是让 Jenkins、接口管理页和人工巡检能持续看到“下一步企业支撑能力”的设计责任，避免 HRMS 停留在一次性调研文档里。`v0.0.50` 已用正式设计稿承接该动作。
 

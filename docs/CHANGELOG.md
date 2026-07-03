@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.59 - 2026-07-03
+
+- 后端接口治理聚合报告新增 `actionItems`，将 Manifest 基线、Diff 归档、治理规则违规和 HRMS 前端接入转成可跟踪动作项，便于 Jenkins 和后续接口管理页直接展示待办。
+- `recommendedActions` 移除已过期的 `DESIGN_HRMS_PHASE_ONE`，改为 `IMPLEMENT_HRMS_ROSTER_FRONTEND`，对齐当前 HRMS 已完成一期设计并进入花名册前端接入阶段的实际状态。
+- 接口治理报告测试补充 `actionItems` 契约断言，确保动作项包含优先级、来源类型、来源编码、负责人、模块、接口、阻断状态、状态和验证方式。
+- 产品版本递增至 `v0.0.59`。
+
 ## v0.0.58 - 2026-07-03
 
 - HRMS Phase 1E 开始落地花名册导入后端能力，新增 CSV 模板下载、上传导入、导入批次列表/详情和错误行查询接口。

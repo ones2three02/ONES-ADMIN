@@ -354,12 +354,12 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.58"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.59"))
                 .andExpect(jsonPath("$.data.summary.total").value(76))
                 .andExpect(jsonPath("$.data.governance.passed").value(true))
                 .andExpect(jsonPath("$.data.governance.total").value(76))
                 .andExpect(jsonPath("$.data.manifest.total").value(76))
-                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.58"))
+                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.59"))
                 .andExpect(jsonPath("$.data.latestGate.gate.checks[0].checkCode").value("API_GOVERNANCE_ERROR"))
                 .andReturn()
                 .getResponse()
@@ -395,14 +395,32 @@ class ApiResourceControllerTest {
         assertThat(frappeHr.path("url").asText()).isEqualTo("https://github.com/frappe/hrms");
         assertThat(report.path("recommendedActions").isArray()).isTrue();
         assertThat(report.path("recommendedActions").size()).isGreaterThanOrEqualTo(2);
+        assertThat(actionCodes(report.path("recommendedActions"))).doesNotContain("DESIGN_HRMS_PHASE_ONE");
         JsonNode archiveAction = findRecommendedAction(
                 report.path("recommendedActions"),
                 "ARCHIVE_MANIFEST_SNAPSHOT"
         );
         assertThat(archiveAction.path("category").asText()).isEqualTo("RELEASE");
-        JsonNode hrmsAction = findRecommendedAction(report.path("recommendedActions"), "DESIGN_HRMS_PHASE_ONE");
+        JsonNode hrmsAction = findRecommendedAction(report.path("recommendedActions"), "IMPLEMENT_HRMS_ROSTER_FRONTEND");
         assertThat(hrmsAction.path("priority").asText()).isEqualTo("P1");
         assertThat(hrmsAction.path("category").asText()).isEqualTo("HRMS");
+        assertThat(report.path("actionItems").isArray()).isTrue();
+        JsonNode baselineAction = findActionItem(report.path("actionItems"), "PUBLISH_API_MANIFEST_BASELINE");
+        assertThat(baselineAction.path("priority").asText()).isEqualTo("P1");
+        assertThat(baselineAction.path("sourceType").asText()).isEqualTo("GATE");
+        assertThat(List.of("NO_BASELINE_SNAPSHOT", "BASELINE_SNAPSHOT_AVAILABLE"))
+                .contains(baselineAction.path("sourceCode").asText());
+        assertThat(baselineAction.path("owner").asText()).isEqualTo("架构治理组");
+        assertThat(baselineAction.path("blocking").asBoolean()).isFalse();
+        assertThat(List.of("OPEN", "DONE")).contains(baselineAction.path("status").asText());
+        JsonNode diffArchiveAction = findActionItem(report.path("actionItems"), "ARCHIVE_MANIFEST_DIFF");
+        assertThat(diffArchiveAction.path("sourceType").asText()).isEqualTo("GATE_CHECK");
+        assertThat(diffArchiveAction.path("sourceCode").asText()).isEqualTo("MANIFEST_DIFF_ARCHIVE");
+        assertThat(diffArchiveAction.path("category").asText()).isEqualTo("RELEASE");
+        JsonNode rosterFrontendAction = findActionItem(report.path("actionItems"), "IMPLEMENT_HRMS_ROSTER_FRONTEND");
+        assertThat(rosterFrontendAction.path("sourceType").asText()).isEqualTo("ROADMAP");
+        assertThat(rosterFrontendAction.path("module").asText()).isEqualTo("HRMS");
+        assertThat(rosterFrontendAction.path("verification").asText()).contains("Vben");
     }
 
     @Test
@@ -445,7 +463,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.58"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.59"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(76))
                 .andReturn()
@@ -573,7 +591,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.58"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.59"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.snapshot.total").value(76))
                 .andExpect(jsonPath("$.data.snapshot.manifest.total").value(76))
@@ -672,7 +690,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.58"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.59"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))
@@ -994,6 +1012,19 @@ class ApiResourceControllerTest {
                 .filter(node -> actionCode.equals(node.path("actionCode").asText()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("未找到推荐动作：" + actionCode));
+    }
+
+    private JsonNode findActionItem(JsonNode actions, String actionCode) {
+        return StreamSupport.stream(actions.spliterator(), false)
+                .filter(node -> actionCode.equals(node.path("actionCode").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到治理动作项：" + actionCode));
+    }
+
+    private List<String> actionCodes(JsonNode actions) {
+        return StreamSupport.stream(actions.spliterator(), false)
+                .map(node -> node.path("actionCode").asText())
+                .toList();
     }
 
     private long findLifecycleCount(JsonNode summary, String lifecycle) {
