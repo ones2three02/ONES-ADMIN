@@ -21,6 +21,7 @@ public record ApiResourceManifestResponse(
             String permissionMode,
             boolean writeOperation,
             boolean repeatSubmitProtected,
+            boolean operationAuditProtected,
             String owner,
             String audience,
             String sinceVersion,

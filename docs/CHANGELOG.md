@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.62 - 2026-07-03
+
+- 接口资源清单、CSV 导出、Manifest 和 Manifest 指纹新增 `operationAuditProtected`，写接口是否纳入操作审计成为可追踪接口契约。
+- 接口治理新增 `WRITE_API_WITHOUT_OPERATION_AUDIT` 阻断规则，非公开写接口缺少操作审计覆盖时会作为 ERROR 阻断发布门禁。
+- 操作审计拦截器抽出统一审计路径判断，接口治理与运行时拦截器复用同一套覆盖口径；除 `/api/system/**`、`/api/hr/**` 外，认证令牌刷新、退出登录和时区设置也进入操作审计。
+- 产品版本递增至 `v0.0.62`。
+
 ## v0.0.61 - 2026-07-03
 
 - 操作审计拦截器覆盖范围从系统写接口扩展到 HRMS 写接口，`/api/hr/**` 的 `POST`、`PUT`、`PATCH`、`DELETE` 请求会统一写入 `sys_operation_log`。

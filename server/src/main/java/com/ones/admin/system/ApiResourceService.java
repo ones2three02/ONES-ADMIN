@@ -15,6 +15,7 @@ import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.config.SaTokenConfig;
+import com.ones.admin.system.audit.OperationAuditInterceptor;
 import com.ones.admin.system.dto.ApiResourceManifestSnapshotPublishRequest;
 import com.ones.admin.system.dto.ApiResourceManifestSnapshotPublishResponse;
 import com.ones.admin.system.dto.ApiResourceManifestSnapshotQuery;
@@ -79,7 +80,8 @@ public class ApiResourceService {
     private static final Pattern API_VERSION_PATTERN = Pattern.compile(API_VERSION_PATTERN_TEXT);
     private static final String CSV_HEADER = "apiKey,operationId,method,path,handler,module,summary,authType,permissionCodes,"
             + "permissionMode,requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
-            + "writeOperation,repeatSubmitProtected,deprecated,owner,audience,sinceVersion,lifecycle,riskLevel,"
+            + "writeOperation,repeatSubmitProtected,operationAuditProtected,deprecated,owner,audience,"
+            + "sinceVersion,lifecycle,riskLevel,"
             + "sunsetVersion,replacementApiKey,"
             + "accessPolicyExplicit,accessPolicyReason";
     private static final List<GovernanceRule> GOVERNANCE_RULES = List.of(
@@ -159,6 +161,13 @@ public class ApiResourceService {
                     "SECURITY",
                     "非公开高风险写接口缺少重复提交防护",
                     "为非公开高风险写接口补充 @RepeatSubmit，并结合业务幂等键、唯一约束或审批流保证重复请求不会造成脏数据；公开登录接口由登录失败锁定策略保护"
+            ),
+            new GovernanceRule(
+                    "WRITE_API_WITHOUT_OPERATION_AUDIT",
+                    "ERROR",
+                    "AUDIT",
+                    "非公开写接口缺少操作审计覆盖",
+                    "将写接口路径纳入 OperationAuditInterceptor 审计路径，或确认该接口不应作为非公开写接口暴露"
             ),
             new GovernanceRule(
                     "PERMISSION_CODE_UNASSIGNABLE",
@@ -340,7 +349,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.61}") String applicationVersion
+            @Value("${ones.version:v0.0.62}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -1001,6 +1010,9 @@ public class ApiResourceService {
         addFieldChange(changes, "repeatSubmitProtected",
                 String.valueOf(previous.repeatSubmitProtected()),
                 String.valueOf(current.repeatSubmitProtected()));
+        addFieldChange(changes, "operationAuditProtected",
+                String.valueOf(previous.operationAuditProtected()),
+                String.valueOf(current.operationAuditProtected()));
         addFieldChange(changes, "owner", previous.owner(), current.owner());
         addFieldChange(changes, "audience", previous.audience(), current.audience());
         addFieldChange(changes, "sinceVersion", previous.sinceVersion(), current.sinceVersion());
@@ -1043,7 +1055,8 @@ public class ApiResourceService {
                 || "permissionCodes".equals(fieldName)
                 || "permissionMode".equals(fieldName)
                 || "writeOperation".equals(fieldName)
-                || "repeatSubmitProtected".equals(fieldName);
+                || "repeatSubmitProtected".equals(fieldName)
+                || "operationAuditProtected".equals(fieldName);
     }
 
     private long countChangeType(List<ApiResourceManifestDiffResponse.Change> changes, String changeType) {
@@ -1180,6 +1193,7 @@ public class ApiResourceService {
             for (String method : methods(info)) {
                 ApiAuthType authType = authType(path, permissionMetadata, accessPolicyMetadata);
                 boolean permissionMissing = isPermissionMissing(path, authType, accessPolicyMetadata);
+                boolean writeOperation = isWriteOperation(method);
                 responses.add(new ApiResourceResponse(
                         method,
                         path,
@@ -1198,8 +1212,9 @@ public class ApiResourceService {
                         unassignablePermissionCodes.isEmpty(),
                         unassignablePermissionCodes,
                         permissionMissing,
-                        isWriteOperation(method),
+                        writeOperation,
                         repeatSubmitProtected,
+                        operationAuditProtected(writeOperation, path, authType),
                         apiKey(method, path),
                         operationId(handlerMethod),
                         handlerName(handlerMethod),
@@ -1229,6 +1244,7 @@ public class ApiResourceService {
                 resource.permissionMode(),
                 resource.writeOperation(),
                 resource.repeatSubmitProtected(),
+                resource.operationAuditProtected(),
                 resource.owner(),
                 resource.audience(),
                 resource.sinceVersion(),
@@ -1265,6 +1281,7 @@ public class ApiResourceService {
                 nullToEmpty(resource.permissionMode()),
                 String.valueOf(resource.writeOperation()),
                 String.valueOf(resource.repeatSubmitProtected()),
+                String.valueOf(resource.operationAuditProtected()),
                 nullToEmpty(resource.owner()),
                 nullToEmpty(resource.audience()),
                 nullToEmpty(resource.sinceVersion()),
@@ -1297,6 +1314,7 @@ public class ApiResourceService {
                 .append(resource.permissionMissing()).append(',')
                 .append(resource.writeOperation()).append(',')
                 .append(resource.repeatSubmitProtected()).append(',')
+                .append(resource.operationAuditProtected()).append(',')
                 .append(resource.deprecated()).append(',')
                 .append(csvValue(resource.owner())).append(',')
                 .append(csvValue(resource.audience())).append(',')
@@ -1536,6 +1554,12 @@ public class ApiResourceService {
                 || "DELETE".equals(method);
     }
 
+    private boolean operationAuditProtected(boolean writeOperation, String path, ApiAuthType authType) {
+        return writeOperation
+                && authType != ApiAuthType.PUBLIC
+                && OperationAuditInterceptor.isAuditedApiPath(path);
+    }
+
     private List<ApiResourceGovernanceResponse.Violation> governanceViolations(ApiResourceResponse resource) {
         List<ApiResourceGovernanceResponse.Violation> violations = new ArrayList<>();
         if (resource.permissionMissing()) {
@@ -1630,6 +1654,16 @@ public class ApiResourceService {
                     "HIGH_RISK_WRITE_API_WITHOUT_REPEAT_SUBMIT",
                     "ERROR",
                     "非公开高风险写接口缺少重复提交防护"
+            ));
+        }
+        if (resource.writeOperation()
+                && !"PUBLIC".equals(resource.authType())
+                && !resource.operationAuditProtected()) {
+            violations.add(toViolation(
+                    resource,
+                    "WRITE_API_WITHOUT_OPERATION_AUDIT",
+                    "ERROR",
+                    "非公开写接口缺少操作审计覆盖"
             ));
         }
         if (!resource.unassignablePermissionCodes().isEmpty()) {

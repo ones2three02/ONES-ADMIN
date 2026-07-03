@@ -58,7 +58,7 @@
 - MyBatis-Plus 数据访问。
 - 用户、角色、菜单、部门基础 RBAC。
 - 登录失败次数、临时锁定、最后登录时间，失败次数与锁定时长可配置。
-- 登录日志、系统与 HRMS 写操作日志已具备后端记录、分页查询和 CSV 导出接口。
+- 登录日志、系统、认证安全、时区与 HRMS 写操作日志已具备后端记录、分页查询和 CSV 导出接口。
 - 已建立统一分页模型，审计日志查询支持分页与筛选。
 - 已建立运行时接口资源清单，可扫描后端真实 `/api/**` 路由、方法、模块、摘要、权限点和写操作标识。
 - 接口资源清单已提供稳定接口标识 `apiKey`、稳定操作标识 `operationId`、处理器定位 `handler` 和废弃状态 `deprecated`，便于接口管理页、API Catalog、客户端生成、审计排障和 Jenkins 报告直接定位到 Controller 方法。
@@ -80,6 +80,7 @@
 - 已建立废弃接口下线治理，废弃 API 必须维护 `sunsetVersion` 和 `replacementApiKey`，避免只有废弃标记但没有迁移路径。
 - 已建立接口生命周期一致性治理，`DEPRECATED` 必须同步 OpenAPI 废弃标记，`REMOVED` 不允许继续暴露运行时路由。
 - 已建立高风险写接口策略一致性治理，接口清单、CSV 和 Manifest 输出 `repeatSubmitProtected`，非公开高风险写接口缺少 `@RepeatSubmit` 时阻断发布。
+- 已建立写接口操作审计覆盖治理，接口清单、CSV、Manifest 和 Manifest Diff 输出 `operationAuditProtected`，非公开写接口缺少操作审计覆盖时通过 `WRITE_API_WITHOUT_OPERATION_AUDIT` 阻断发布。
 - 已建立接口权限注册一致性检查，可识别代码权限点是否写入 `sys_permission`，以及是否挂载到 `sys_menu.auth_code` 供角色授权。
 - 已建立权限码命名规范检查，当前统一使用小写冒号分段格式：`^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*){1,3}$`。
 - 已建立模块化错误码体系，通用、认证、系统模块错误码分层维护，并通过测试校验跨模块错误码唯一性。
@@ -88,7 +89,7 @@
 - 高风险写接口已接入防重复提交保护，正式环境默认使用 Redis 存储防重票据；登录接口继续由失败次数和临时锁定策略保护。
 - 文件存储已抽象为 `FileStorageService`，默认本地目录存储，可通过配置切换到 MinIO。
 - 登录日志、操作日志落库后可发布统一系统事件，默认关闭外发，可通过配置切换到 RabbitMQ。
-- HRMS 写接口已纳入统一操作审计，员工、岗位、职级、合同和花名册导入等写操作可通过 TraceId 在操作日志中追踪；业务生命周期事件只记录业务状态流转，不替代操作日志。
+- 系统、认证令牌刷新/退出登录、时区设置与 HRMS 写接口已纳入统一操作审计，员工、岗位、职级、合同和花名册导入等写操作可通过 TraceId 在操作日志中追踪；业务生命周期事件只记录业务状态流转，不替代操作日志。
 - HRMS 已完成一期企业级设计稿，并在 v0.0.51 开始落地 Phase 1A：新增 `hr_` 基础表迁移、岗位/职级/员工基础接口、独立 HR 错误码、Swagger 分组、权限初始化和授权树挂载。v0.0.52 已继续落地员工调岗、转正、离职生命周期动作，v0.0.54 已补齐员工生命周期时间线查询接口，v0.0.55 已补齐员工合同列表、新增、编辑接口，v0.0.56 已补齐合同终止和即将到期合同查询，v0.0.58 已开始落地花名册模板下载、批量导入、批次和错误行查询，形成“员工主数据 + 生命周期 + 合同流程 + 批量导入 + 权限治理”的基础闭环。
 - MySQL、Redis、RabbitMQ、MinIO 配置通过环境变量注入，本地敏感配置不提交 Git。
 
@@ -149,8 +150,9 @@
   - 提供 `@ApiAccessPolicy` 显式标记登录态和公开接口的设计意图，减少安全巡检误报。
   - 登录入口和健康检查已补充公开访问策略说明，后续飞书扫码、飞书 SSO 回调等公开入口必须复用同一治理口径。
   - 对仅登录保护、且没有显式访问策略的系统接口标记权限缺口，便于安全巡检。
-  - 对接口未显式声明 HTTP 方法、公开接口缺少显式访问策略、公开接口未同步运行时白名单、系统写接口无权限点、非公开高风险写接口缺少重复提交防护、权限码命名不规范、`operationId` 命名不规范、`operationId` 重复、权限点未注册、权限点不可授权、废弃接口、废弃接口缺少下线版本、废弃接口下线版本格式不规范、废弃接口缺少替代接口、`DEPRECATED` 未同步 OpenAPI 废弃标记、`REMOVED` 接口仍暴露路由、缺少接口负责人、缺少引入版本、接口引入版本格式不规范、缺少生命周期、缺少风险级别、缺少 OpenAPI 模块标签、缺少接口摘要等问题输出结构化治理结果，便于 Jenkins 自动巡检。
+  - 对接口未显式声明 HTTP 方法、公开接口缺少显式访问策略、公开接口未同步运行时白名单、系统写接口无权限点、非公开高风险写接口缺少重复提交防护、非公开写接口缺少操作审计覆盖、权限码命名不规范、`operationId` 命名不规范、`operationId` 重复、权限点未注册、权限点不可授权、废弃接口、废弃接口缺少下线版本、废弃接口下线版本格式不规范、废弃接口缺少替代接口、`DEPRECATED` 未同步 OpenAPI 废弃标记、`REMOVED` 接口仍暴露路由、缺少接口负责人、缺少引入版本、接口引入版本格式不规范、缺少生命周期、缺少风险级别、缺少 OpenAPI 模块标签、缺少接口摘要等问题输出结构化治理结果，便于 Jenkins 自动巡检。
   - 接口资源列表、CSV 导出、Manifest 和 Manifest Diff 已纳入 `repeatSubmitProtected`，重复提交防护策略变化会进入 Manifest 指纹和发布差异。
+  - 接口资源列表、CSV 导出、Manifest 和 Manifest Diff 已纳入 `operationAuditProtected`，操作审计覆盖变化会进入 Manifest 指纹和发布差异。
   - 每条接口治理违规项均返回 `remediation` 修复建议，便于 Jenkins 输出可执行治理动作，也便于后续接口管理页直接展示整改指引。
   - 新增权限点 `system:api:list` 和 `system:api:publish`，超级管理员启动时自动补齐授权，接口查询与接口发布分权治理。
   - 新增文件上传权限点 `system:file:upload`，文件上传不再只是登录态即可访问。
@@ -167,7 +169,7 @@
   - 提供 `/api/system/audit/login-logs` 查询接口。
   - 提供 `/api/system/audit/login-logs/export` CSV 导出接口，沿用查询筛选条件和审计权限。
 - 新增系统操作日志：
-  - 自动记录 `/api/system/**` 下 POST、PUT、PATCH、DELETE 写操作。
+  - 自动记录 `/api/system/**`、`/api/hr/**`、`/api/timezone/**` 下 POST、PUT、PATCH、DELETE 写操作，以及 `/api/auth/refresh`、`/api/auth/logout` 认证安全写操作。
   - 记录用户 ID、请求方法、路径、模块、动作、权限点、业务响应码、结果、TraceId、耗时。
   - 提供 `/api/system/audit/operation-logs` 查询接口。
   - 提供 `/api/system/audit/operation-logs/export` CSV 导出接口，沿用查询筛选条件和审计权限。
@@ -246,6 +248,7 @@
   - Jenkins 应对 `DEPRECATED_API_MISSING_SUNSET_VERSION` 和 `DEPRECATED_API_MISSING_REPLACEMENT` 输出整改提示，要求废弃接口有明确下线版本和替代接口
   - Jenkins 应将 `REMOVED_API_STILL_MAPPED` 视为阻断项，要求已移除接口不再存在运行时路由
   - Jenkins 应将 `HIGH_RISK_WRITE_API_WITHOUT_REPEAT_SUBMIT` 视为阻断项，要求非公开高风险写接口补充 `@RepeatSubmit` 或降低风险级别并说明理由
+  - Jenkins 应将 `WRITE_API_WITHOUT_OPERATION_AUDIT` 视为阻断项，要求非公开写接口纳入 `OperationAuditInterceptor` 覆盖范围或经安全评审改为公开接口
   - 可调用 `/api/system/api-resources/export` 导出 CSV 作为构建产物，便于接口清单留档和版本差异比对
   - 可调用 `/api/system/api-resources/manifest` 生成 JSON 与 `checksum`，用于识别接口契约是否发生变更
   - 推荐 Jenkins 在开发/测试环境调用 `/api/system/api-resources/manifest/snapshots/latest` 获取上一版发布快照

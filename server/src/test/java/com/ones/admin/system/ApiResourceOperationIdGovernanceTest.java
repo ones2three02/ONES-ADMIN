@@ -236,6 +236,45 @@ class ApiResourceOperationIdGovernanceTest {
     }
 
     @Test
+    void writeApiRequiresOperationAuditCoverage() throws Exception {
+        String token = login("admin", "admin123");
+
+        String resourceResponse = mockMvc.perform(get("/api/system/api-resources")
+                        .param("pageNum", "1")
+                        .param("pageSize", "200")
+                        .param("path", "/api/test/security/high-risk-without-repeat-submit")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].writeOperation").value(true))
+                .andExpect(jsonPath("$.data.list[0].operationAuditProtected").value(false))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode writeResource = objectMapper.readTree(resourceResponse).at("/data/list/0");
+        assertThat(writeResource.path("authType").asText()).isNotEqualTo("PUBLIC");
+
+        String governanceResponse = mockMvc.perform(get("/api/system/api-resources/governance")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.passed").value(false))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode violations = objectMapper.readTree(governanceResponse).at("/data/violations");
+        JsonNode violation = findViolation(
+                violations,
+                "/api/test/security/high-risk-without-repeat-submit",
+                "WRITE_API_WITHOUT_OPERATION_AUDIT"
+        );
+        assertThat(violation.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(violation.path("remediation").asText()).contains("OperationAuditInterceptor");
+    }
+
+    @Test
     void publicAccessPolicyMustMatchRuntimeWhitelist() throws Exception {
         String token = login("admin", "admin123");
 

@@ -86,8 +86,19 @@ class ApiResourceControllerTest {
         assertThat(userCreateResource.path("summary").asText()).isEqualTo("新增用户");
         assertThat(userCreateResource.path("writeOperation").asBoolean()).isTrue();
         assertThat(userCreateResource.path("repeatSubmitProtected").asBoolean()).isTrue();
+        assertThat(userCreateResource.path("operationAuditProtected").asBoolean()).isTrue();
         assertThat(userCreateResource.path("riskLevel").asText()).isEqualTo("HIGH");
         assertThat(permissionCodes(userCreateResource)).containsExactly("system:user:create");
+
+        JsonNode refreshTokenResource = findResource(resources, "POST", "/api/auth/refresh");
+        assertThat(refreshTokenResource.path("authType").asText()).isEqualTo("LOGIN");
+        assertThat(refreshTokenResource.path("operationAuditProtected").asBoolean()).isTrue();
+        JsonNode logoutResource = findResource(resources, "POST", "/api/auth/logout");
+        assertThat(logoutResource.path("authType").asText()).isEqualTo("LOGIN");
+        assertThat(logoutResource.path("operationAuditProtected").asBoolean()).isTrue();
+        JsonNode timezoneResource = findResource(resources, "POST", "/api/timezone/setTimezone");
+        assertThat(timezoneResource.path("authType").asText()).isEqualTo("LOGIN");
+        assertThat(timezoneResource.path("operationAuditProtected").asBoolean()).isTrue();
     }
 
     @Test
@@ -350,6 +361,11 @@ class ApiResourceControllerTest {
         assertThat(repeatSubmitRule.path("blocking").asBoolean()).isTrue();
         assertThat(repeatSubmitRule.path("category").asText()).isEqualTo("SECURITY");
         assertThat(repeatSubmitRule.path("remediation").asText()).contains("@RepeatSubmit");
+        JsonNode operationAuditRule = findRule(rules, "WRITE_API_WITHOUT_OPERATION_AUDIT");
+        assertThat(operationAuditRule.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(operationAuditRule.path("blocking").asBoolean()).isTrue();
+        assertThat(operationAuditRule.path("category").asText()).isEqualTo("AUDIT");
+        assertThat(operationAuditRule.path("remediation").asText()).contains("OperationAuditInterceptor");
     }
 
     @Test
@@ -360,12 +376,12 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.61"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.62"))
                 .andExpect(jsonPath("$.data.summary.total").value(76))
                 .andExpect(jsonPath("$.data.governance.passed").value(true))
                 .andExpect(jsonPath("$.data.governance.total").value(76))
                 .andExpect(jsonPath("$.data.manifest.total").value(76))
-                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.61"))
+                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.62"))
                 .andExpect(jsonPath("$.data.latestGate.gate.checks[0].checkCode").value("API_GOVERNANCE_ERROR"))
                 .andReturn()
                 .getResponse()
@@ -445,7 +461,8 @@ class ApiResourceControllerTest {
         assertThat(response).startsWith(
                 "apiKey,operationId,method,path,handler,module,summary,authType,permissionCodes,permissionMode,"
                         + "requiresPermission,permissionRegistered,permissionAssignable,permissionMissing,"
-                        + "writeOperation,repeatSubmitProtected,deprecated,owner,audience,sinceVersion,lifecycle,riskLevel,"
+                        + "writeOperation,repeatSubmitProtected,operationAuditProtected,deprecated,owner,audience,"
+                        + "sinceVersion,lifecycle,riskLevel,"
                         + "sunsetVersion,replacementApiKey,"
                         + "accessPolicyExplicit,accessPolicyReason\n"
         );
@@ -469,7 +486,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.61"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.62"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(76))
                 .andReturn()
@@ -500,13 +517,22 @@ class ApiResourceControllerTest {
         assertThat(userList.path("lifecycle").asText()).isEqualTo("ACTIVE");
         assertThat(userList.path("riskLevel").asText()).isEqualTo("MEDIUM");
         assertThat(userList.path("repeatSubmitProtected").asBoolean()).isFalse();
+        assertThat(userList.path("operationAuditProtected").asBoolean()).isFalse();
         assertThat(permissionCodes(userList)).containsExactly("system:user:list");
 
         JsonNode userCreate = findResource(firstManifest.path("resources"), "POST", "/api/system/users");
         assertThat(userCreate.path("writeOperation").asBoolean()).isTrue();
         assertThat(userCreate.path("riskLevel").asText()).isEqualTo("HIGH");
         assertThat(userCreate.path("repeatSubmitProtected").asBoolean()).isTrue();
+        assertThat(userCreate.path("operationAuditProtected").asBoolean()).isTrue();
         assertThat(permissionCodes(userCreate)).containsExactly("system:user:create");
+
+        JsonNode refreshToken = findResource(firstManifest.path("resources"), "POST", "/api/auth/refresh");
+        assertThat(refreshToken.path("operationAuditProtected").asBoolean()).isTrue();
+        JsonNode logout = findResource(firstManifest.path("resources"), "POST", "/api/auth/logout");
+        assertThat(logout.path("operationAuditProtected").asBoolean()).isTrue();
+        JsonNode timezone = findResource(firstManifest.path("resources"), "POST", "/api/timezone/setTimezone");
+        assertThat(timezone.path("operationAuditProtected").asBoolean()).isTrue();
 
         JsonNode contractList = findResource(firstManifest.path("resources"),
                 "GET", "/api/hr/employees/{employeeId}/contracts");
@@ -520,6 +546,7 @@ class ApiResourceControllerTest {
         assertThat(contractCreate.path("writeOperation").asBoolean()).isTrue();
         assertThat(contractCreate.path("riskLevel").asText()).isEqualTo("HIGH");
         assertThat(contractCreate.path("repeatSubmitProtected").asBoolean()).isTrue();
+        assertThat(contractCreate.path("operationAuditProtected").asBoolean()).isTrue();
         assertThat(permissionCodes(contractCreate)).containsExactly("hr:contract:create");
 
         JsonNode contractUpdate = findResource(firstManifest.path("resources"),
@@ -527,6 +554,7 @@ class ApiResourceControllerTest {
         assertThat(contractUpdate.path("writeOperation").asBoolean()).isTrue();
         assertThat(contractUpdate.path("riskLevel").asText()).isEqualTo("HIGH");
         assertThat(contractUpdate.path("repeatSubmitProtected").asBoolean()).isTrue();
+        assertThat(contractUpdate.path("operationAuditProtected").asBoolean()).isTrue();
         assertThat(permissionCodes(contractUpdate)).containsExactly("hr:contract:update");
 
         JsonNode expiringContracts = findResource(firstManifest.path("resources"),
@@ -558,6 +586,7 @@ class ApiResourceControllerTest {
         assertThat(rosterImport.path("riskLevel").asText()).isEqualTo("HIGH");
         assertThat(rosterImport.path("writeOperation").asBoolean()).isTrue();
         assertThat(rosterImport.path("repeatSubmitProtected").asBoolean()).isTrue();
+        assertThat(rosterImport.path("operationAuditProtected").asBoolean()).isTrue();
         assertThat(permissionCodes(rosterImport)).containsExactly("hr:roster:import");
 
         JsonNode rosterBatches = findResource(firstManifest.path("resources"),
@@ -597,7 +626,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.61"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.62"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.snapshot.total").value(76))
                 .andExpect(jsonPath("$.data.snapshot.manifest.total").value(76))
@@ -696,7 +725,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.61"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.62"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))

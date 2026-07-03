@@ -14,12 +14,23 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.util.List;
 import java.util.Objects;
 
 @Component
 public class OperationAuditInterceptor implements HandlerInterceptor {
 
     private static final String START_TIME_ATTRIBUTE = "ones.operation.startTime";
+    private static final String USER_ID_ATTRIBUTE = "ones.operation.userId";
+    private static final List<String> AUDITED_API_PATH_PREFIXES = List.of(
+            "/api/system/",
+            "/api/hr/",
+            "/api/timezone/"
+    );
+    private static final List<String> AUDITED_API_EXACT_PATHS = List.of(
+            "/api/auth/refresh",
+            "/api/auth/logout"
+    );
 
     private final OperationAuditService operationAuditService;
 
@@ -31,6 +42,10 @@ public class OperationAuditInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         if (shouldRecord(request, handler)) {
             request.setAttribute(START_TIME_ATTRIBUTE, System.currentTimeMillis());
+            Long userId = currentUserId();
+            if (userId != null) {
+                request.setAttribute(USER_ID_ATTRIBUTE, userId);
+            }
         }
         return true;
     }
@@ -52,7 +67,7 @@ public class OperationAuditInterceptor implements HandlerInterceptor {
                 && response.getStatus() < HttpServletResponse.SC_BAD_REQUEST
                 && (apiCode == null || Objects.equals(apiCode, CommonErrorCode.SUCCESS.code()));
         operationAuditService.record(new OperationAuditService.OperationAuditRecord(
-                currentUserId(),
+                auditedUserId(request),
                 request.getMethod(),
                 request.getRequestURI(),
                 moduleName(handlerMethod),
@@ -77,8 +92,20 @@ public class OperationAuditInterceptor implements HandlerInterceptor {
                 || HttpMethod.PUT.matches(method)
                 || HttpMethod.PATCH.matches(method)
                 || HttpMethod.DELETE.matches(method);
-        String requestUri = request.getRequestURI();
-        return writeMethod && (requestUri.startsWith("/api/system/") || requestUri.startsWith("/api/hr/"));
+        return writeMethod && isAuditedApiPath(request.getRequestURI());
+    }
+
+    public static boolean isAuditedApiPath(String path) {
+        return path != null && (AUDITED_API_EXACT_PATHS.contains(path)
+                || AUDITED_API_PATH_PREFIXES.stream().anyMatch(path::startsWith));
+    }
+
+    private Long auditedUserId(HttpServletRequest request) {
+        Object userId = request.getAttribute(USER_ID_ATTRIBUTE);
+        if (userId instanceof Long longUserId) {
+            return longUserId;
+        }
+        return currentUserId();
     }
 
     private Long currentUserId() {
