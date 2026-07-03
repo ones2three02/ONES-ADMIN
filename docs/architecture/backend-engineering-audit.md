@@ -5,7 +5,7 @@
 
 ## 1. 调研来源
 
-本轮重点参考了以下开源企业后台项目，调研渠道为 agent-reach GitHub/dev 路由与 GitHub CLI，访问日期为 2026-07-01 至 2026-07-02。
+本轮重点参考了以下开源企业后台项目，调研渠道为 agent-reach GitHub/dev 路由、公开 GitHub 页面与网页检索，访问日期为 2026-07-01 至 2026-07-03。
 
 | 项目 | 后端特征 | 可借鉴重点 |
 | --- | --- | --- |
@@ -46,6 +46,7 @@
 - Spectral/Optic 的 API lint 思路要求规范以规则编码沉淀，oasdiff 的差异治理要求版本元数据可比较；ONES-ADMIN 的 `sinceVersion`、`sunsetVersion` 必须遵循统一产品版本格式，避免接口目录只有文本而无法进入 Jenkins 审计。
 - ONES-ADMIN 当前保持 Spring Boot 3 + Sa-Token + MyBatis-Plus，不跟随 Cool Admin Java 切换 MyBatis-Flex；后续只吸收它的模块边界和初始化治理思想。
 - 本轮复核的接口管理开源标杆中，Backstage 适合借鉴 API Catalog 的可发现性与 Owner/Lifecycle 元数据，Gravitee 适合借鉴 API 生命周期与集中管理，Apicurio 适合借鉴 API/Schema Registry，SmartAdmin/CoolAdmin 继续作为后端安全、模块边界和初始化治理参考。
+- 2026-07-03 继续复核后，本项目本轮不新增外部 API 网关依赖，先把公开接口的“开放原因”纳入阻断规则，确保登录、健康检查、飞书回调、SSO 回跳等公开入口后续都有可审计依据。
 
 ## 2. 当前后端基线
 
@@ -75,7 +76,7 @@
 - 已建立接口版本元数据格式治理，当前格式为 `^v\d+\.\d+\.\d+$`，`sinceVersion` 和废弃接口 `sunsetVersion` 不规范时输出治理警告，便于 Jenkins 和接口管理页追踪版本计划。
 - 已建立接口治理质量门禁，可输出权限缺口、系统写接口无权限、接口文档元数据缺失等违规项。
 - 已建立接口治理规则目录，结构化输出规则编码、严重级别、是否阻断、分类和修复建议，便于 Jenkins、接口管理页和人工巡检复用同一套规则解释。
-- 已建立公开接口访问策略治理，`PUBLIC` 接口必须显式声明 `@ApiAccessPolicy(ApiAuthType.PUBLIC, reason = "...")` 并同步加入 Sa-Token 运行时白名单，否则作为安全错误阻断发布。
+- 已建立公开接口访问策略治理，`PUBLIC` 接口必须显式声明 `@ApiAccessPolicy(ApiAuthType.PUBLIC, reason = "...")`、填写开放原因并同步加入 Sa-Token 运行时白名单，否则作为安全错误阻断发布。
 - 已建立废弃接口下线治理，废弃 API 必须维护 `sunsetVersion` 和 `replacementApiKey`，避免只有废弃标记但没有迁移路径。
 - 已建立接口生命周期一致性治理，`DEPRECATED` 必须同步 OpenAPI 废弃标记，`REMOVED` 不允许继续暴露运行时路由。
 - 已建立高风险写接口策略一致性治理，接口清单、CSV 和 Manifest 输出 `repeatSubmitProtected`，非公开高风险写接口缺少 `@RepeatSubmit` 时阻断发布。

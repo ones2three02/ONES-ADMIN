@@ -98,6 +98,13 @@ public class ApiResourceService {
                     "为公开接口补充 @ApiAccessPolicy(ApiAuthType.PUBLIC, reason = \"...\")，说明开放原因、调用方和安全补偿措施"
             ),
             new GovernanceRule(
+                    "PUBLIC_API_ACCESS_POLICY_REASON_MISSING",
+                    "ERROR",
+                    "SECURITY",
+                    "公开接口缺少开放原因",
+                    "为公开接口的 @ApiAccessPolicy 补充 reason，说明开放原因、调用方和安全补偿措施"
+            ),
+            new GovernanceRule(
                     "PUBLIC_API_NOT_IN_RUNTIME_WHITELIST",
                     "ERROR",
                     "SECURITY",
@@ -333,7 +340,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.59}") String applicationVersion
+            @Value("${ones.version:v0.0.60}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -1545,6 +1552,16 @@ public class ApiResourceService {
                     "PUBLIC_API_WITHOUT_ACCESS_POLICY",
                     "ERROR",
                     "公开接口必须显式声明访问策略和开放原因"
+            ));
+        }
+        if ("PUBLIC".equals(resource.authType())
+                && resource.accessPolicyExplicit()
+                && !hasText(resource.accessPolicyReason())) {
+            violations.add(toViolation(
+                    resource,
+                    "PUBLIC_API_ACCESS_POLICY_REASON_MISSING",
+                    "ERROR",
+                    "公开接口必须说明开放原因、调用方和安全补偿措施"
             ));
         }
         if ("PUBLIC".equals(resource.authType()) && !isPublicPath(resource.path())) {

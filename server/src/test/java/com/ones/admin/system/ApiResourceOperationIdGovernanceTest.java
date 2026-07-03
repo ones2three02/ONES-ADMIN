@@ -275,6 +275,45 @@ class ApiResourceOperationIdGovernanceTest {
     }
 
     @Test
+    void publicAccessPolicyRequiresAuditReason() throws Exception {
+        String token = login("admin", "admin123");
+
+        String resourceResponse = mockMvc.perform(get("/api/system/api-resources")
+                        .param("pageNum", "1")
+                        .param("pageSize", "200")
+                        .param("path", "/api/test/security/public-without-audit-reason")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].authType").value("PUBLIC"))
+                .andExpect(jsonPath("$.data.list[0].accessPolicyExplicit").value(true))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode publicPolicyResource = objectMapper.readTree(resourceResponse).at("/data/list/0");
+        assertThat(publicPolicyResource.path("accessPolicyReason").isNull()).isTrue();
+
+        String governanceResponse = mockMvc.perform(get("/api/system/api-resources/governance")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.passed").value(false))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode violations = objectMapper.readTree(governanceResponse).at("/data/violations");
+        JsonNode violation = findViolation(
+                violations,
+                "/api/test/security/public-without-audit-reason",
+                "PUBLIC_API_ACCESS_POLICY_REASON_MISSING"
+        );
+        assertThat(violation.path("severity").asText()).isEqualTo("ERROR");
+        assertThat(violation.path("remediation").asText()).contains("reason");
+    }
+
+    @Test
     void apiMethodMustBeExplicit() throws Exception {
         String token = login("admin", "admin123");
 
@@ -467,6 +506,16 @@ class ApiResourceOperationIdGovernanceTest {
         @ApiAccessPolicy(value = ApiAuthType.PUBLIC, reason = "测试公开策略缺少运行时白名单同步")
         public ApiResult<String> publicWithoutRuntimeWhitelist() {
             return ApiResult.ok("public-without-runtime-whitelist");
+        }
+
+        @GetMapping("/api/test/security/public-without-audit-reason")
+        @Operation(
+                summary = "公开策略缺少开放原因",
+                operationId = "SecurityFixture_publicWithoutAuditReason"
+        )
+        @ApiAccessPolicy(ApiAuthType.PUBLIC)
+        public ApiResult<String> publicWithoutAuditReason() {
+            return ApiResult.ok("public-without-audit-reason");
         }
 
         @GetMapping("/api/test/catalog/invalid-since-version")

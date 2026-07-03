@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.60 - 2026-07-03
+
+- 接口治理新增 `PUBLIC_API_ACCESS_POLICY_REASON_MISSING` 阻断规则，公开接口即使已声明 `@ApiAccessPolicy(ApiAuthType.PUBLIC)`，也必须填写 `reason` 说明开放原因、调用方和安全补偿措施。
+- 治理规则目录同步输出新规则的严重级别、分类、阻断状态和修复建议，便于 Jenkins、接口管理页和人工巡检复用同一套解释。
+- 补充公开接口开放原因缺失的 TDD 用例，确保接口目录不会只登记公开策略而缺少审计理由。
+- 产品版本递增至 `v0.0.60`。
+
 ## v0.0.59 - 2026-07-03
 
 - 后端接口治理聚合报告新增 `actionItems`，将 Manifest 基线、Diff 归档、治理规则违规和 HRMS 前端接入转成可跟踪动作项，便于 Jenkins 和后续接口管理页直接展示待办。
