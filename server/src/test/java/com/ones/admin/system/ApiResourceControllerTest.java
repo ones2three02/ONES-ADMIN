@@ -354,12 +354,12 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.55"))
-                .andExpect(jsonPath("$.data.summary.total").value(69))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.56"))
+                .andExpect(jsonPath("$.data.summary.total").value(71))
                 .andExpect(jsonPath("$.data.governance.passed").value(true))
-                .andExpect(jsonPath("$.data.governance.total").value(69))
-                .andExpect(jsonPath("$.data.manifest.total").value(69))
-                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.55"))
+                .andExpect(jsonPath("$.data.governance.total").value(71))
+                .andExpect(jsonPath("$.data.manifest.total").value(71))
+                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.56"))
                 .andExpect(jsonPath("$.data.latestGate.gate.checks[0].checkCode").value("API_GOVERNANCE_ERROR"))
                 .andReturn()
                 .getResponse()
@@ -445,9 +445,9 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.55"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.56"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
-                .andExpect(jsonPath("$.data.total").value(69))
+                .andExpect(jsonPath("$.data.total").value(71))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -505,6 +505,21 @@ class ApiResourceControllerTest {
         assertThat(contractUpdate.path("repeatSubmitProtected").asBoolean()).isTrue();
         assertThat(permissionCodes(contractUpdate)).containsExactly("hr:contract:update");
 
+        JsonNode expiringContracts = findResource(firstManifest.path("resources"),
+                "GET", "/api/hr/contracts/expiring");
+        assertThat(expiringContracts.path("sinceVersion").asText()).isEqualTo("v0.0.56");
+        assertThat(expiringContracts.path("riskLevel").asText()).isEqualTo("MEDIUM");
+        assertThat(expiringContracts.path("writeOperation").asBoolean()).isFalse();
+        assertThat(permissionCodes(expiringContracts)).containsExactly("hr:contract:list");
+
+        JsonNode terminateContract = findResource(firstManifest.path("resources"),
+                "POST", "/api/hr/contracts/{contractId}/terminate");
+        assertThat(terminateContract.path("sinceVersion").asText()).isEqualTo("v0.0.56");
+        assertThat(terminateContract.path("riskLevel").asText()).isEqualTo("HIGH");
+        assertThat(terminateContract.path("writeOperation").asBoolean()).isTrue();
+        assertThat(terminateContract.path("repeatSubmitProtected").asBoolean()).isTrue();
+        assertThat(permissionCodes(terminateContract)).containsExactly("hr:contract:terminate");
+
         JsonNode manifest = findResource(firstManifest.path("resources"), "GET", "/api/system/api-resources/manifest");
         assertThat(manifest.path("handler").asText())
                 .isEqualTo("com.ones.admin.system.ApiResourceController#generateApiResourceManifest");
@@ -526,10 +541,10 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.55"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.56"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
-                .andExpect(jsonPath("$.data.snapshot.total").value(69))
-                .andExpect(jsonPath("$.data.snapshot.manifest.total").value(69))
+                .andExpect(jsonPath("$.data.snapshot.total").value(71))
+                .andExpect(jsonPath("$.data.snapshot.manifest.total").value(71))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -625,7 +640,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.55"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.56"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))

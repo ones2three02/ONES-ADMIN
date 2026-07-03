@@ -8,6 +8,7 @@ import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.hr.dto.HrEmployeeContractResponse;
 import com.ones.admin.hr.dto.HrEmployeeContractSaveRequest;
+import com.ones.admin.hr.dto.HrEmployeeContractTerminateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -17,12 +18,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/hr/employees/{employeeId}/contracts")
+@RequestMapping("/api/hr")
 @Tag(name = "HRMS-员工合同")
 @ApiResourceMetadata(
         owner = "人力平台组",
@@ -39,14 +41,24 @@ public class HrEmployeeContractController {
         this.contractService = contractService;
     }
 
-    @GetMapping
+    @GetMapping("/employees/{employeeId}/contracts")
     @SaCheckPermission("hr:contract:list")
     @Operation(operationId = "HrEmployeeContractController_listContracts", summary = "查询员工合同列表")
     public ApiResult<List<HrEmployeeContractResponse>> listContracts(@PathVariable Long employeeId) {
         return ApiResult.ok(contractService.listContracts(employeeId));
     }
 
-    @PostMapping
+    @GetMapping("/contracts/expiring")
+    @SaCheckPermission("hr:contract:list")
+    @Operation(operationId = "HrEmployeeContractController_listExpiringContracts", summary = "查询即将到期合同")
+    @ApiResourceMetadata(sinceVersion = "v0.0.56", riskLevel = ApiRiskLevel.MEDIUM)
+    public ApiResult<List<HrEmployeeContractResponse>> listExpiringContracts(
+            @RequestParam(required = false) Integer days
+    ) {
+        return ApiResult.ok(contractService.listExpiringContracts(days));
+    }
+
+    @PostMapping("/employees/{employeeId}/contracts")
     @SaCheckPermission("hr:contract:create")
     @Operation(operationId = "HrEmployeeContractController_createContract", summary = "新增员工合同")
     @RepeatSubmit
@@ -58,7 +70,7 @@ public class HrEmployeeContractController {
         return ApiResult.ok(contractService.createContract(employeeId, request));
     }
 
-    @PutMapping("/{contractId}")
+    @PutMapping("/employees/{employeeId}/contracts/{contractId}")
     @SaCheckPermission("hr:contract:update")
     @Operation(operationId = "HrEmployeeContractController_updateContract", summary = "编辑员工合同")
     @RepeatSubmit
@@ -69,5 +81,17 @@ public class HrEmployeeContractController {
             @Valid @RequestBody HrEmployeeContractSaveRequest request
     ) {
         return ApiResult.ok(contractService.updateContract(employeeId, contractId, request));
+    }
+
+    @PostMapping("/contracts/{contractId}/terminate")
+    @SaCheckPermission("hr:contract:terminate")
+    @Operation(operationId = "HrEmployeeContractController_terminateContract", summary = "终止员工合同")
+    @RepeatSubmit
+    @ApiResourceMetadata(sinceVersion = "v0.0.56", riskLevel = ApiRiskLevel.HIGH)
+    public ApiResult<HrEmployeeContractResponse> terminateContract(
+            @PathVariable Long contractId,
+            @Valid @RequestBody HrEmployeeContractTerminateRequest request
+    ) {
+        return ApiResult.ok(contractService.terminateContract(contractId, request));
     }
 }

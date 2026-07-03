@@ -102,3 +102,9 @@
 2026-07-03 通过 agent-reach GitHub/dev 路由复核 [frappe/hrms](https://github.com/frappe/hrms) 当前仍为活跃的开源 HRMS 参考项目。ONES-ADMIN 本次不复制其实现，只继续吸收“员工档案作为中心资产，合同与生命周期聚合到员工详情”的产品边界。
 
 结论：`v0.0.55` 优先落地员工维度的合同列表、新增、编辑三个核心接口，不一次性扩展合同终止、到期提醒、签署流程和附件文件元数据。这样能先让员工详情页具备合同聚合能力，同时保持后端接口、权限、校验和接口治理闭环可控。
+
+## 9. v0.0.56 合同流程补充
+
+2026-07-03 通过 agent-reach GitHub/dev 路由复核 [orangehrm/orangehrm](https://github.com/orangehrm/orangehrm) 的员工合同边界，公开代码中存在 `EmploymentContractAPI` 与 `EmpContract`，合同挂在员工 PIM 域下，并以开始日期、结束日期和附件为核心信息。
+
+结论：`v0.0.56` 在员工合同核心 CRUD 之后补齐合同终止和即将到期查询，既保持员工档案聚合边界，也为 HR 前台页面的“合同到期提醒”筛选提供后端能力。附件元数据和签署流程仍后置，避免一期合同域过早膨胀。

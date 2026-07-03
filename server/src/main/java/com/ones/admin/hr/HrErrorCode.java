@@ -25,6 +25,8 @@ public enum HrErrorCode implements ErrorCode {
     EMPLOYEE_CONTRACT_NOT_FOUND(4431, "员工合同不存在"),
     EMPLOYEE_CONTRACT_NO_EXISTS(4432, "合同编号已存在"),
     EMPLOYEE_CONTRACT_DATE_INVALID(4433, "合同结束日期不能早于开始日期"),
+    EMPLOYEE_CONTRACT_ALREADY_TERMINATED(4434, "员工合同已终止"),
+    EMPLOYEE_CONTRACT_EXPIRING_DAYS_INVALID(4435, "合同到期查询天数必须在 0 到 365 之间"),
     HR_ENUM_INVALID(4491, "HRMS 枚举值不正确");
 
     private final int code;

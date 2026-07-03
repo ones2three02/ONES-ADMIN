@@ -79,22 +79,38 @@ class HrManagementControllerTest {
 
         long contractId = createEmployeeContract(token, employeeId, suffix);
         updateEmployeeContract(token, employeeId, contractId, suffix);
+        LocalDate expiringEndDate = LocalDate.now().plusDays(20);
+        long expiringContractId = createEmployeeContract(token, employeeId, "EXP-" + suffix, expiringEndDate);
+        mockMvc.perform(get("/api/hr/contracts/expiring")
+                        .header("Authorization", "Bearer " + token)
+                        .param("days", "30"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].id").value(expiringContractId))
+                .andExpect(jsonPath("$.data[0].employeeNo").value("E" + suffix))
+                .andExpect(jsonPath("$.data[0].contractNo").value("CEXP-" + suffix))
+                .andExpect(jsonPath("$.data[0].status").value("ACTIVE"))
+                .andExpect(jsonPath("$.data[0].endDate").value(expiringEndDate.toString()));
+
+        terminateEmployeeContract(token, contractId, LocalDate.of(2028, 12, 31));
         mockMvc.perform(get("/api/hr/employees/" + employeeId + "/contracts")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(1))
-                .andExpect(jsonPath("$.data[0].id").value(contractId))
-                .andExpect(jsonPath("$.data[0].employeeId").value(employeeId))
-                .andExpect(jsonPath("$.data[0].employeeNo").value("E" + suffix))
-                .andExpect(jsonPath("$.data[0].realName").value("张三"))
-                .andExpect(jsonPath("$.data[0].contractNo").value("C" + suffix))
-                .andExpect(jsonPath("$.data[0].contractType").value("FIXED_TERM"))
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].id").value(expiringContractId))
                 .andExpect(jsonPath("$.data[0].status").value("ACTIVE"))
-                .andExpect(jsonPath("$.data[0].startDate").value("2026-07-01"))
-                .andExpect(jsonPath("$.data[0].endDate").value("2029-12-31"))
-                .andExpect(jsonPath("$.data[0].probationMonths").value(3))
-                .andExpect(jsonPath("$.data[0].renewalRemindDate").value("2029-11-30"))
-                .andExpect(jsonPath("$.data[0].remark").value("合同续签信息更新"));
+                .andExpect(jsonPath("$.data[1].id").value(contractId))
+                .andExpect(jsonPath("$.data[1].employeeId").value(employeeId))
+                .andExpect(jsonPath("$.data[1].employeeNo").value("E" + suffix))
+                .andExpect(jsonPath("$.data[1].realName").value("张三"))
+                .andExpect(jsonPath("$.data[1].contractNo").value("C" + suffix))
+                .andExpect(jsonPath("$.data[1].contractType").value("FIXED_TERM"))
+                .andExpect(jsonPath("$.data[1].status").value("TERMINATED"))
+                .andExpect(jsonPath("$.data[1].startDate").value("2026-07-01"))
+                .andExpect(jsonPath("$.data[1].endDate").value("2028-12-31"))
+                .andExpect(jsonPath("$.data[1].probationMonths").value(3))
+                .andExpect(jsonPath("$.data[1].renewalRemindDate").value("2029-11-30"))
+                .andExpect(jsonPath("$.data[1].remark").value("合同提前终止"));
 
         resignEmployee(token, employeeId);
         mockMvc.perform(get("/api/hr/employees/" + employeeId)
@@ -145,14 +161,23 @@ class HrManagementControllerTest {
     }
 
     private long createEmployeeContract(String token, long employeeId, String suffix) throws Exception {
+        return createEmployeeContract(token, employeeId, suffix, LocalDate.of(2029, 6, 30));
+    }
+
+    private long createEmployeeContract(
+            String token,
+            long employeeId,
+            String suffix,
+            LocalDate endDate
+    ) throws Exception {
         Map<String, Object> request = Map.of(
                 "contractNo", "C" + suffix,
                 "contractType", "FIXED_TERM",
                 "status", "ACTIVE",
                 "startDate", "2026-07-01",
-                "endDate", "2029-06-30",
+                "endDate", endDate.toString(),
                 "probationMonths", 3,
-                "renewalRemindDate", "2029-05-31",
+                "renewalRemindDate", endDate.minusDays(30).toString(),
                 "remark", "首签劳动合同"
         );
         String response = mockMvc.perform(post("/api/hr/employees/" + employeeId + "/contracts")
@@ -166,8 +191,8 @@ class HrManagementControllerTest {
                 .andExpect(jsonPath("$.data.contractType").value("FIXED_TERM"))
                 .andExpect(jsonPath("$.data.status").value("ACTIVE"))
                 .andExpect(jsonPath("$.data.startDate").value("2026-07-01"))
-                .andExpect(jsonPath("$.data.endDate").value("2029-06-30"))
-                .andExpect(jsonPath("$.data.renewalRemindDate").value("2029-05-31"))
+                .andExpect(jsonPath("$.data.endDate").value(endDate.toString()))
+                .andExpect(jsonPath("$.data.renewalRemindDate").value(endDate.minusDays(30).toString()))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -195,6 +220,22 @@ class HrManagementControllerTest {
                 .andExpect(jsonPath("$.data.endDate").value("2029-12-31"))
                 .andExpect(jsonPath("$.data.renewalRemindDate").value("2029-11-30"))
                 .andExpect(jsonPath("$.data.remark").value("合同续签信息更新"));
+    }
+
+    private void terminateEmployeeContract(String token, long contractId, LocalDate terminateDate) throws Exception {
+        Map<String, Object> request = Map.of(
+                "terminateDate", terminateDate.toString(),
+                "reason", "合同提前终止"
+        );
+        mockMvc.perform(post("/api/hr/contracts/" + contractId + "/terminate")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(contractId))
+                .andExpect(jsonPath("$.data.status").value("TERMINATED"))
+                .andExpect(jsonPath("$.data.endDate").value(terminateDate.toString()))
+                .andExpect(jsonPath("$.data.remark").value("合同提前终止"));
     }
 
     private long createPosition(String token, String code) throws Exception {

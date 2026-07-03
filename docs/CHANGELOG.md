@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.56 - 2026-07-03
+
+- HRMS 员工合同管理继续补齐流程能力，新增 `GET /api/hr/contracts/expiring` 即将到期合同查询和 `POST /api/hr/contracts/{contractId}/terminate` 合同终止接口。
+- 合同到期查询默认 30 天窗口，最大 365 天，按结束日期升序返回，避免无边界扫描；终止接口校验终止日期不能早于合同开始日期。
+- 新增 `hr:contract:terminate` 权限和授权树节点，合同终止接口接入 `@RepeatSubmit`、Sa-Token 权限和接口治理元数据。
+- 接口治理总数更新至 71 个，OpenAPI、Manifest、治理报告和测试断言同步到 `v0.0.56`。
+- 产品版本递增至 `v0.0.56`。
+
 ## v0.0.55 - 2026-07-03
 
 - HRMS Phase 1D 开始落地员工合同管理核心接口，新增员工合同列表、新增、编辑能力，复用既有 `hr_employee_contract` 表。
