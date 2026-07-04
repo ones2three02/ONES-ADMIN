@@ -291,44 +291,53 @@ public class SystemDataInitializer implements ApplicationRunner {
         ensureMenu(system.getId(), "SystemFileUpload", "文件上传", "/system#file-upload",
                 null, null, "system:file:upload", "lucide:upload", "button", 63);
 
-        ensureMenu(system.getId(), "HrEmployeeList", "员工查询", "/system#hr-employee-list",
-                null, null, "hr:employee:list", "lucide:users", "button", 70);
-        ensureMenu(system.getId(), "HrEmployeeDetail", "员工详情", "/system#hr-employee-detail",
-                null, null, "hr:employee:detail", "lucide:user-search", "button", 71);
-        ensureMenu(system.getId(), "HrEmployeeLifecycle", "员工生命周期", "/system#hr-employee-lifecycle",
-                null, null, "hr:employee:lifecycle", "lucide:history", "button", 72);
-        ensureMenu(system.getId(), "HrEmployeeCreate", "员工新增", "/system#hr-employee-create",
-                null, null, "hr:employee:create", "lucide:user-plus", "button", 73);
-        ensureMenu(system.getId(), "HrEmployeeTransfer", "员工调岗", "/system#hr-employee-transfer",
-                null, null, "hr:employee:transfer", "lucide:shuffle", "button", 74);
-        ensureMenu(system.getId(), "HrEmployeeRegularize", "员工转正", "/system#hr-employee-regularize",
-                null, null, "hr:employee:regularize", "lucide:badge-check", "button", 75);
-        ensureMenu(system.getId(), "HrEmployeeResign", "员工离职", "/system#hr-employee-resign",
-                null, null, "hr:employee:resign", "lucide:user-minus", "button", 76);
-        ensureMenu(system.getId(), "HrPositionList", "岗位查询", "/system#hr-position-list",
-                null, null, "hr:position:list", "lucide:briefcase-business", "button", 77);
-        ensureMenu(system.getId(), "HrPositionCreate", "岗位新增", "/system#hr-position-create",
-                null, null, "hr:position:create", "lucide:badge-plus", "button", 78);
-        ensureMenu(system.getId(), "HrPositionUpdate", "岗位编辑", "/system#hr-position-update",
-                null, null, "hr:position:update", "lucide:badge-pen", "button", 79);
-        ensureMenu(system.getId(), "HrJobGradeList", "职级查询", "/system#hr-job-grade-list",
-                null, null, "hr:job-grade:list", "lucide:layers-3", "button", 80);
-        ensureMenu(system.getId(), "HrJobGradeCreate", "职级新增", "/system#hr-job-grade-create",
-                null, null, "hr:job-grade:create", "lucide:layers-3", "button", 81);
-        ensureMenu(system.getId(), "HrJobGradeUpdate", "职级编辑", "/system#hr-job-grade-update",
-                null, null, "hr:job-grade:update", "lucide:layers-3", "button", 82);
-        ensureMenu(system.getId(), "HrContractList", "员工合同查询", "/system#hr-contract-list",
-                null, null, "hr:contract:list", "lucide:file-text", "button", 83);
-        ensureMenu(system.getId(), "HrContractCreate", "员工合同新增", "/system#hr-contract-create",
-                null, null, "hr:contract:create", "lucide:file-plus-2", "button", 84);
-        ensureMenu(system.getId(), "HrContractUpdate", "员工合同编辑", "/system#hr-contract-update",
-                null, null, "hr:contract:update", "lucide:file-pen-line", "button", 85);
-        ensureMenu(system.getId(), "HrContractTerminate", "员工合同终止", "/system#hr-contract-terminate",
-                null, null, "hr:contract:terminate", "lucide:file-x-2", "button", 86);
-        ensureMenu(system.getId(), "HrRosterImportList", "花名册导入批次查询", "/system#hr-roster-import-list",
-                null, null, "hr:roster:list", "lucide:file-search", "button", 87);
-        ensureMenu(system.getId(), "HrRosterImport", "花名册导入", "/system#hr-roster-import",
-                null, null, "hr:roster:import", "lucide:file-up", "button", 88);
+        SystemMenuEntity hrms = ensureMenu(null, "HRMS", "人力资源管理", "/hr",
+                "BasicLayout", null, null, "lucide:users", "catalog", 200);
+
+        SystemMenuEntity hrEmployee = ensureMenu(hrms.getId(), "HrEmployee", "员工管理", "/hr/employee",
+                "/hr/employee/list", null, "hr:employee:list", "lucide:users", "menu", 10);
+        ensureMenu(hrEmployee.getId(), "HrEmployeeDetail", "员工详情", "/hr/employee#detail",
+                null, null, "hr:employee:detail", "lucide:user-search", "button", 11);
+        ensureMenu(hrEmployee.getId(), "HrEmployeeLifecycle", "员工生命周期", "/hr/employee#lifecycle",
+                null, null, "hr:employee:lifecycle", "lucide:history", "button", 12);
+        ensureMenu(hrEmployee.getId(), "HrEmployeeCreate", "员工新增", "/hr/employee#create",
+                null, null, "hr:employee:create", "lucide:user-plus", "button", 13);
+        ensureMenu(hrEmployee.getId(), "HrEmployeeTransfer", "员工调岗", "/hr/employee#transfer",
+                null, null, "hr:employee:transfer", "lucide:shuffle", "button", 14);
+        ensureMenu(hrEmployee.getId(), "HrEmployeeRegularize", "员工转正", "/hr/employee#regularize",
+                null, null, "hr:employee:regularize", "lucide:badge-check", "button", 15);
+        ensureMenu(hrEmployee.getId(), "HrEmployeeResign", "员工离职", "/hr/employee#resign",
+                null, null, "hr:employee:resign", "lucide:user-minus", "button", 16);
+
+        SystemMenuEntity hrPosition = ensureMenu(hrms.getId(), "HrPosition", "岗位管理", "/hr/position",
+                "/hr/position/list", null, "hr:position:list", "lucide:briefcase-business", "menu", 20);
+        ensureMenu(hrPosition.getId(), "HrPositionCreate", "岗位新增", "/hr/position#create",
+                null, null, "hr:position:create", "lucide:badge-plus", "button", 21);
+        ensureMenu(hrPosition.getId(), "HrPositionUpdate", "岗位编辑", "/hr/position#update",
+                null, null, "hr:position:update", "lucide:badge-pen", "button", 22);
+
+        SystemMenuEntity hrJobGrade = ensureMenu(hrms.getId(), "HrJobGrade", "职级管理", "/hr/job-grade",
+                "/hr/job-grade/list", null, "hr:job-grade:list", "lucide:layers-3", "menu", 30);
+        ensureMenu(hrJobGrade.getId(), "HrJobGradeCreate", "职级新增", "/hr/job-grade#create",
+                null, null, "hr:job-grade:create", "lucide:layers-3", "button", 31);
+        ensureMenu(hrJobGrade.getId(), "HrJobGradeUpdate", "职级编辑", "/hr/job-grade#update",
+                null, null, "hr:job-grade:update", "lucide:layers-3", "button", 32);
+
+        SystemMenuEntity hrContract = ensureMenu(hrms.getId(), "HrContract", "合同管理", "/hr/contract",
+                "/hr/contract/list", null, "hr:contract:list", "lucide:file-text", "menu", 40);
+        ensureMenu(hrContract.getId(), "HrContractCreate", "合同新增", "/hr/contract#create",
+                null, null, "hr:contract:create", "lucide:file-plus-2", "button", 41);
+        ensureMenu(hrContract.getId(), "HrContractUpdate", "合同编辑", "/hr/contract#update",
+                null, null, "hr:contract:update", "lucide:file-pen-line", "button", 42);
+        ensureMenu(hrContract.getId(), "HrContractTerminate", "合同终止", "/hr/contract#terminate",
+                null, null, "hr:contract:terminate", "lucide:file-x-2", "button", 43);
+
+        SystemMenuEntity hrRosterImport = ensureMenu(hrms.getId(), "HrRosterImport", "花名册导入", "/hr/roster-import",
+                "/hr/roster-import/list", null, "hr:roster:list", "lucide:file-up", "menu", 50);
+        ensureMenu(hrRosterImport.getId(), "HrRosterImportList", "导入批次查询", "/hr/roster-import#list",
+                null, null, "hr:roster:list", "lucide:file-search", "button", 51);
+        ensureMenu(hrRosterImport.getId(), "HrRosterImportExecute", "执行导入", "/hr/roster-import#import",
+                null, null, "hr:roster:import", "lucide:file-up", "button", 52);
     }
 
     private SystemMenuEntity ensureMenu(
