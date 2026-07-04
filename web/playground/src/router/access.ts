@@ -18,6 +18,7 @@ async function generateAccess(options: GenerateMenuAndRoutesOptions) {
   const pageMap: ComponentRecordType = {
     ...import.meta.glob('../views/_core/**/*.vue'),
     ...import.meta.glob('../views/dashboard/overview/**/*.vue'),
+    ...import.meta.glob('../views/hr/**/*.vue'),
     ...import.meta.glob('../views/system/**/*.vue'),
   };
 
