@@ -242,6 +242,27 @@ export namespace SystemApiResourceApi {
     verification: string;
   }
 
+  export interface ApiResourceReleaseReadiness {
+    baselineAvailable: boolean;
+    blockingActionCount: number;
+    blockingCheckCount: number;
+    gateStatus?: string;
+    message: string;
+    nextActionCode?: string;
+    nextActionTitle?: string;
+    openActionCount: number;
+    priority: 'P0' | 'P1' | 'P2';
+    qualityScore: number;
+    ready: boolean;
+    status:
+      | 'BASELINE_REQUIRED'
+      | 'BLOCKED'
+      | 'MANUAL_REVIEW_REQUIRED'
+      | 'READY'
+      | 'READY_WITH_WARNINGS'
+      | 'UNKNOWN';
+  }
+
   export interface ApiResourceQualityDimension {
     benchmark: string;
     category: ApiResourceQualityCategory;
@@ -266,6 +287,7 @@ export namespace SystemApiResourceApi {
     qualityScore: number;
     recommendedActions: ApiResourceRecommendedAction[];
     referenceBenchmarks: ApiResourceReferenceBenchmark[];
+    releaseReadiness: ApiResourceReleaseReadiness;
     rules: ApiResourceGovernanceRules;
     summary: ApiResourceSummary;
   }

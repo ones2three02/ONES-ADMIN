@@ -376,12 +376,12 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.65"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.66"))
                 .andExpect(jsonPath("$.data.summary.total").value(77))
                 .andExpect(jsonPath("$.data.governance.passed").value(true))
                 .andExpect(jsonPath("$.data.governance.total").value(77))
                 .andExpect(jsonPath("$.data.manifest.total").value(77))
-                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.65"))
+                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.66"))
                 .andExpect(jsonPath("$.data.latestGate.gate.checks[0].checkCode").value("API_GOVERNANCE_ERROR"))
                 .andReturn()
                 .getResponse()
@@ -390,6 +390,24 @@ class ApiResourceControllerTest {
         JsonNode report = objectMapper.readTree(response).path("data");
         assertThat(report.path("generatedAt").asText()).isNotBlank();
         assertThat(report.path("qualityScore").asInt()).isEqualTo(100);
+        JsonNode releaseReadiness = report.path("releaseReadiness");
+        assertThat(List.of(
+                "BASELINE_REQUIRED",
+                "BLOCKED",
+                "MANUAL_REVIEW_REQUIRED",
+                "READY",
+                "READY_WITH_WARNINGS",
+                "UNKNOWN"
+        )).contains(releaseReadiness.path("status").asText());
+        assertThat(releaseReadiness.path("ready").isBoolean()).isTrue();
+        assertThat(List.of("P0", "P1", "P2")).contains(releaseReadiness.path("priority").asText());
+        assertThat(releaseReadiness.path("qualityScore").asInt()).isEqualTo(100);
+        assertThat(releaseReadiness.path("baselineAvailable").isBoolean()).isTrue();
+        assertThat(releaseReadiness.path("gateStatus").asText()).isNotBlank();
+        assertThat(releaseReadiness.path("blockingCheckCount").asLong()).isGreaterThanOrEqualTo(0);
+        assertThat(releaseReadiness.path("blockingActionCount").asLong()).isGreaterThanOrEqualTo(0);
+        assertThat(releaseReadiness.path("openActionCount").asLong()).isGreaterThanOrEqualTo(0);
+        assertThat(releaseReadiness.path("message").asText()).isNotBlank();
         assertThat(report.path("qualityDimensions").isArray()).isTrue();
         assertThat(report.path("qualityDimensions").size()).isGreaterThanOrEqualTo(6);
         JsonNode securityDimension = findQualityDimension(report.path("qualityDimensions"), "SECURITY");
@@ -499,7 +517,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.65"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.66"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(77))
                 .andReturn()
@@ -639,7 +657,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.65"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.66"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.snapshot.total").value(77))
                 .andExpect(jsonPath("$.data.snapshot.manifest.total").value(77))
@@ -738,7 +756,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.65"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.66"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))

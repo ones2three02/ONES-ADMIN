@@ -393,7 +393,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.65}") String applicationVersion
+            @Value("${ones.version:v0.0.66}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -513,10 +513,16 @@ public class ApiResourceService {
         );
         List<ApiResourceGovernanceReportResponse.QualityDimension> qualityDimensions =
                 buildQualityDimensions(governance);
+        int qualityScore = qualityScore(qualityDimensions);
+        List<ApiResourceGovernanceReportResponse.RecommendedAction> recommendedActions =
+                recommendActions(summary, governance, latestGate);
+        List<ApiResourceGovernanceReportResponse.ActionItem> actionItems =
+                buildActionItems(summary, governance, latestGate);
         return new ApiResourceGovernanceReportResponse(
                 applicationVersion,
                 OffsetDateTime.now(ZoneOffset.UTC).toString(),
-                qualityScore(qualityDimensions),
+                qualityScore,
+                buildReleaseReadiness(qualityScore, latestGate, actionItems),
                 qualityDimensions,
                 summary,
                 governance,
@@ -524,9 +530,152 @@ public class ApiResourceService {
                 manifest,
                 latestGate,
                 REFERENCE_BENCHMARKS,
-                recommendActions(summary, governance, latestGate),
-                buildActionItems(summary, governance, latestGate)
+                recommendedActions,
+                actionItems
         );
+    }
+
+    private ApiResourceGovernanceReportResponse.ReleaseReadiness buildReleaseReadiness(
+            int qualityScore,
+            ApiResourceManifestLatestGateResponse latestGate,
+            List<ApiResourceGovernanceReportResponse.ActionItem> actionItems
+    ) {
+        long openActionCount = actionItems.stream()
+                .filter(item -> "OPEN".equals(item.status()))
+                .count();
+        long blockingActionCount = actionItems.stream()
+                .filter(item -> item.blocking() && "OPEN".equals(item.status()))
+                .count();
+        if (latestGate == null || latestGate.gate() == null) {
+            return new ApiResourceGovernanceReportResponse.ReleaseReadiness(
+                    "UNKNOWN",
+                    false,
+                    "P1",
+                    qualityScore,
+                    false,
+                    null,
+                    1,
+                    blockingActionCount,
+                    openActionCount,
+                    "RUN_MANIFEST_GATE",
+                    "执行 Manifest 发布门禁",
+                    "尚未生成 Manifest 发布门禁结果，无法判断接口发布就绪状态"
+            );
+        }
+
+        ApiResourceManifestGateResponse gate = latestGate.gate();
+        long blockingCheckCount = gate.checks() == null ? 0 : gate.checks().stream()
+                .filter(check -> check.blocking() && !check.passed())
+                .count();
+        if (!gate.passed()) {
+            ApiResourceManifestGateResponse.Check firstBlockingCheck = firstFailedBlockingCheck(gate);
+            boolean reviewRequired = gate.reviewReasonRequired()
+                    || "REVIEW_REASON_REQUIRED".equals(gate.status());
+            return new ApiResourceGovernanceReportResponse.ReleaseReadiness(
+                    reviewRequired ? "MANUAL_REVIEW_REQUIRED" : "BLOCKED",
+                    false,
+                    "P0",
+                    qualityScore,
+                    latestGate.baselineAvailable(),
+                    gate.status(),
+                    blockingCheckCount,
+                    blockingActionCount,
+                    openActionCount,
+                    reviewRequired
+                            ? "REVIEW_BREAKING_CHANGE"
+                            : firstBlockingCheck == null ? "REVIEW_MANIFEST_GATE" : firstBlockingCheck.checkCode(),
+                    reviewRequired
+                            ? "补充破坏性变更人工确认"
+                            : firstBlockingCheck == null ? "处理 Manifest 发布门禁阻断" : firstBlockingCheck.message(),
+                    reviewRequired
+                            ? "接口存在破坏性契约变更，需要记录架构负责人、影响范围和调用方迁移计划"
+                            : "Manifest 发布门禁存在阻断项，必须处理失败检查后再发布"
+            );
+        }
+
+        if (!latestGate.baselineAvailable()) {
+            return new ApiResourceGovernanceReportResponse.ReleaseReadiness(
+                    "BASELINE_REQUIRED",
+                    false,
+                    "P1",
+                    qualityScore,
+                    false,
+                    gate.status(),
+                    blockingCheckCount,
+                    blockingActionCount,
+                    openActionCount,
+                    "PUBLISH_API_MANIFEST_BASELINE",
+                    "发布接口 Manifest 基线快照",
+                    "当前环境缺少 Manifest 基线快照，应先归档当前接口契约，后续发布才能稳定做版本差异门禁"
+            );
+        }
+
+        ApiResourceGovernanceReportResponse.ActionItem nextAction = firstOpenActionItem(actionItems);
+        if (qualityScore < 95 || gate.governanceWarningCount() > 0) {
+            return new ApiResourceGovernanceReportResponse.ReleaseReadiness(
+                    "READY_WITH_WARNINGS",
+                    true,
+                    nextAction == null ? "P1" : nextAction.priority(),
+                    qualityScore,
+                    true,
+                    gate.status(),
+                    blockingCheckCount,
+                    blockingActionCount,
+                    openActionCount,
+                    nextAction == null ? "TRACK_GOVERNANCE_WARNINGS" : nextAction.actionCode(),
+                    nextAction == null ? "跟踪接口治理警告" : nextAction.title(),
+                    "接口发布门禁已通过，但仍有治理警告或非阻断动作需要进入迭代跟踪"
+            );
+        }
+
+        return new ApiResourceGovernanceReportResponse.ReleaseReadiness(
+                "READY",
+                true,
+                nextAction == null ? "P2" : nextAction.priority(),
+                qualityScore,
+                true,
+                gate.status(),
+                blockingCheckCount,
+                blockingActionCount,
+                openActionCount,
+                nextAction == null ? null : nextAction.actionCode(),
+                nextAction == null ? null : nextAction.title(),
+                openActionCount > 0
+                        ? "接口发布门禁已通过，仍有非阻断动作需要持续跟踪"
+                        : "接口治理、契约门禁和基线状态均满足发布要求"
+        );
+    }
+
+    private ApiResourceManifestGateResponse.Check firstFailedBlockingCheck(ApiResourceManifestGateResponse gate) {
+        if (gate.checks() == null) {
+            return null;
+        }
+        return gate.checks()
+                .stream()
+                .filter(check -> check.blocking() && !check.passed())
+                .findFirst()
+                .orElse(null);
+    }
+
+    private ApiResourceGovernanceReportResponse.ActionItem firstOpenActionItem(
+            List<ApiResourceGovernanceReportResponse.ActionItem> actionItems
+    ) {
+        return actionItems.stream()
+                .filter(item -> "OPEN".equals(item.status()))
+                .sorted(Comparator
+                        .comparingInt((ApiResourceGovernanceReportResponse.ActionItem item) -> priorityRank(item.priority()))
+                        .thenComparing(ApiResourceGovernanceReportResponse.ActionItem::actionCode))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private int priorityRank(String priority) {
+        return switch (priority) {
+            case "P0" -> 0;
+            case "P1" -> 1;
+            case "P2" -> 2;
+            default -> 9;
+        };
     }
 
     private List<ApiResourceGovernanceReportResponse.QualityDimension> buildQualityDimensions(

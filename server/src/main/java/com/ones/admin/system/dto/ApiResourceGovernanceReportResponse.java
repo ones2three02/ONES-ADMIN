@@ -6,6 +6,7 @@ public record ApiResourceGovernanceReportResponse(
         String applicationVersion,
         String generatedAt,
         int qualityScore,
+        ReleaseReadiness releaseReadiness,
         List<QualityDimension> qualityDimensions,
         ApiResourceSummaryResponse summary,
         ApiResourceGovernanceResponse governance,
@@ -36,6 +37,22 @@ public record ApiResourceGovernanceReportResponse(
             boolean passed,
             String benchmark,
             String recommendation
+    ) {
+    }
+
+    public record ReleaseReadiness(
+            String status,
+            boolean ready,
+            String priority,
+            int qualityScore,
+            boolean baselineAvailable,
+            String gateStatus,
+            long blockingCheckCount,
+            long blockingActionCount,
+            long openActionCount,
+            String nextActionCode,
+            String nextActionTitle,
+            String message
     ) {
     }
 

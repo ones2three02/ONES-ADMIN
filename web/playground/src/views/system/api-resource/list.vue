@@ -27,6 +27,7 @@ const loadError = ref('');
 
 const summary = computed(() => governanceReport.value?.summary);
 const governance = computed(() => governanceReport.value?.governance);
+const releaseReadiness = computed(() => governanceReport.value?.releaseReadiness);
 const releaseGate = computed(() => governanceReport.value?.latestGate.gate);
 const gateChecks = computed(() => releaseGate.value?.checks.slice(0, 4) ?? []);
 const governanceRules = computed(
@@ -88,6 +89,50 @@ const governanceStatus = computed(() => {
   return {
     color: 'success',
     text: '治理通过',
+  };
+});
+
+const releaseReadinessStatus = computed(() => {
+  const readiness = releaseReadiness.value;
+  if (!readiness) {
+    return {
+      color: 'processing',
+      text: '加载中',
+    };
+  }
+  if (readiness.status === 'READY') {
+    return {
+      color: 'success',
+      text: '发布就绪',
+    };
+  }
+  if (readiness.status === 'READY_WITH_WARNINGS') {
+    return {
+      color: 'warning',
+      text: '带警告',
+    };
+  }
+  if (readiness.status === 'BASELINE_REQUIRED') {
+    return {
+      color: 'warning',
+      text: '基线待归档',
+    };
+  }
+  if (readiness.status === 'MANUAL_REVIEW_REQUIRED') {
+    return {
+      color: 'warning',
+      text: '需复核',
+    };
+  }
+  if (readiness.status === 'BLOCKED') {
+    return {
+      color: 'error',
+      text: '发布阻断',
+    };
+  }
+  return {
+    color: 'processing',
+    text: '待检查',
   };
 });
 
@@ -222,7 +267,7 @@ onMounted(() => {
         :message="loadError"
       />
 
-      <div class="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div class="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         <Card variant="borderless">
           <div class="flex items-start justify-between gap-3">
             <Statistic title="治理状态" :value="governanceStatus.text" />
@@ -232,6 +277,23 @@ onMounted(() => {
           </div>
           <div class="mt-3">
             <component :is="renderGovernanceTag" />
+          </div>
+        </Card>
+
+        <Card variant="borderless">
+          <div class="flex items-start justify-between gap-3">
+            <Statistic title="发布就绪" :value="releaseReadinessStatus.text" />
+            <div class="rounded bg-muted p-2 text-primary">
+              <IconifyIcon icon="lucide:rocket" class="size-5" />
+            </div>
+          </div>
+          <div class="mt-3 flex items-center gap-2">
+            <Tag :color="releaseReadinessStatus.color">
+              {{ releaseReadiness?.priority ?? 'P1' }}
+            </Tag>
+            <span class="text-muted-foreground truncate text-xs">
+              {{ releaseReadiness?.nextActionTitle || '无阻断动作' }}
+            </span>
           </div>
         </Card>
 
@@ -443,6 +505,38 @@ onMounted(() => {
               <div class="mt-1 text-sm font-medium">
                 {{ releaseGate?.requiredManualReview ? '需要' : '不需要' }}
               </div>
+            </div>
+            <div class="rounded border border-border p-3">
+              <div class="text-muted-foreground text-xs">阻断检查</div>
+              <div class="mt-1 text-sm font-medium">
+                {{ releaseReadiness?.blockingCheckCount ?? 0 }}
+              </div>
+            </div>
+            <div class="rounded border border-border p-3">
+              <div class="text-muted-foreground text-xs">打开动作</div>
+              <div class="mt-1 text-sm font-medium">
+                {{ releaseReadiness?.openActionCount ?? 0 }}
+              </div>
+            </div>
+            <div class="rounded border border-border p-3">
+              <div class="text-muted-foreground text-xs">基线状态</div>
+              <div class="mt-1 text-sm font-medium">
+                {{ releaseReadiness?.baselineAvailable ? '已归档' : '待归档' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4 rounded border border-border p-3">
+            <div class="mb-2 flex items-center justify-between gap-3">
+              <span class="text-sm font-medium">
+                {{ releaseReadiness?.nextActionTitle || '发布动作已闭环' }}
+              </span>
+              <Tag :color="releaseReadinessStatus.color">
+                {{ releaseReadiness?.status || 'UNKNOWN' }}
+              </Tag>
+            </div>
+            <div class="text-muted-foreground line-clamp-2 text-xs">
+              {{ releaseReadiness?.message }}
             </div>
           </div>
 
