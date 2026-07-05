@@ -3,10 +3,11 @@ package com.ones.admin.hr;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ones.admin.common.exception.BusinessException;
+import com.ones.admin.common.web.CsvExportUtils;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.hr.dto.HrEmployeeCreateRequest;
 import com.ones.admin.hr.dto.HrEmployeeLifecycleEventResponse;
@@ -37,13 +38,38 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class HrEmployeeService {
 
     private static final Set<String> EMPLOYMENT_TYPES = Set.of("FULL_TIME", "PART_TIME", "INTERN", "OUTSOURCED");
     private static final Set<String> EMPLOYMENT_STATUSES = Set.of("ACTIVE", "PROBATION", "SUSPENDED", "RESIGNED");
+    private static final int MAX_EXPORT_ROWS = 5000;
+    private static final List<String> EXPORT_HEADERS = List.of(
+            "employeeNo",
+            "realName",
+            "preferredName",
+            "gender",
+            "mobile",
+            "email",
+            "idCardMasked",
+            "deptName",
+            "positionName",
+            "gradeName",
+            "managerName",
+            "employmentType",
+            "employmentStatus",
+            "hireDate",
+            "probationEndDate",
+            "leaveDate",
+            "remark",
+            "createdAt",
+            "updatedAt"
+    );
     private static final TypeReference<Map<String, Object>> LIFECYCLE_DETAIL_TYPE = new TypeReference<>() {
     };
 
@@ -80,6 +106,45 @@ public class HrEmployeeService {
                 .map(this::toResponse)
                 .toList();
         return PageResult.of(page, records);
+    }
+
+    public String exportEmployees(HrEmployeeQuery query) {
+        Long total = employeeMapper.selectCount(buildEmployeeQuery(query));
+        if (total > MAX_EXPORT_ROWS) {
+            throw new BusinessException("员工花名册导出最多支持 " + MAX_EXPORT_ROWS + " 行，请缩小筛选条件后重试");
+        }
+
+        List<HrEmployeeEntity> employees = employeeMapper.selectList(buildEmployeeQuery(query)
+                .last("limit " + MAX_EXPORT_ROWS));
+        Map<Long, String> deptNames = loadDeptNames(employees);
+        Map<Long, String> positionNames = loadPositionNames(employees);
+        Map<Long, String> gradeNames = loadGradeNames(employees);
+        Map<Long, String> managerNames = loadManagerNames(employees);
+
+        StringBuilder csv = new StringBuilder();
+        csv.append(CsvExportUtils.row(EXPORT_HEADERS.toArray())).append('\n');
+        employees.forEach(employee -> csv.append(CsvExportUtils.row(
+                employee.getEmployeeNo(),
+                employee.getRealName(),
+                employee.getPreferredName(),
+                employee.getGender(),
+                employee.getMobile(),
+                employee.getEmail(),
+                employee.getIdCardMasked(),
+                nameOf(deptNames, employee.getDeptId()),
+                nameOf(positionNames, employee.getPositionId()),
+                nameOf(gradeNames, employee.getGradeId()),
+                nameOf(managerNames, employee.getManagerEmployeeId()),
+                employee.getEmploymentType(),
+                employee.getEmploymentStatus(),
+                employee.getHireDate(),
+                employee.getProbationEndDate(),
+                employee.getLeaveDate(),
+                employee.getRemark(),
+                employee.getCreatedAt(),
+                employee.getUpdatedAt()
+        )).append('\n'));
+        return csv.toString();
     }
 
     public HrEmployeeResponse getEmployee(Long id) {
@@ -505,6 +570,58 @@ public class HrEmployeeService {
                 employee.getCreatedAt(),
                 employee.getUpdatedAt()
         );
+    }
+
+    private Map<Long, String> loadDeptNames(List<HrEmployeeEntity> employees) {
+        List<Long> ids = uniqueIds(employees, HrEmployeeEntity::getDeptId);
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return deptMapper.selectBatchIds(ids)
+                .stream()
+                .collect(Collectors.toMap(SystemDeptEntity::getId, SystemDeptEntity::getName));
+    }
+
+    private Map<Long, String> loadPositionNames(List<HrEmployeeEntity> employees) {
+        List<Long> ids = uniqueIds(employees, HrEmployeeEntity::getPositionId);
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return positionMapper.selectBatchIds(ids)
+                .stream()
+                .collect(Collectors.toMap(HrPositionEntity::getId, HrPositionEntity::getPositionName));
+    }
+
+    private Map<Long, String> loadGradeNames(List<HrEmployeeEntity> employees) {
+        List<Long> ids = uniqueIds(employees, HrEmployeeEntity::getGradeId);
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return jobGradeMapper.selectBatchIds(ids)
+                .stream()
+                .collect(Collectors.toMap(HrJobGradeEntity::getId, HrJobGradeEntity::getGradeName));
+    }
+
+    private Map<Long, String> loadManagerNames(List<HrEmployeeEntity> employees) {
+        List<Long> ids = uniqueIds(employees, HrEmployeeEntity::getManagerEmployeeId);
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return employeeMapper.selectBatchIds(ids)
+                .stream()
+                .collect(Collectors.toMap(HrEmployeeEntity::getId, HrEmployeeEntity::getRealName));
+    }
+
+    private List<Long> uniqueIds(List<HrEmployeeEntity> employees, Function<HrEmployeeEntity, Long> idGetter) {
+        return employees.stream()
+                .map(idGetter)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+    }
+
+    private String nameOf(Map<Long, String> names, Long id) {
+        return id == null ? null : names.get(id);
     }
 
     private HrEmployeeLifecycleEventResponse toLifecycleEventResponse(HrEmployeeLifecycleEventEntity event) {

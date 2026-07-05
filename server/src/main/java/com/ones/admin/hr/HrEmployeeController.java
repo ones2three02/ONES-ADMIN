@@ -18,6 +18,9 @@ import com.ones.admin.hr.dto.HrEmployeeUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -51,6 +55,14 @@ public class HrEmployeeController {
     @Operation(operationId = "HrEmployeeController_listEmployees", summary = "查询员工列表")
     public ApiResult<PageResult<HrEmployeeResponse>> listEmployees(@Valid HrEmployeeQuery query) {
         return ApiResult.ok(employeeService.queryEmployees(query));
+    }
+
+    @GetMapping("/export")
+    @SaCheckPermission("hr:employee:export")
+    @Operation(operationId = "HrEmployeeController_exportEmployees", summary = "导出员工花名册")
+    @ApiResourceMetadata(sinceVersion = "v0.0.69", riskLevel = ApiRiskLevel.MEDIUM)
+    public ResponseEntity<String> exportEmployees(@Valid HrEmployeeQuery query) {
+        return csvResponse("ones-hr-employees.csv", employeeService.exportEmployees(query));
     }
 
     @GetMapping("/{id}")
@@ -123,5 +135,12 @@ public class HrEmployeeController {
             @Valid @RequestBody HrEmployeeResignRequest request
     ) {
         return ApiResult.ok(employeeService.resignEmployee(id, request));
+    }
+
+    private ResponseEntity<String> csvResponse(String filename, String body) {
+        return ResponseEntity.ok()
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(body);
     }
 }

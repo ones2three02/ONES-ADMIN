@@ -32,7 +32,7 @@ export namespace HrEmployeeApi {
   export interface EmployeeQuery {
     page?: number;
     pageNum?: number;
-    pageSize: number;
+    pageSize?: number;
     keyword?: string;
     deptId?: string;
     positionId?: string;
@@ -151,4 +151,11 @@ export async function resignEmployee(id: string | number, data: HrEmployeeApi.Re
 
 export async function getEmployeeLifecycleEvents(id: string | number) {
   return await requestClient.get<HrEmployeeApi.LifecycleEvent[]>(`/hr/employees/${id}/lifecycle-events`);
+}
+
+export async function exportEmployees(params: HrEmployeeApi.EmployeeQuery) {
+  return await requestClient.get<Blob>('/hr/employees/export', {
+    params,
+    responseType: 'blob',
+  });
 }

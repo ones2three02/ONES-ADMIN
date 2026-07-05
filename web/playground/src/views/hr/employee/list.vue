@@ -5,12 +5,13 @@ import type { HrEmployeeApi } from '#/api';
 import { onMounted, ref, watch } from 'vue';
 
 import { Page, Tree, useVbenDrawer } from '@vben/common-ui';
-import { Plus } from '@vben/icons';
+import { IconifyIcon, Plus } from '@vben/icons';
+import { downloadFileFromBlob } from '@vben/utils';
 
-import { Button, Card, InputSearch } from 'antdv-next';
+import { Button, Card, InputSearch, message } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
-import { getDeptList, getEmployeeList } from '#/api';
+import { exportEmployees, getDeptList, getEmployeeList } from '#/api';
 import { $t } from '#/locales';
 
 import { useColumns, useGridFormSchema } from './data';
@@ -23,6 +24,7 @@ import TransferForm from './modules/transfer-form.vue';
 const deptList = ref<any[]>([]);
 const searchDeptValue = ref('');
 const selectedDeptId = ref<string>('');
+const latestQuery = ref<Partial<HrEmployeeApi.EmployeeQuery>>({});
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   connectedComponent: Form,
@@ -71,11 +73,14 @@ const [Grid, gridApi] = useVbenVxeGrid({
     proxyConfig: {
       ajax: {
         query: async ({ page }, formValues) => {
+          latestQuery.value = {
+            ...formValues,
+            deptId: selectedDeptId.value || undefined,
+          };
           return await getEmployeeList({
             pageNum: page.currentPage,
             pageSize: page.pageSize,
-            ...formValues,
-            deptId: selectedDeptId.value || undefined,
+            ...latestQuery.value,
           });
         },
       },
@@ -99,6 +104,25 @@ function onRefresh() {
 
 function onCreate() {
   formDrawerApi.setData({}).open();
+}
+
+async function onExport() {
+  const hide = message.loading('正在导出员工花名册...', 0);
+  try {
+    const blob = await exportEmployees({
+      ...latestQuery.value,
+      deptId: selectedDeptId.value || undefined,
+    });
+    downloadFileFromBlob({
+      fileName: 'ones-hr-employees.csv',
+      source: blob,
+    });
+    message.success('导出成功');
+  } catch (error: any) {
+    message.error(error?.message || '导出失败，请稍后重试');
+  } finally {
+    hide();
+  }
 }
 
 function onEdit(row: HrEmployeeApi.HrEmployee) {
@@ -183,6 +207,10 @@ watch(searchDeptValue, (value) => {
       <div class="w-4/5 ml-4">
         <Grid :table-title="$t('hr.employee.list')">
           <template #toolbar-tools>
+            <Button v-access:code="['hr:employee:export']" class="mr-2" @click="onExport">
+              <IconifyIcon icon="lucide:download" class="size-4" />
+              导出花名册
+            </Button>
             <Button type="primary" @click="onCreate">
               <Plus class="size-5" />
               {{ $t('hr.employee.createEmployee') }}

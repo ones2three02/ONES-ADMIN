@@ -95,6 +95,7 @@ public class SystemDataInitializer implements ApplicationRunner {
                 ensurePermission("hr:employee:transfer", "员工调岗"),
                 ensurePermission("hr:employee:regularize", "员工转正"),
                 ensurePermission("hr:employee:resign", "员工离职"),
+                ensurePermission("hr:employee:export", "员工花名册导出"),
                 ensurePermission("hr:position:list", "岗位查询"),
                 ensurePermission("hr:position:create", "岗位新增"),
                 ensurePermission("hr:position:update", "岗位编辑"),
@@ -311,6 +312,8 @@ public class SystemDataInitializer implements ApplicationRunner {
                 null, null, "hr:employee:regularize", "lucide:badge-check", "button", 16);
         ensureMenu(hrEmployee.getId(), "HrEmployeeResign", "员工离职", "/hr/employee#resign",
                 null, null, "hr:employee:resign", "lucide:user-minus", "button", 17);
+        ensureMenu(hrEmployee.getId(), "HrEmployeeExport", "员工花名册导出", "/hr/employee#export",
+                null, null, "hr:employee:export", "lucide:download", "button", 18);
 
         SystemMenuEntity hrPosition = ensureMenu(hrms.getId(), "HrPosition", "岗位管理", "/hr/position",
                 "/hr/position/list", null, "hr:position:list", "lucide:briefcase-business", "menu", 20);

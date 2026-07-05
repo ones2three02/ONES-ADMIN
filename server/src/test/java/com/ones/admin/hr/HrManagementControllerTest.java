@@ -15,14 +15,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -178,6 +181,27 @@ class HrManagementControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.total").value(1))
                 .andExpect(jsonPath("$.data.list[0].employeeNo").value("E" + suffix));
+
+        String exportResponse = mockMvc.perform(get("/api/hr/employees/export")
+                        .header("Authorization", "Bearer " + token)
+                        .param("keyword", "E" + suffix))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", containsString("text/csv")))
+                .andExpect(header().string("Content-Disposition", containsString("ones-hr-employees.csv")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(exportResponse)
+                .startsWith("employeeNo,realName,preferredName,gender,mobile,email,idCardMasked")
+                .contains("E" + suffix)
+                .contains("张三丰")
+                .contains("ONES 总部")
+                .contains("架构师")
+                .contains("P8")
+                .contains("110****5678")
+                .doesNotContain(idCardNumber)
+                .doesNotContain("110101199001015678");
     }
 
     private long createEmployeeContract(String token, long employeeId, String suffix) throws Exception {
