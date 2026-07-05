@@ -188,6 +188,9 @@ const topViolations = computed(() => {
   return governance.value?.violations.slice(0, 3) ?? [];
 });
 const ownerStats = computed(() => summary.value?.owners.slice(0, 4) ?? []);
+const ownerActionSummaries = computed(
+  () => governanceReport.value?.ownerActionSummaries?.slice(0, 4) ?? [],
+);
 const audienceStats = computed(() => summary.value?.audiences.slice(0, 4) ?? []);
 const governanceRuleSummaries = computed(
   () => governance.value?.ruleSummaries.slice(0, 4) ?? [],
@@ -231,6 +234,30 @@ function getSeverityColor(severity: string) {
     return 'warning';
   }
   return 'processing';
+}
+
+function getOwnerActionStatusColor(
+  status: SystemApiResourceApi.ApiResourceOwnerActionSummary['status'],
+) {
+  if (status === 'BLOCKED') {
+    return 'error';
+  }
+  if (status === 'TRACKING') {
+    return 'warning';
+  }
+  return 'success';
+}
+
+function getOwnerActionStatusText(
+  status: SystemApiResourceApi.ApiResourceOwnerActionSummary['status'],
+) {
+  if (status === 'BLOCKED') {
+    return '阻断';
+  }
+  if (status === 'TRACKING') {
+    return '跟踪';
+  }
+  return '完成';
 }
 
 onMounted(() => {
@@ -310,6 +337,78 @@ onMounted(() => {
           </div>
         </Card>
       </div>
+
+      <Card
+        v-if="ownerActionSummaries.length > 0"
+        class="mb-4"
+        variant="borderless"
+      >
+        <div class="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2 font-medium">
+              <IconifyIcon
+                class="size-4 text-primary"
+                icon="lucide:user-check"
+              />
+              负责人待办
+            </div>
+            <div class="text-muted-foreground mt-1 text-xs">
+              按负责人聚合接口治理动作，给 CI 报告和团队整改提供统一视图。
+            </div>
+          </div>
+          <Tag color="processing">
+            {{ ownerActionSummaries.length }} 个负责人
+          </Tag>
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+          <div
+            v-for="ownerAction in ownerActionSummaries"
+            :key="ownerAction.owner"
+            class="rounded border border-border p-3"
+          >
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <span class="truncate text-sm font-medium">
+                {{ ownerAction.owner }}
+              </span>
+              <Tag :color="getOwnerActionStatusColor(ownerAction.status)">
+                {{ getOwnerActionStatusText(ownerAction.status) }}
+              </Tag>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center text-xs">
+              <div class="rounded bg-muted p-2">
+                <div class="text-muted-foreground">待办</div>
+                <div class="mt-1 font-medium">{{ ownerAction.openActionCount }}</div>
+              </div>
+              <div class="rounded bg-muted p-2">
+                <div class="text-muted-foreground">阻断</div>
+                <div class="mt-1 font-medium">
+                  {{ ownerAction.blockingActionCount }}
+                </div>
+              </div>
+              <div class="rounded bg-muted p-2">
+                <div class="text-muted-foreground">P0</div>
+                <div class="mt-1 font-medium">{{ ownerAction.p0ActionCount }}</div>
+              </div>
+            </div>
+            <div class="mt-3 flex items-center gap-2">
+              <Tag>{{ ownerAction.priority }}</Tag>
+              <span class="text-muted-foreground truncate text-xs">
+                {{ ownerAction.nextActionTitle || '暂无未完成动作' }}
+              </span>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-1">
+              <Tag
+                v-for="category in ownerAction.categories.slice(0, 3)"
+                :key="`${ownerAction.owner}-${category}`"
+                color="blue"
+              >
+                {{ category }}
+              </Tag>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <div
         v-if="governanceReport"

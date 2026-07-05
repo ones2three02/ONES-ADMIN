@@ -393,7 +393,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.67}") String applicationVersion
+            @Value("${ones.version:v0.0.68}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -518,6 +518,8 @@ public class ApiResourceService {
                 recommendActions(summary, governance, latestGate);
         List<ApiResourceGovernanceReportResponse.ActionItem> actionItems =
                 buildActionItems(summary, governance, latestGate);
+        List<ApiResourceGovernanceReportResponse.OwnerActionSummary> ownerActionSummaries =
+                buildOwnerActionSummaries(actionItems);
         return new ApiResourceGovernanceReportResponse(
                 applicationVersion,
                 OffsetDateTime.now(ZoneOffset.UTC).toString(),
@@ -531,6 +533,7 @@ public class ApiResourceService {
                 latestGate,
                 REFERENCE_BENCHMARKS,
                 recommendedActions,
+                ownerActionSummaries,
                 actionItems
         );
     }
@@ -838,6 +841,104 @@ public class ApiResourceService {
             ));
         }
         return items;
+    }
+
+    private List<ApiResourceGovernanceReportResponse.OwnerActionSummary> buildOwnerActionSummaries(
+            List<ApiResourceGovernanceReportResponse.ActionItem> actionItems
+    ) {
+        return actionItems.stream()
+                .collect(Collectors.groupingBy(item -> blankToDefault(item.owner(), "未归属")))
+                .entrySet()
+                .stream()
+                .map(entry -> toOwnerActionSummary(entry.getKey(), entry.getValue()))
+                .sorted(Comparator
+                        .comparingInt((ApiResourceGovernanceReportResponse.OwnerActionSummary summary) ->
+                                priorityRank(summary.priority()))
+                        .thenComparing(Comparator
+                                .comparingLong(ApiResourceGovernanceReportResponse.OwnerActionSummary::blockingActionCount)
+                                .reversed())
+                        .thenComparing(Comparator
+                                .comparingLong(ApiResourceGovernanceReportResponse.OwnerActionSummary::openActionCount)
+                                .reversed())
+                        .thenComparing(ApiResourceGovernanceReportResponse.OwnerActionSummary::owner))
+                .toList();
+    }
+
+    private ApiResourceGovernanceReportResponse.OwnerActionSummary toOwnerActionSummary(
+            String owner,
+            List<ApiResourceGovernanceReportResponse.ActionItem> actionItems
+    ) {
+        long openActionCount = actionItems.stream()
+                .filter(item -> "OPEN".equals(item.status()))
+                .count();
+        long blockingActionCount = actionItems.stream()
+                .filter(item -> item.blocking() && "OPEN".equals(item.status()))
+                .count();
+        long p0ActionCount = countOpenPriority(actionItems, "P0");
+        long p1ActionCount = countOpenPriority(actionItems, "P1");
+        long p2ActionCount = countOpenPriority(actionItems, "P2");
+        ApiResourceGovernanceReportResponse.ActionItem nextAction = firstOpenActionItem(actionItems);
+        String priority = nextAction == null ? "P2" : nextAction.priority();
+        String status = blockingActionCount > 0 ? "BLOCKED" : openActionCount > 0 ? "TRACKING" : "DONE";
+        List<String> categories = distinctCategories(actionItems);
+        return new ApiResourceGovernanceReportResponse.OwnerActionSummary(
+                owner,
+                status,
+                priority,
+                actionItems.size(),
+                openActionCount,
+                blockingActionCount,
+                p0ActionCount,
+                p1ActionCount,
+                p2ActionCount,
+                categories,
+                nextAction == null ? null : nextAction.actionCode(),
+                nextAction == null ? null : nextAction.title(),
+                ownerActionRecommendation(owner, status, nextAction)
+        );
+    }
+
+    private long countOpenPriority(
+            List<ApiResourceGovernanceReportResponse.ActionItem> actionItems,
+            String priority
+    ) {
+        return actionItems.stream()
+                .filter(item -> "OPEN".equals(item.status()))
+                .filter(item -> priority.equals(item.priority()))
+                .count();
+    }
+
+    private List<String> distinctCategories(List<ApiResourceGovernanceReportResponse.ActionItem> actionItems) {
+        List<String> openCategories = actionItems.stream()
+                .filter(item -> "OPEN".equals(item.status()))
+                .map(ApiResourceGovernanceReportResponse.ActionItem::category)
+                .filter(this::hasText)
+                .distinct()
+                .sorted()
+                .toList();
+        if (!openCategories.isEmpty()) {
+            return openCategories;
+        }
+        return actionItems.stream()
+                .map(ApiResourceGovernanceReportResponse.ActionItem::category)
+                .filter(this::hasText)
+                .distinct()
+                .sorted()
+                .toList();
+    }
+
+    private String ownerActionRecommendation(
+            String owner,
+            String status,
+            ApiResourceGovernanceReportResponse.ActionItem nextAction
+    ) {
+        if ("BLOCKED".equals(status)) {
+            return owner + " 需要优先处理阻断级接口治理动作，修复后重新执行 Manifest Gate";
+        }
+        if ("TRACKING".equals(status) && nextAction != null) {
+            return owner + " 下一步处理：" + nextAction.title();
+        }
+        return owner + " 当前无未完成接口治理动作，保持版本发布归档和周期复核";
     }
 
     private ApiResourceGovernanceReportResponse.ActionItem toGovernanceActionItem(

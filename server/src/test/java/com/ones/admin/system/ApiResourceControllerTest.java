@@ -376,12 +376,12 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.67"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.68"))
                 .andExpect(jsonPath("$.data.summary.total").value(77))
                 .andExpect(jsonPath("$.data.governance.passed").value(true))
                 .andExpect(jsonPath("$.data.governance.total").value(77))
                 .andExpect(jsonPath("$.data.manifest.total").value(77))
-                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.67"))
+                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.68"))
                 .andExpect(jsonPath("$.data.latestGate.gate.checks[0].checkCode").value("API_GOVERNANCE_ERROR"))
                 .andReturn()
                 .getResponse()
@@ -455,6 +455,21 @@ class ApiResourceControllerTest {
                 "ARCHIVE_MANIFEST_SNAPSHOT"
         );
         assertThat(archiveAction.path("category").asText()).isEqualTo("RELEASE");
+        assertThat(report.path("ownerActionSummaries").isArray()).isTrue();
+        assertThat(report.path("ownerActionSummaries").size()).isGreaterThanOrEqualTo(1);
+        JsonNode governanceOwnerSummary = findOwnerActionSummary(report.path("ownerActionSummaries"), "架构治理组");
+        assertThat(List.of("BLOCKED", "DONE", "TRACKING"))
+                .contains(governanceOwnerSummary.path("status").asText());
+        assertThat(List.of("P0", "P1", "P2"))
+                .contains(governanceOwnerSummary.path("priority").asText());
+        assertThat(governanceOwnerSummary.path("totalActionCount").asLong()).isGreaterThanOrEqualTo(1);
+        assertThat(governanceOwnerSummary.path("openActionCount").asLong()).isGreaterThanOrEqualTo(0);
+        assertThat(governanceOwnerSummary.path("blockingActionCount").asLong()).isGreaterThanOrEqualTo(0);
+        assertThat(governanceOwnerSummary.path("p0ActionCount").asLong()).isGreaterThanOrEqualTo(0);
+        assertThat(governanceOwnerSummary.path("p1ActionCount").asLong()).isGreaterThanOrEqualTo(0);
+        assertThat(governanceOwnerSummary.path("p2ActionCount").asLong()).isGreaterThanOrEqualTo(0);
+        assertThat(governanceOwnerSummary.path("categories").isArray()).isTrue();
+        assertThat(governanceOwnerSummary.path("recommendation").asText()).contains("架构治理组");
         assertThat(report.path("actionItems").isArray()).isTrue();
         assertThat(actionCodes(report.path("actionItems"))).doesNotContain("IMPLEMENT_HRMS_ROSTER_FRONTEND");
         JsonNode baselineAction = findActionItem(report.path("actionItems"), "PUBLISH_API_MANIFEST_BASELINE");
@@ -512,7 +527,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.67"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.68"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(77))
                 .andReturn()
@@ -652,7 +667,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.67"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.68"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.snapshot.total").value(77))
                 .andExpect(jsonPath("$.data.snapshot.manifest.total").value(77))
@@ -751,7 +766,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.67"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.68"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))
@@ -1080,6 +1095,13 @@ class ApiResourceControllerTest {
                 .filter(node -> actionCode.equals(node.path("actionCode").asText()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("未找到治理动作项：" + actionCode));
+    }
+
+    private JsonNode findOwnerActionSummary(JsonNode summaries, String owner) {
+        return StreamSupport.stream(summaries.spliterator(), false)
+                .filter(node -> owner.equals(node.path("owner").asText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("未找到负责人治理摘要：" + owner));
     }
 
     private JsonNode findQualityDimension(JsonNode dimensions, String dimensionCode) {

@@ -1,6 +1,6 @@
 # ONES-ADMIN 后端工程化审计与优化路线
 
-更新时间：2026-07-03
+更新时间：2026-07-05
 当前分支：develop
 
 ## 1. 调研来源
@@ -72,6 +72,7 @@
 - 接口治理聚合报告已补充 `referenceBenchmarks`、`recommendedActions` 和 `actionItems`，将接口管理/API 网关/HRMS 参考基准、下一步建议与可跟踪治理动作结构化输出，便于 Jenkins 和前端直接消费。
 - 接口治理聚合报告已补充 `qualityScore` 与 `qualityDimensions`，按 SECURITY、AUDIT、CONTRACT、LIFECYCLE、CATALOG、DOCUMENTATION 六个维度输出治理评分、扣分数量、参考基准和整改建议，便于 Jenkins 设置趋势阈值，也便于前端接口管理页展示维度健康度。
 - 接口治理聚合报告已补充 `releaseReadiness`，将 Manifest Gate、基线快照、治理评分和动作项汇总为机器可读发布状态，Jenkins 可直接读取 `ready`、`status`、`blockingCheckCount` 和 `nextActionCode`。
+- 接口治理聚合报告已补充 `ownerActionSummaries`，按负责人聚合治理动作总数、打开动作数、阻断动作数、P0/P1/P2 待办、分类和下一步动作，便于 Jenkins 和接口管理页按团队追踪整改负载。
 - 接口管理参考基准已覆盖 Backstage 的 API Catalog、Gravitee 的 API Management 生命周期、Kong/APISIX/Tyk 的网关策略、Spectral 的 OpenAPI 规则校验和 oasdiff 的破坏性变更识别；ONES-ADMIN 当前优先吸收“目录资产化、策略门禁化、契约可比对、整改动作可跟踪”四类能力。
 - 已将 `operationId` 纳入接口清单、CSV、Manifest、Manifest 指纹和 Manifest Diff，接口操作标识变化按破坏性变更处理。
 - 已建立 `operationId` 命名规范和唯一性门禁，当前格式为 `^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$`，重复或非法命名会作为治理错误阻断发布。
@@ -204,6 +205,10 @@
   - `validate` 阶段要求 JDK 21 或更高版本。
   - `validate` 阶段要求 Maven 3.9.0 或更高版本。
   - Jenkins 和本地开发建议优先使用项目内 `./mvnw`，并显式配置 `JAVA_HOME` 指向 JDK 21。
+- 新增接口治理负责人待办摘要：
+  - `/api/system/api-resources/governance/report` 输出 `ownerActionSummaries`，把治理动作按负责人聚合成团队工作台视图。
+  - 每个负责人摘要包含状态、优先级、打开动作数、阻断动作数、P0/P1/P2 分布、分类、下一步动作和整改建议。
+  - 该能力借鉴 Backstage API Catalog 的 Owner 责任制，避免接口治理只停留在规则明细，便于 Jenkins、接口管理页和人工巡检按团队推进整改。
 
 ## 4. 后续优化路线
 
@@ -247,6 +252,7 @@
   - 推荐调用 `/api/system/api-resources/governance/report` 生成聚合治理报告，作为 Jenkins 报告、构建产物和前端接口管理页统一数据源
   - Jenkins 可读取报告中的 `qualityScore` 与 `qualityDimensions`，例如要求主干发布 `qualityScore >= 95` 且 SECURITY、AUDIT、CONTRACT 维度无 ERROR
   - Jenkins 可读取报告中的 `releaseReadiness.ready`、`releaseReadiness.status`、`releaseReadiness.blockingCheckCount` 和 `releaseReadiness.nextActionCode`，直接输出发布准备度与下一步动作
+  - Jenkins 可读取报告中的 `ownerActionSummaries`，按负责人输出接口治理待办负载、阻断动作和下一步动作
   - Jenkins 可读取报告中的 `recommendedActions` 和 `actionItems`，按 `priority`、`category`、`actionCode`、`owner`、`module` 和 `blocking` 输出本次发布需要执行或跟踪的整改动作
   - 可调用 `/api/system/api-resources/governance/rules` 输出规则目录，作为 Jenkins 报告中 ruleCode 的解释来源
   - Jenkins 应将 `API_METHOD_NOT_EXPLICIT` 视为阻断项，要求所有 `/api/**` 接口使用明确 HTTP 方法，禁止 `ALL` 泛匹配路由

@@ -242,6 +242,22 @@ export namespace SystemApiResourceApi {
     verification: string;
   }
 
+  export interface ApiResourceOwnerActionSummary {
+    blockingActionCount: number;
+    categories: ApiResourceActionCategory[];
+    nextActionCode?: string;
+    nextActionTitle?: string;
+    openActionCount: number;
+    owner: string;
+    p0ActionCount: number;
+    p1ActionCount: number;
+    p2ActionCount: number;
+    priority: 'P0' | 'P1' | 'P2';
+    recommendation: string;
+    status: 'BLOCKED' | 'DONE' | 'TRACKING';
+    totalActionCount: number;
+  }
+
   export interface ApiResourceReleaseReadiness {
     baselineAvailable: boolean;
     blockingActionCount: number;
@@ -283,6 +299,7 @@ export namespace SystemApiResourceApi {
     governance: ApiResourceGovernance;
     latestGate: ApiResourceManifestLatestGate;
     manifest: ApiResourceManifest;
+    ownerActionSummaries: ApiResourceOwnerActionSummary[];
     qualityDimensions: ApiResourceQualityDimension[];
     qualityScore: number;
     recommendedActions: ApiResourceRecommendedAction[];

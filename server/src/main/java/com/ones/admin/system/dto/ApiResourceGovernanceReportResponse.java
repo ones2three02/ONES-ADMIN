@@ -15,6 +15,7 @@ public record ApiResourceGovernanceReportResponse(
         ApiResourceManifestLatestGateResponse latestGate,
         List<ReferenceBenchmark> referenceBenchmarks,
         List<RecommendedAction> recommendedActions,
+        List<OwnerActionSummary> ownerActionSummaries,
         List<ActionItem> actionItems
 ) {
 
@@ -63,6 +64,23 @@ public record ApiResourceGovernanceReportResponse(
             String title,
             String description,
             String verification
+    ) {
+    }
+
+    public record OwnerActionSummary(
+            String owner,
+            String status,
+            String priority,
+            long totalActionCount,
+            long openActionCount,
+            long blockingActionCount,
+            long p0ActionCount,
+            long p1ActionCount,
+            long p2ActionCount,
+            List<String> categories,
+            String nextActionCode,
+            String nextActionTitle,
+            String recommendation
     ) {
     }
 
