@@ -2,10 +2,12 @@
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 import type { HrRosterImportApi } from '#/api';
 
+import { computed, ref } from 'vue';
+
 import { Page, useVbenModal } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
 
-import { Button, Card, message, Upload } from 'antdv-next';
+import { Button, Card, message, Statistic, Tag, Upload } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import { downloadRosterTemplate, getRosterImportBatches, uploadRosterFile } from '#/api';
@@ -17,6 +19,9 @@ import ErrorsModal from './modules/errors.vue';
 const [Errors, errorsModalApi] = useVbenModal({
   connectedComponent: ErrorsModal,
 });
+
+const latestBatches = ref<HrRosterImportApi.ImportBatch[]>([]);
+const totalBatchCount = ref(0);
 
 const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions: {
@@ -36,10 +41,13 @@ const [Grid, gridApi] = useVbenVxeGrid({
     proxyConfig: {
       ajax: {
         query: async ({ page }) => {
-          return await getRosterImportBatches({
-            page: page.currentPage,
+          const result = await getRosterImportBatches({
+            pageNum: page.currentPage,
             pageSize: page.pageSize,
           });
+          latestBatches.value = result.items;
+          totalBatchCount.value = result.total;
+          return result;
         },
       },
     },
@@ -55,6 +63,30 @@ const [Grid, gridApi] = useVbenVxeGrid({
     },
   } as VxeTableGridOptions<HrRosterImportApi.ImportBatch>,
 });
+
+const metrics = computed(() => {
+  const currentPageBatches = latestBatches.value;
+  return [
+    {
+      icon: 'lucide:files',
+      title: '导入批次',
+      value: totalBatchCount.value,
+    },
+    {
+      icon: 'lucide:circle-check',
+      title: '当前页成功',
+      value: currentPageBatches.reduce((total, item) => total + item.successCount, 0),
+    },
+    {
+      icon: 'lucide:triangle-alert',
+      title: '当前页失败',
+      value: currentPageBatches.reduce((total, item) => total + item.failedCount, 0),
+    },
+  ];
+});
+
+const latestBatch = computed(() => latestBatches.value[0]);
+const latestBatchStatus = computed(() => statusTag(latestBatch.value?.status));
 
 function onRefresh() {
   gridApi.query();
@@ -81,10 +113,21 @@ async function handleDownloadTemplate() {
 
 async function handleCustomUpload(options: any) {
   const { file, onSuccess, onError } = options;
+  const uploadFile = file as File;
+  if (!uploadFile.name.toLowerCase().endsWith('.csv')) {
+    message.error('仅支持 CSV 文件');
+    onError?.(new Error('仅支持 CSV 文件'));
+    return;
+  }
+  if (uploadFile.size > 2 * 1024 * 1024) {
+    message.error('CSV 文件不能超过 2MB');
+    onError?.(new Error('CSV 文件不能超过 2MB'));
+    return;
+  }
   const hide = message.loading('正在上传并解析花名册...', 0);
   try {
-    await uploadRosterFile(file);
-    message.success('花名册导入请求提交成功，正在后台解析');
+    const batch = await uploadRosterFile(uploadFile);
+    message.success(`导入完成：成功 ${batch.successCount} 行，失败 ${batch.failedCount} 行`);
     onSuccess?.();
     onRefresh();
   } catch (error: any) {
@@ -98,16 +141,54 @@ async function handleCustomUpload(options: any) {
 function handleViewErrors(row: HrRosterImportApi.ImportBatch) {
   errorsModalApi.setData({ id: row.id }).open();
 }
+
+function statusTag(status?: string) {
+  const statusMap: Record<string, { color: string; text: string }> = {
+    PARSING: { color: 'processing', text: '解析中' },
+    PARTIAL_SUCCESS: { color: 'warning', text: '部分成功' },
+    SUCCESS: { color: 'success', text: '导入成功' },
+    VALIDATION_FAILED: { color: 'error', text: '校验失败' },
+  };
+  return status ? (statusMap[status] ?? { color: 'default', text: status }) : { color: 'default', text: '-' };
+}
 </script>
 <template>
-  <Page auto-content-height>
+  <Page auto-content-height :title="$t('hr.rosterImport.title')">
     <Errors @success="onRefresh" />
 
-    <div class="flex flex-col size-full gap-4">
-      <!-- 拖拽上传 Card -->
-      <Card title="导入花名册 (CSV)" class="w-full">
-        <div class="flex gap-4 items-center">
-          <div class="flex-1 max-w-md">
+    <div class="flex size-full flex-col gap-4">
+      <div class="grid gap-4 lg:grid-cols-4">
+        <Card
+          v-for="item in metrics"
+          :key="item.title"
+          variant="borderless"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <Statistic :title="item.title" :value="item.value" />
+            <div class="rounded bg-muted p-2 text-primary">
+              <IconifyIcon :icon="item.icon" class="size-5" />
+            </div>
+          </div>
+        </Card>
+
+        <Card variant="borderless">
+          <div class="flex items-start justify-between gap-3">
+            <Statistic
+              title="最近批次"
+              :value="latestBatch?.batchNo || '-'"
+              :value-style="{ fontSize: '14px' }"
+            />
+            <Tag :color="latestBatchStatus.color">{{ latestBatchStatus.text }}</Tag>
+          </div>
+          <div class="text-muted-foreground mt-3 text-xs">
+            {{ latestBatch?.completedAt || latestBatch?.createdAt || '-' }}
+          </div>
+        </Card>
+      </div>
+
+      <Card title="导入花名册 (CSV)" class="w-full" variant="borderless">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-center">
+          <div class="max-w-xl flex-1">
             <Upload.Dragger
               name="file"
               :multiple="false"
@@ -115,32 +196,28 @@ function handleViewErrors(row: HrRosterImportApi.ImportBatch) {
               :custom-request="handleCustomUpload"
               accept=".csv"
             >
-              <p class="ant-upload-drag-icon flex justify-center mt-4">
-                <IconifyIcon icon="lucide:upload" class="size-10 text-primary" style="font-size: 32px;" />
+              <p class="ant-upload-drag-icon mt-4 flex justify-center">
+                <IconifyIcon icon="lucide:upload" class="size-10 text-primary" />
               </p>
               <p class="ant-upload-text px-4 pb-4">
                 点击或拖拽 CSV 文件到此区域进行花名册上传导入
               </p>
             </Upload.Dragger>
           </div>
-          <div class="flex flex-col gap-2">
-            <h4 class="font-bold text-gray-700">导入指南:</h4>
-            <ul class="text-xs text-gray-500 list-disc list-inside space-y-1">
-              <li>上传文件格式必须为 CSV 格式，且编码为 UTF-8。</li>
-              <li>请优先下载标准导入模板，参照模板字段填写。</li>
-              <li>部门、岗位和职级字段需填写对应的系统 ID 标识。</li>
-              <li>上传后系统将在后台异步解析，请在下方列表刷新查看结果。</li>
-            </ul>
-            <Button type="primary" class="w-fit mt-2" @click="handleDownloadTemplate">
+          <div class="flex flex-wrap gap-2">
+            <Button type="primary" @click="handleDownloadTemplate">
               <IconifyIcon icon="lucide:download" class="mr-2" />
               {{ $t('hr.rosterImport.downloadTemplate') }}
+            </Button>
+            <Button @click="onRefresh">
+              <IconifyIcon icon="lucide:refresh-cw" class="mr-2" />
+              {{ $t('common.refresh') }}
             </Button>
           </div>
         </div>
       </Card>
 
-      <!-- 历史批次列表 -->
-      <div class="flex-1 min-h-[300px]">
+      <div class="min-h-[300px] flex-1">
         <Grid :table-title="$t('hr.rosterImport.list')">
           <template #action="{ row }">
             <VbenTableAction

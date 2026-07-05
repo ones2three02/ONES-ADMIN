@@ -393,7 +393,7 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.66}") String applicationVersion
+            @Value("${ones.version:v0.0.67}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
@@ -783,14 +783,6 @@ public class ApiResourceService {
                 "发布通过后将接口 Manifest 以应用版本资产落库，便于下一次发布做 Diff 与 Gate。",
                 "POST /api/system/api-resources/manifest/snapshots 返回 published=true 或既有快照"
         ));
-        actions.add(new ApiResourceGovernanceReportResponse.RecommendedAction(
-                "IMPLEMENT_HRMS_ROSTER_FRONTEND",
-                "P1",
-                "HRMS",
-                "接入 HRMS 花名册导入前端",
-                "后端已具备模板下载、批量导入、批次和错误行查询接口，下一步需要按 Vben 风格补齐导入任务页面。",
-                "Vben 风格前端页面可完成模板下载、上传导入、批次列表和错误行查看"
-        ));
         return actions;
     }
 
@@ -843,23 +835,6 @@ public class ApiResourceService {
                     changed
                             ? "Jenkins 构建产物中包含 Manifest Diff 明细和当前 checksum"
                             : "Jenkins 构建产物中包含当前 checksum 和 Manifest Gate 通过记录"
-            ));
-        }
-        if (summary.modules().stream().anyMatch(module -> "HRMS-花名册导入".equals(module.module()))) {
-            items.add(new ApiResourceGovernanceReportResponse.ActionItem(
-                    "IMPLEMENT_HRMS_ROSTER_FRONTEND",
-                    "P1",
-                    "HRMS",
-                    "接入 HRMS 花名册导入前端",
-                    "后端已暴露花名册导入模板、导入批次和错误行接口，前端需要按 Vben / Ant Design Vue 风格补齐页面闭环。",
-                    "ROADMAP",
-                    "HRMS_ROSTER_IMPORT_FRONTEND",
-                    "人力平台组",
-                    "HRMS",
-                    "GET /api/hr/roster-import/batches",
-                    false,
-                    "OPEN",
-                    "Vben 风格页面支持模板下载、CSV 上传、批次列表、导入结果和错误行查看"
             ));
         }
         return items;

@@ -376,12 +376,12 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.66"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.67"))
                 .andExpect(jsonPath("$.data.summary.total").value(77))
                 .andExpect(jsonPath("$.data.governance.passed").value(true))
                 .andExpect(jsonPath("$.data.governance.total").value(77))
                 .andExpect(jsonPath("$.data.manifest.total").value(77))
-                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.66"))
+                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.67"))
                 .andExpect(jsonPath("$.data.latestGate.gate.checks[0].checkCode").value("API_GOVERNANCE_ERROR"))
                 .andReturn()
                 .getResponse()
@@ -447,17 +447,16 @@ class ApiResourceControllerTest {
         assertThat(frappeHr.path("category").asText()).isEqualTo("HRMS");
         assertThat(frappeHr.path("url").asText()).isEqualTo("https://github.com/frappe/hrms");
         assertThat(report.path("recommendedActions").isArray()).isTrue();
-        assertThat(report.path("recommendedActions").size()).isGreaterThanOrEqualTo(2);
+        assertThat(report.path("recommendedActions").size()).isGreaterThanOrEqualTo(1);
         assertThat(actionCodes(report.path("recommendedActions"))).doesNotContain("DESIGN_HRMS_PHASE_ONE");
+        assertThat(actionCodes(report.path("recommendedActions"))).doesNotContain("IMPLEMENT_HRMS_ROSTER_FRONTEND");
         JsonNode archiveAction = findRecommendedAction(
                 report.path("recommendedActions"),
                 "ARCHIVE_MANIFEST_SNAPSHOT"
         );
         assertThat(archiveAction.path("category").asText()).isEqualTo("RELEASE");
-        JsonNode hrmsAction = findRecommendedAction(report.path("recommendedActions"), "IMPLEMENT_HRMS_ROSTER_FRONTEND");
-        assertThat(hrmsAction.path("priority").asText()).isEqualTo("P1");
-        assertThat(hrmsAction.path("category").asText()).isEqualTo("HRMS");
         assertThat(report.path("actionItems").isArray()).isTrue();
+        assertThat(actionCodes(report.path("actionItems"))).doesNotContain("IMPLEMENT_HRMS_ROSTER_FRONTEND");
         JsonNode baselineAction = findActionItem(report.path("actionItems"), "PUBLISH_API_MANIFEST_BASELINE");
         assertThat(baselineAction.path("priority").asText()).isEqualTo("P1");
         assertThat(baselineAction.path("sourceType").asText()).isEqualTo("GATE");
@@ -470,10 +469,6 @@ class ApiResourceControllerTest {
         assertThat(diffArchiveAction.path("sourceType").asText()).isEqualTo("GATE_CHECK");
         assertThat(diffArchiveAction.path("sourceCode").asText()).isEqualTo("MANIFEST_DIFF_ARCHIVE");
         assertThat(diffArchiveAction.path("category").asText()).isEqualTo("RELEASE");
-        JsonNode rosterFrontendAction = findActionItem(report.path("actionItems"), "IMPLEMENT_HRMS_ROSTER_FRONTEND");
-        assertThat(rosterFrontendAction.path("sourceType").asText()).isEqualTo("ROADMAP");
-        assertThat(rosterFrontendAction.path("module").asText()).isEqualTo("HRMS");
-        assertThat(rosterFrontendAction.path("verification").asText()).contains("Vben");
     }
 
     @Test
@@ -517,7 +512,7 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.66"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.67"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.total").value(77))
                 .andReturn()
@@ -657,7 +652,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.66"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.67"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
                 .andExpect(jsonPath("$.data.snapshot.total").value(77))
                 .andExpect(jsonPath("$.data.snapshot.manifest.total").value(77))
@@ -756,7 +751,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.66"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.67"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))

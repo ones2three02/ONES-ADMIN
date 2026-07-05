@@ -24,18 +24,24 @@ export namespace HrRosterImportApi {
   }
 
   export interface BatchQuery {
-    page: number;
-    pageSize: number;
+    page?: number;
+    pageNum?: number;
+    pageSize?: number;
   }
 }
 
 export async function getRosterImportBatches(params: HrRosterImportApi.BatchQuery) {
   const res = await requestClient.get<{
-    records: any[];
+    list: any[];
     total: number;
-  }>('/hr/roster-import/batches', { params });
+  }>('/hr/roster-import/batches', {
+    params: {
+      ...params,
+      pageNum: params.page ?? params.pageNum,
+    },
+  });
   return {
-    items: res.records.map((item) => ({
+    items: res.list.map((item) => ({
       ...item,
       id: String(item.id),
     })) as HrRosterImportApi.ImportBatch[],

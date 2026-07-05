@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.67 - 2026-07-05
+
+- 修复 HRMS 花名册导入前端批次列表分页响应字段，从旧 `records` 对齐为后端统一 `list`，并同步使用 `pageNum` 查询参数。
+- 花名册导入页按 Vben / Ant Design Vue 现有风格补齐批次概览、最近批次状态、前端 CSV 类型与 2MB 大小校验，并修正 `PARTIAL_SUCCESS`、`VALIDATION_FAILED` 等后端状态展示。
+- 接口治理报告移除已完成的 `IMPLEMENT_HRMS_ROSTER_FRONTEND` 推荐动作和待办项，避免 Jenkins 与接口管理页继续提示过期整改动作。
+- 产品版本递增至 `v0.0.67`。
+
 ## v0.0.66 - 2026-07-05
 
 - 接口治理聚合报告新增 `releaseReadiness` 发布就绪摘要，输出机器可读状态、发布可用性、优先级、基线状态、阻断检查数、打开动作数和下一步动作，便于 Jenkins 直接判定接口发布准备度。

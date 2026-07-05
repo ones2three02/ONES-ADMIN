@@ -21,9 +21,11 @@ export function useColumns(): VxeTableGridColumns {
       formatter: ({ cellValue }) => {
         const statuses: any = {
           PENDING: '处理中',
+          PARSING: '解析中',
           SUCCESS: '导入成功',
-          PARTIAL: '部分成功',
+          PARTIAL_SUCCESS: '部分成功',
           FAILED: '导入失败',
+          VALIDATION_FAILED: '校验失败',
         };
         return statuses[cellValue] || cellValue;
       },
