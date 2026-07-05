@@ -1,25 +1,18 @@
 <script lang="ts" setup>
-import { computed, nextTick } from 'vue';
+import type { HrEmployeeApi } from '#/api';
+
+import { computed, nextTick, ref } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
-import { createEmployee } from '#/api'; // 注意：编辑员工并没有update接口吗？
-// 等等！后端好像确实没有直接update员工的接口，而是调岗、转正、离职。
-// 我们来看一下后端 HrEmployeeController 里是否有编辑普通字段（比如mobile、email、displayName）的接口？
-// 确实没有，后端只有新增、调岗、转正、离职。这说明普通字段编辑在后端是没有暴露的，或者是在调岗里更新信息。
-// 那我们在这个表单里就只在【新增员工】时调用 createEmployee。
-// 如果是编辑，我们需要什么操作吗？如果只是展示或因为后端没写 update 接口，我们可以暂且把编辑作为只读查看，
-// 或者在前端暂时只支持【新增员工】的抽屉。
-// 为了严谨起见，我们查看一下 HrEmployeeService 里有没有 update 方法？
-// 有可能是在 Controller 里没有，也有可能有。不过我们在 HrEmployeeController 里看到确实只有：
-// createEmployee, transferEmployee, regularizeEmployee, resignEmployee，没有普通的 updateEmployee。
-// 那我们的 drawer 就主要是用作“新增员工”。
+import { createEmployee, updateEmployee } from '#/api';
 import { $t } from '#/locales';
 
 import { useFormSchema } from '../data';
 
 const emits = defineEmits(['success']);
+const editingEmployee = ref<HrEmployeeApi.HrEmployee>();
 
 const [Form, formApi] = useVbenForm({
   schema: useFormSchema(),
@@ -32,7 +25,10 @@ const [Drawer, drawerApi] = useVbenDrawer({
     if (!valid) return;
     const values = await formApi.getValues();
     drawerApi.lock();
-    createEmployee(values as any)
+    const submit = editingEmployee.value
+      ? updateEmployee(editingEmployee.value.id, buildUpdatePayload(values))
+      : createEmployee(buildCreatePayload(values));
+    submit
       .then(() => {
         emits('success');
         drawerApi.close();
@@ -44,15 +40,69 @@ const [Drawer, drawerApi] = useVbenDrawer({
 
   async onOpenChange(isOpen) {
     if (isOpen) {
+      const data = drawerApi.getData<HrEmployeeApi.HrEmployee>();
+      editingEmployee.value = data?.id ? data : undefined;
       formApi.resetForm();
       await nextTick();
+      if (editingEmployee.value) {
+        formApi.setValues({
+          ...editingEmployee.value,
+          idCardNumber: undefined,
+        });
+      }
     }
   },
 });
 
 const getDrawerTitle = computed(() => {
-  return $t('hr.employee.createEmployee');
+  return editingEmployee.value
+    ? $t('hr.employee.editEmployee')
+    : $t('hr.employee.createEmployee');
 });
+
+function emptyToUndefined(value: unknown) {
+  return value === '' || value === null ? undefined : value;
+}
+
+function buildCreatePayload(values: Record<string, any>): HrEmployeeApi.CreateRequest {
+  return {
+    employeeNo: values.employeeNo,
+    realName: values.realName,
+    preferredName: emptyToUndefined(values.preferredName) as string | undefined,
+    gender: values.gender,
+    mobile: values.mobile,
+    email: values.email,
+    idCardNumber: emptyToUndefined(values.idCardNumber) as string | undefined,
+    userId: emptyToUndefined(values.userId) as string | undefined,
+    deptId: values.deptId,
+    positionId: emptyToUndefined(values.positionId) as string | undefined,
+    gradeId: emptyToUndefined(values.gradeId) as string | undefined,
+    managerEmployeeId: emptyToUndefined(values.managerEmployeeId) as string | undefined,
+    employmentType: values.employmentType,
+    employmentStatus: emptyToUndefined(values.employmentStatus) as string | undefined,
+    hireDate: values.hireDate,
+    probationEndDate: emptyToUndefined(values.probationEndDate) as string | undefined,
+    remark: emptyToUndefined(values.remark) as string | undefined,
+  };
+}
+
+function buildUpdatePayload(values: Record<string, any>): HrEmployeeApi.UpdateRequest {
+  const payload: HrEmployeeApi.UpdateRequest = {
+    realName: values.realName,
+    preferredName: emptyToUndefined(values.preferredName) as string | undefined,
+    gender: emptyToUndefined(values.gender) as string | undefined,
+    mobile: emptyToUndefined(values.mobile) as string | undefined,
+    email: emptyToUndefined(values.email) as string | undefined,
+    userId: emptyToUndefined(values.userId) as string | undefined,
+    probationEndDate: emptyToUndefined(values.probationEndDate) as string | undefined,
+    remark: emptyToUndefined(values.remark) as string | undefined,
+  };
+  const idCardNumber = emptyToUndefined(values.idCardNumber) as string | undefined;
+  if (idCardNumber) {
+    payload.idCardNumber = idCardNumber;
+  }
+  return payload;
+}
 </script>
 <template>
   <Drawer :title="getDrawerTitle">

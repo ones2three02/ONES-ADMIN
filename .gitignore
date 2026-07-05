@@ -13,6 +13,7 @@ coverage/
 # Java
 target/
 *.class
+server/data/
 server/uploads/
 
 # Logs and local env

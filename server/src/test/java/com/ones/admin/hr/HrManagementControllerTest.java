@@ -63,6 +63,26 @@ class HrManagementControllerTest {
                 .andExpect(jsonPath("$.data.gradeName").value("P7"))
                 .andExpect(jsonPath("$.data.idCardMasked").value("110****1234"));
 
+        updateEmployeeProfile(token, employeeId, suffix, idCardNumber);
+        mockMvc.perform(get("/api/hr/employees/" + employeeId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.employeeNo").value("E" + suffix))
+                .andExpect(jsonPath("$.data.realName").value("张三丰"))
+                .andExpect(jsonPath("$.data.preferredName").value("三丰"))
+                .andExpect(jsonPath("$.data.mobile").value("13900139000"))
+                .andExpect(jsonPath("$.data.email").value("zhangsanfeng" + suffix + "@ones.local"))
+                .andExpect(jsonPath("$.data.idCardMasked").value("110****5678"))
+                .andExpect(jsonPath("$.data.positionName").value("运维工程师"))
+                .andExpect(jsonPath("$.data.gradeName").value("P7"))
+                .andExpect(jsonPath("$.data.remark").value("基础档案信息更新"));
+
+        updateEmployeeProfileWithoutIdCard(token, employeeId, suffix);
+        mockMvc.perform(get("/api/hr/employees/" + employeeId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.idCardMasked").value("110****5678"));
+
         transferEmployee(token, employeeId, transferPositionId, transferGradeId);
         mockMvc.perform(get("/api/hr/employees/" + employeeId)
                         .header("Authorization", "Bearer " + token))
@@ -102,7 +122,7 @@ class HrManagementControllerTest {
                 .andExpect(jsonPath("$.data[1].id").value(contractId))
                 .andExpect(jsonPath("$.data[1].employeeId").value(employeeId))
                 .andExpect(jsonPath("$.data[1].employeeNo").value("E" + suffix))
-                .andExpect(jsonPath("$.data[1].realName").value("张三"))
+                .andExpect(jsonPath("$.data[1].realName").value("张三丰"))
                 .andExpect(jsonPath("$.data[1].contractNo").value("C" + suffix))
                 .andExpect(jsonPath("$.data[1].contractType").value("FIXED_TERM"))
                 .andExpect(jsonPath("$.data[1].status").value("TERMINATED"))
@@ -336,6 +356,59 @@ class HrManagementControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.positionName").value("架构师"))
                 .andExpect(jsonPath("$.data.gradeName").value("P8"));
+    }
+
+    private void updateEmployeeProfile(
+            String token,
+            long employeeId,
+            String suffix,
+            String originalIdCardNumber
+    ) throws Exception {
+        Map<String, Object> request = Map.of(
+                "realName", "张三丰",
+                "preferredName", "三丰",
+                "gender", "MALE",
+                "mobile", "13900139000",
+                "email", "zhangsanfeng" + suffix + "@ones.local",
+                "idCardNumber", "110101199001015678",
+                "userId", 2L,
+                "probationEndDate", "2026-10-15",
+                "remark", "基础档案信息更新"
+        );
+        String response = mockMvc.perform(put("/api/hr/employees/" + employeeId)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(employeeId))
+                .andExpect(jsonPath("$.data.realName").value("张三丰"))
+                .andExpect(jsonPath("$.data.idCardMasked").value("110****5678"))
+                .andExpect(jsonPath("$.data.probationEndDate").value("2026-10-15"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        assertThat(response).doesNotContain(originalIdCardNumber);
+        assertThat(response).doesNotContain("110101199001015678");
+    }
+
+    private void updateEmployeeProfileWithoutIdCard(String token, long employeeId, String suffix) throws Exception {
+        Map<String, Object> request = Map.of(
+                "realName", "张三丰",
+                "preferredName", "三丰",
+                "gender", "MALE",
+                "mobile", "13900139000",
+                "email", "zhangsanfeng" + suffix + "@ones.local",
+                "userId", 2L,
+                "probationEndDate", "2026-10-15",
+                "remark", "基础档案信息更新"
+        );
+        mockMvc.perform(put("/api/hr/employees/" + employeeId)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(employeeId))
+                .andExpect(jsonPath("$.data.idCardMasked").value("110****5678"));
     }
 
     private void regularizeEmployee(String token, long employeeId) throws Exception {

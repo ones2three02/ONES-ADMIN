@@ -14,12 +14,14 @@ import com.ones.admin.hr.dto.HrEmployeeRegularizeRequest;
 import com.ones.admin.hr.dto.HrEmployeeResignRequest;
 import com.ones.admin.hr.dto.HrEmployeeResponse;
 import com.ones.admin.hr.dto.HrEmployeeTransferRequest;
+import com.ones.admin.hr.dto.HrEmployeeUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -73,6 +75,18 @@ public class HrEmployeeController {
     @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<HrEmployeeResponse> createEmployee(@Valid @RequestBody HrEmployeeCreateRequest request) {
         return ApiResult.ok(employeeService.createEmployee(request));
+    }
+
+    @PutMapping("/{id}")
+    @SaCheckPermission("hr:employee:update")
+    @Operation(operationId = "HrEmployeeController_updateEmployee", summary = "编辑员工基础信息")
+    @RepeatSubmit
+    @ApiResourceMetadata(sinceVersion = "v0.0.65", riskLevel = ApiRiskLevel.HIGH)
+    public ApiResult<HrEmployeeResponse> updateEmployee(
+            @PathVariable Long id,
+            @Valid @RequestBody HrEmployeeUpdateRequest request
+    ) {
+        return ApiResult.ok(employeeService.updateEmployee(id, request));
     }
 
     @PostMapping("/{id}/transfer")

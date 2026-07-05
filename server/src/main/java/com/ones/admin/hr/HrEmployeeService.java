@@ -15,6 +15,7 @@ import com.ones.admin.hr.dto.HrEmployeeRegularizeRequest;
 import com.ones.admin.hr.dto.HrEmployeeResignRequest;
 import com.ones.admin.hr.dto.HrEmployeeResponse;
 import com.ones.admin.hr.dto.HrEmployeeTransferRequest;
+import com.ones.admin.hr.dto.HrEmployeeUpdateRequest;
 import com.ones.admin.hr.entity.HrEmployeeEntity;
 import com.ones.admin.hr.entity.HrEmployeeJobEntity;
 import com.ones.admin.hr.entity.HrEmployeeLifecycleEventEntity;
@@ -115,8 +116,10 @@ public class HrEmployeeService {
         employee.setGender(normalizeNullable(request.gender()));
         employee.setMobile(normalizeNullable(request.mobile()));
         employee.setEmail(normalizeNullable(request.email()));
-        employee.setIdCardMasked(maskIdCard(request.idCardNumber()));
-        employee.setIdCardEncrypted(null);
+        if (hasText(request.idCardNumber())) {
+            employee.setIdCardMasked(maskIdCard(request.idCardNumber()));
+            employee.setIdCardEncrypted(null);
+        }
         employee.setUserId(request.userId());
         employee.setDeptId(deptId);
         employee.setPositionId(positionId);
@@ -131,6 +134,26 @@ public class HrEmployeeService {
 
         createInitialJob(employee);
         createLifecycleEvent(employee);
+        return toResponse(employeeMapper.selectById(employee.getId()));
+    }
+
+    @Transactional
+    public HrEmployeeResponse updateEmployee(Long id, HrEmployeeUpdateRequest request) {
+        HrEmployeeEntity employee = getRequiredEmployee(id);
+        employee.setRealName(request.realName().trim());
+        employee.setPreferredName(normalizeNullable(request.preferredName()));
+        employee.setGender(normalizeNullable(request.gender()));
+        employee.setMobile(normalizeNullable(request.mobile()));
+        employee.setEmail(normalizeNullable(request.email()));
+        if (hasText(request.idCardNumber())) {
+            employee.setIdCardMasked(maskIdCard(request.idCardNumber()));
+            employee.setIdCardEncrypted(null);
+        }
+        employee.setUserId(request.userId());
+        employee.setProbationEndDate(request.probationEndDate());
+        employee.setRemark(normalizeNullable(request.remark()));
+        employee.setUpdatedAt(LocalDateTime.now());
+        employeeMapper.updateById(employee);
         return toResponse(employeeMapper.selectById(employee.getId()));
     }
 

@@ -99,9 +99,9 @@ const [ExpiringGrid, expiringGridApi] = useVbenVxeGrid({
 async function loadEmployeeList() {
   try {
     const res = await getEmployeeList({
-      page: 1,
+      pageNum: 1,
       pageSize: 50,
-      realName: searchEmployeeValue.value || undefined,
+      keyword: searchEmployeeValue.value || undefined,
     });
     employees.value = res.items;
     if (res.items.length > 0 && !selectedEmployeeId.value) {

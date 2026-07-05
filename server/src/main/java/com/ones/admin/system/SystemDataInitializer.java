@@ -91,6 +91,7 @@ public class SystemDataInitializer implements ApplicationRunner {
                 ensurePermission("hr:employee:detail", "员工详情"),
                 ensurePermission("hr:employee:lifecycle", "员工生命周期查询"),
                 ensurePermission("hr:employee:create", "员工新增"),
+                ensurePermission("hr:employee:update", "员工编辑"),
                 ensurePermission("hr:employee:transfer", "员工调岗"),
                 ensurePermission("hr:employee:regularize", "员工转正"),
                 ensurePermission("hr:employee:resign", "员工离职"),
@@ -302,12 +303,14 @@ public class SystemDataInitializer implements ApplicationRunner {
                 null, null, "hr:employee:lifecycle", "lucide:history", "button", 12);
         ensureMenu(hrEmployee.getId(), "HrEmployeeCreate", "员工新增", "/hr/employee#create",
                 null, null, "hr:employee:create", "lucide:user-plus", "button", 13);
+        ensureMenu(hrEmployee.getId(), "HrEmployeeUpdate", "员工编辑", "/hr/employee#update",
+                null, null, "hr:employee:update", "lucide:user-pen", "button", 14);
         ensureMenu(hrEmployee.getId(), "HrEmployeeTransfer", "员工调岗", "/hr/employee#transfer",
-                null, null, "hr:employee:transfer", "lucide:shuffle", "button", 14);
+                null, null, "hr:employee:transfer", "lucide:shuffle", "button", 15);
         ensureMenu(hrEmployee.getId(), "HrEmployeeRegularize", "员工转正", "/hr/employee#regularize",
-                null, null, "hr:employee:regularize", "lucide:badge-check", "button", 15);
+                null, null, "hr:employee:regularize", "lucide:badge-check", "button", 16);
         ensureMenu(hrEmployee.getId(), "HrEmployeeResign", "员工离职", "/hr/employee#resign",
-                null, null, "hr:employee:resign", "lucide:user-minus", "button", 16);
+                null, null, "hr:employee:resign", "lucide:user-minus", "button", 17);
 
         SystemMenuEntity hrPosition = ensureMenu(hrms.getId(), "HrPosition", "岗位管理", "/hr/position",
                 "/hr/position/list", null, "hr:position:list", "lucide:briefcase-business", "menu", 20);

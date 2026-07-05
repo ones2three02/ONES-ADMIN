@@ -13,6 +13,16 @@ export function useFormSchema(): VbenFormSchema[] {
   return [
     {
       component: 'Input',
+      fieldName: 'employeeNo',
+      label: $t('hr.employee.employeeNo'),
+      rules: 'required',
+      dependencies: {
+        show: (values) => !values.id,
+        triggerFields: ['id'],
+      },
+    },
+    {
+      component: 'Input',
       fieldName: 'realName',
       label: $t('hr.employee.realName'),
       rules: 'required',
@@ -48,12 +58,8 @@ export function useFormSchema(): VbenFormSchema[] {
     },
     {
       component: 'Input',
-      fieldName: 'idCard',
+      fieldName: 'idCardNumber',
       label: $t('hr.employee.idCard'),
-      dependencies: {
-        show: (values) => !values.id,
-        triggerFields: ['id'],
-      },
     },
     {
       component: 'ApiTreeSelect',
@@ -68,6 +74,10 @@ export function useFormSchema(): VbenFormSchema[] {
       fieldName: 'deptId',
       label: $t('hr.employee.deptName'),
       rules: 'required',
+      dependencies: {
+        show: (values) => !values.id,
+        triggerFields: ['id'],
+      },
     },
     {
       component: 'ApiSelect',
@@ -78,6 +88,10 @@ export function useFormSchema(): VbenFormSchema[] {
       },
       fieldName: 'positionId',
       label: $t('hr.employee.positionName'),
+      dependencies: {
+        show: (values) => !values.id,
+        triggerFields: ['id'],
+      },
     },
     {
       component: 'ApiSelect',
@@ -88,6 +102,10 @@ export function useFormSchema(): VbenFormSchema[] {
       },
       fieldName: 'gradeId',
       label: $t('hr.employee.gradeName'),
+      dependencies: {
+        show: (values) => !values.id,
+        triggerFields: ['id'],
+      },
     },
     {
       component: 'ApiSelect',
@@ -98,6 +116,10 @@ export function useFormSchema(): VbenFormSchema[] {
       },
       fieldName: 'managerEmployeeId',
       label: $t('hr.employee.managerName'),
+      dependencies: {
+        show: (values) => !values.id,
+        triggerFields: ['id'],
+      },
     },
     {
       component: 'Select',
@@ -112,6 +134,27 @@ export function useFormSchema(): VbenFormSchema[] {
       fieldName: 'employmentType',
       label: $t('hr.employee.employmentType'),
       rules: 'required',
+      dependencies: {
+        show: (values) => !values.id,
+        triggerFields: ['id'],
+      },
+    },
+    {
+      component: 'Select',
+      componentProps: {
+        options: [
+          { label: '在职(正式)', value: 'ACTIVE' },
+          { label: '试用期', value: 'PROBATION' },
+          { label: '停职', value: 'SUSPENDED' },
+          { label: '已离职', value: 'RESIGNED' },
+        ],
+      },
+      fieldName: 'employmentStatus',
+      label: $t('hr.employee.employmentStatus'),
+      dependencies: {
+        show: (values) => !values.id,
+        triggerFields: ['id'],
+      },
     },
     {
       component: 'DatePicker',
@@ -127,18 +170,12 @@ export function useFormSchema(): VbenFormSchema[] {
       },
     },
     {
-      component: 'InputNumber',
+      component: 'DatePicker',
       componentProps: {
-        min: 0,
-        precision: 0,
-        style: { width: '100%' },
+        valueFormat: 'YYYY-MM-DD',
       },
-      fieldName: 'probationMonths',
-      label: '试用期(月)',
-      dependencies: {
-        show: (values) => !values.id,
-        triggerFields: ['id'],
-      },
+      fieldName: 'probationEndDate',
+      label: $t('hr.employee.probationEndDate'),
     },
     {
       component: 'Textarea',
@@ -219,7 +256,7 @@ export function useRegularizeSchema(): VbenFormSchema[] {
       componentProps: {
         valueFormat: 'YYYY-MM-DD',
       },
-      fieldName: 'actualRegularizeDate',
+      fieldName: 'regularizeDate',
       label: '实际转正日期',
       rules: 'required',
     },
@@ -244,7 +281,7 @@ export function useResignSchema(): VbenFormSchema[] {
     },
     {
       component: 'Textarea',
-      fieldName: 'reason',
+      fieldName: 'resignationReason',
       label: '离职原因',
       rules: 'required',
     },
@@ -255,13 +292,8 @@ export function useGridFormSchema(): VbenFormSchema[] {
   return [
     {
       component: 'Input',
-      fieldName: 'realName',
-      label: $t('hr.employee.realName'),
-    },
-    {
-      component: 'Input',
-      fieldName: 'employeeNo',
-      label: $t('hr.employee.employeeNo'),
+      fieldName: 'keyword',
+      label: '姓名/工号/手机/邮箱',
     },
     {
       component: 'Select',
@@ -270,7 +302,7 @@ export function useGridFormSchema(): VbenFormSchema[] {
         options: [
           { label: '在职', value: 'ACTIVE' },
           { label: '试用期', value: 'PROBATION' },
-          { label: '已离职', value: 'TERMINATED' },
+          { label: '已离职', value: 'RESIGNED' },
         ],
       },
       fieldName: 'employmentStatus',
@@ -344,7 +376,8 @@ export function useColumns(): VxeTableGridColumns {
         const statuses: any = {
           ACTIVE: '在职(正式)',
           PROBATION: '试用期',
-          TERMINATED: '已离职',
+          SUSPENDED: '停职',
+          RESIGNED: '已离职',
         };
         return statuses[cellValue] || cellValue;
       },

@@ -30,28 +30,45 @@ export namespace HrEmployeeApi {
   }
 
   export interface EmployeeQuery {
-    page: number;
+    page?: number;
+    pageNum?: number;
     pageSize: number;
-    realName?: string;
-    employeeNo?: string;
+    keyword?: string;
     deptId?: string;
+    positionId?: string;
+    gradeId?: string;
     employmentStatus?: string;
   }
 
   export interface CreateRequest {
+    employeeNo: string;
     realName: string;
     preferredName?: string;
     gender: string;
     mobile: string;
     email: string;
-    idCard?: string;
+    idCardNumber?: string;
+    userId?: string;
     deptId: string;
     positionId?: string;
     gradeId?: string;
     managerEmployeeId?: string;
     employmentType: string;
+    employmentStatus?: string;
     hireDate: string;
-    probationMonths?: number;
+    probationEndDate?: string;
+    remark?: string;
+  }
+
+  export interface UpdateRequest {
+    realName: string;
+    preferredName?: string;
+    gender?: string;
+    mobile?: string;
+    email?: string;
+    idCardNumber?: string;
+    userId?: string;
+    probationEndDate?: string;
     remark?: string;
   }
 
@@ -60,18 +77,19 @@ export namespace HrEmployeeApi {
     positionId?: string;
     gradeId?: string;
     managerEmployeeId?: string;
+    employmentType?: string;
     effectiveDate: string;
     changeReason: string;
   }
 
   export interface RegularizeRequest {
-    actualRegularizeDate: string;
+    regularizeDate: string;
     remark?: string;
   }
 
   export interface ResignRequest {
     leaveDate: string;
-    reason: string;
+    resignationReason: string;
   }
 
   export interface LifecycleEvent {
@@ -90,11 +108,11 @@ export namespace HrEmployeeApi {
 
 export async function getEmployeeList(params: HrEmployeeApi.EmployeeQuery) {
   const res = await requestClient.get<{
-    records: any[];
+    list: any[];
     total: number;
   }>('/hr/employees', { params });
   return {
-    items: res.records.map((item) => ({
+    items: res.list.map((item) => ({
       ...item,
       id: String(item.id),
       deptId: String(item.deptId),
@@ -113,6 +131,10 @@ export async function getEmployee(id: string | number) {
 
 export async function createEmployee(data: HrEmployeeApi.CreateRequest) {
   return await requestClient.post<HrEmployeeApi.HrEmployee>('/hr/employees', data);
+}
+
+export async function updateEmployee(id: string | number, data: HrEmployeeApi.UpdateRequest) {
+  return await requestClient.put<HrEmployeeApi.HrEmployee>(`/hr/employees/${id}`, data);
 }
 
 export async function transferEmployee(id: string | number, data: HrEmployeeApi.TransferRequest) {

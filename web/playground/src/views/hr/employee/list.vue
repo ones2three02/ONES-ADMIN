@@ -62,7 +62,7 @@ const [Grid, gridApi] = useVbenVxeGrid({
         field: 'action',
         fixed: 'right',
         title: $t('common.action'),
-        width: 180,
+        width: 220,
         slots: { default: 'action' },
       },
     ],
@@ -72,7 +72,7 @@ const [Grid, gridApi] = useVbenVxeGrid({
       ajax: {
         query: async ({ page }, formValues) => {
           return await getEmployeeList({
-            page: page.currentPage,
+            pageNum: page.currentPage,
             pageSize: page.pageSize,
             ...formValues,
             deptId: selectedDeptId.value || undefined,
@@ -99,6 +99,10 @@ function onRefresh() {
 
 function onCreate() {
   formDrawerApi.setData({}).open();
+}
+
+function onEdit(row: HrEmployeeApi.HrEmployee) {
+  formDrawerApi.setData(row).open();
 }
 
 function onTransfer(row: HrEmployeeApi.HrEmployee) {
@@ -188,6 +192,12 @@ watch(searchDeptValue, (value) => {
             <VbenTableAction
               :actions="[
                 {
+                  text: $t('hr.employee.editEmployee'),
+                  icon: 'lucide:user-pen',
+                  onClick: () => onEdit(row),
+                  auth: ['hr:employee:update'],
+                },
+                {
                   text: $t('hr.employee.lifecycleEvents'),
                   icon: 'lucide:history',
                   onClick: () => onViewLifecycle(row),
@@ -197,7 +207,7 @@ watch(searchDeptValue, (value) => {
                 {
                   text: $t('hr.employee.transfer'),
                   icon: 'lucide:shuffle',
-                  disabled: row.employmentStatus === 'TERMINATED',
+                  disabled: row.employmentStatus === 'RESIGNED',
                   onClick: () => onTransfer(row),
                   auth: ['hr:employee:transfer'],
                 },
@@ -212,7 +222,7 @@ watch(searchDeptValue, (value) => {
                   text: $t('hr.employee.resign'),
                   icon: 'lucide:user-minus',
                   danger: true,
-                  disabled: row.employmentStatus === 'TERMINATED',
+                  disabled: row.employmentStatus === 'RESIGNED',
                   onClick: () => onResign(row),
                   auth: ['hr:employee:resign'],
                 },
