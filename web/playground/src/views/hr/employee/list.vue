@@ -23,6 +23,7 @@ import {
 } from '../dict-options';
 import Form from './modules/form.vue';
 import Lifecycle from './modules/lifecycle.vue';
+import Profile from './modules/profile.vue';
 import RegularizeForm from './modules/regularize-form.vue';
 import ResignForm from './modules/resign-form.vue';
 import TransferForm from './modules/transfer-form.vue';
@@ -57,6 +58,11 @@ const [LifecycleDrawer, lifecycleDrawerApi] = useVbenDrawer({
   destroyOnClose: true,
 });
 
+const [ProfileDrawer, profileDrawerApi] = useVbenDrawer({
+  connectedComponent: Profile,
+  destroyOnClose: true,
+});
+
 const [Grid, gridApi] = useVbenVxeGrid({
   formOptions: {
     schema: useGridFormSchema(),
@@ -70,7 +76,7 @@ const [Grid, gridApi] = useVbenVxeGrid({
         field: 'action',
         fixed: 'right',
         title: $t('common.action'),
-        width: 220,
+        width: 260,
         slots: { default: 'action' },
       },
     ],
@@ -151,6 +157,10 @@ function onViewLifecycle(row: HrEmployeeApi.HrEmployee) {
   lifecycleDrawerApi.setData(row).open();
 }
 
+function onViewProfile(row: HrEmployeeApi.HrEmployee) {
+  profileDrawerApi.setData(row).open();
+}
+
 async function loadDeptList() {
   try {
     const res = await getDeptList();
@@ -197,6 +207,7 @@ watch(searchDeptValue, (value) => {
     <RegularizeDrawer @success="onRefresh" />
     <ResignDrawer @success="onRefresh" />
     <LifecycleDrawer @success="onRefresh" />
+    <ProfileDrawer @success="onRefresh" />
 
     <div class="flex size-full">
       <!-- 左侧部门树 -->
@@ -231,6 +242,12 @@ watch(searchDeptValue, (value) => {
           <template #action="{ row }">
             <VbenTableAction
               :actions="[
+                {
+                  text: '档案',
+                  icon: 'lucide:user-round-search',
+                  onClick: () => onViewProfile(row),
+                  auth: ['hr:employee:detail'],
+                },
                 {
                   text: $t('hr.employee.editEmployee'),
                   icon: 'lucide:user-pen',
