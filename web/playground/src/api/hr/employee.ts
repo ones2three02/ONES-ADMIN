@@ -124,6 +124,35 @@ export namespace HrEmployeeApi {
     createdAt?: string;
     updatedAt?: string;
   }
+
+  export interface OrgEmployeeNode {
+    id: string;
+    employeeNo: string;
+    realName: string;
+    deptId?: string;
+    deptName?: string;
+    positionId?: string;
+    positionName?: string;
+    gradeId?: string;
+    gradeName?: string;
+    employmentStatus: string;
+  }
+
+  export interface DeptNode {
+    id: string;
+    name: string;
+  }
+
+  export interface EmployeeOrgContext {
+    employeeId: string;
+    deptId?: string;
+    deptName?: string;
+    deptPath: DeptNode[];
+    manager?: OrgEmployeeNode;
+    current: OrgEmployeeNode;
+    directReports: OrgEmployeeNode[];
+    directReportCount: number;
+  }
 }
 
 export async function getEmployeeList(params: HrEmployeeApi.EmployeeQuery) {
@@ -186,6 +215,37 @@ export async function getEmployeeJobs(id: string | number) {
       : undefined,
     positionId: item.positionId ? String(item.positionId) : undefined,
   }));
+}
+
+function normalizeOrgEmployeeNode(node?: HrEmployeeApi.OrgEmployeeNode) {
+  if (!node) {
+    return undefined;
+  }
+  return {
+    ...node,
+    deptId: node.deptId ? String(node.deptId) : undefined,
+    gradeId: node.gradeId ? String(node.gradeId) : undefined,
+    id: String(node.id),
+    positionId: node.positionId ? String(node.positionId) : undefined,
+  };
+}
+
+export async function getEmployeeOrgContext(id: string | number) {
+  const res = await requestClient.get<HrEmployeeApi.EmployeeOrgContext>(
+    `/hr/employees/${id}/org-context`,
+  );
+  return {
+    ...res,
+    current: normalizeOrgEmployeeNode(res.current)!,
+    deptId: res.deptId ? String(res.deptId) : undefined,
+    deptPath: res.deptPath.map((item) => ({
+      ...item,
+      id: String(item.id),
+    })),
+    directReports: res.directReports.map((item) => normalizeOrgEmployeeNode(item)!),
+    employeeId: String(res.employeeId),
+    manager: normalizeOrgEmployeeNode(res.manager),
+  };
 }
 
 export async function exportEmployees(params: HrEmployeeApi.EmployeeQuery) {

@@ -25,6 +25,7 @@ import {
   getEmployeeContracts,
   getEmployeeJobs,
   getEmployeeLifecycleEvents,
+  getEmployeeOrgContext,
 } from '#/api';
 
 import {
@@ -41,6 +42,7 @@ const employee = ref<HrEmployeeApi.HrEmployee>();
 const contracts = ref<HrContractApi.HrContract[]>([]);
 const events = ref<HrEmployeeApi.LifecycleEvent[]>([]);
 const jobs = ref<HrEmployeeApi.EmployeeJob[]>([]);
+const orgContext = ref<HrEmployeeApi.EmployeeOrgContext>();
 const loading = ref(false);
 const { hasAccessByCodes } = useAccess();
 
@@ -63,6 +65,7 @@ const [Drawer, drawerApi] = useVbenDrawer({
     contracts.value = [];
     events.value = [];
     jobs.value = [];
+    orgContext.value = undefined;
     try {
       await Promise.all([
         getHrDictOptions(HR_GENDER_DICT),
@@ -71,18 +74,20 @@ const [Drawer, drawerApi] = useVbenDrawer({
         getHrDictOptions(HR_CONTRACT_TYPE_DICT),
         getHrDictOptions(HR_CONTRACT_STATUS_DICT),
       ]);
-      const [detail, contractRows, lifecycleRows, jobRows] = await Promise.all([
+      const [detail, contractRows, lifecycleRows, jobRows, organization] = await Promise.all([
         getEmployee(row.id),
         canViewContracts.value ? getEmployeeContracts(row.id) : Promise.resolve([]),
         canViewLifecycle.value
           ? getEmployeeLifecycleEvents(row.id)
           : Promise.resolve([]),
         getEmployeeJobs(row.id),
+        getEmployeeOrgContext(row.id),
       ]);
       employee.value = detail;
       contracts.value = contractRows;
       events.value = lifecycleRows;
       jobs.value = jobRows;
+      orgContext.value = organization;
     } finally {
       loading.value = false;
     }
@@ -124,6 +129,11 @@ const summaryItems = computed(() => {
       icon: 'lucide:file-check-2',
       label: '有效合同',
       value: activeContract.value?.contractNo || '-',
+    },
+    {
+      icon: 'lucide:git-branch',
+      label: '直属下级',
+      value: `${orgContext.value?.directReportCount ?? 0}`,
     },
   ];
 });
@@ -178,13 +188,31 @@ function lifecycleColor(type: string) {
 function jobRange(job: HrEmployeeApi.EmployeeJob) {
   return `${empty(job.effectiveDate)} 至 ${empty(job.endDate)}`;
 }
+
+function orgNodeTitle(node?: HrEmployeeApi.OrgEmployeeNode) {
+  if (!node) {
+    return '-';
+  }
+  return `${node.realName}（${node.employeeNo}）`;
+}
+
+function orgNodeMeta(node?: HrEmployeeApi.OrgEmployeeNode) {
+  if (!node) {
+    return '-';
+  }
+  return [
+    node.deptName,
+    node.positionName,
+    node.gradeName,
+  ].filter(Boolean).join(' / ') || '-';
+}
 </script>
 
 <template>
   <Drawer :title="title" :footer="false" class="hr-employee-profile-drawer">
     <Skeleton v-if="loading && !employee" active />
     <div v-else-if="employee" class="flex flex-col gap-4 p-1">
-      <div class="grid gap-3 md:grid-cols-4">
+      <div class="grid gap-3 md:grid-cols-5">
         <Card v-for="item in summaryItems" :key="item.label" variant="borderless">
           <div class="flex items-start justify-between gap-3">
             <div>
@@ -300,6 +328,63 @@ function jobRange(job: HrEmployeeApi.EmployeeJob) {
               </Card>
             </TimelineItem>
           </Timeline>
+          <Empty v-else :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+        </TabPane>
+
+        <TabPane key="organization" tab="组织关系">
+          <div v-if="orgContext" class="flex flex-col gap-3">
+            <Card variant="borderless">
+              <Descriptions bordered :column="2" size="small">
+                <DescriptionsItem label="组织路径" :span="2">
+                  <div class="flex flex-wrap gap-2">
+                    <Tag
+                      v-for="dept in orgContext.deptPath"
+                      :key="dept.id"
+                      color="blue"
+                    >
+                      {{ dept.name }}
+                    </Tag>
+                    <span v-if="!orgContext.deptPath.length">-</span>
+                  </div>
+                </DescriptionsItem>
+                <DescriptionsItem label="当前员工">
+                  {{ orgNodeTitle(orgContext.current) }}
+                </DescriptionsItem>
+                <DescriptionsItem label="当前岗位">
+                  {{ orgNodeMeta(orgContext.current) }}
+                </DescriptionsItem>
+                <DescriptionsItem label="直属上级">
+                  {{ orgNodeTitle(orgContext.manager) }}
+                </DescriptionsItem>
+                <DescriptionsItem label="上级岗位">
+                  {{ orgNodeMeta(orgContext.manager) }}
+                </DescriptionsItem>
+              </Descriptions>
+            </Card>
+
+            <div v-if="orgContext.directReports.length" class="grid gap-3 md:grid-cols-2">
+              <Card
+                v-for="report in orgContext.directReports"
+                :key="report.id"
+                variant="borderless"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="truncate font-medium">
+                      {{ orgNodeTitle(report) }}
+                    </div>
+                    <div class="text-muted-foreground mt-1 truncate text-xs">
+                      {{ orgNodeMeta(report) }}
+                    </div>
+                  </div>
+                  <Tag :color="statusColor(report.employmentStatus)">
+                    {{ dictLabel(HR_EMPLOYMENT_STATUS_DICT, report.employmentStatus) }}
+                  </Tag>
+                </div>
+              </Card>
+            </div>
+            <Empty v-else description="暂无可见直属下级" :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+          </div>
           <Empty v-else :image="Empty.PRESENTED_IMAGE_SIMPLE" />
         </TabPane>
 

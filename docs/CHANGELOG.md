@@ -1,5 +1,14 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.89 - 2026-07-07
+
+- HRMS 新增员工组织关系接口 `GET /api/hr/employees/{id}/org-context`，复用 `hr:employee:detail` 权限和员工数据范围校验。
+- 组织关系返回组织路径、直属上级、当前员工、可见直属下级和直属下级数量，先用现有 `sys_dept`、`hr_employee.manager_employee_id`、岗位和职级数据计算，不新增数据库迁移。
+- 员工档案抽屉新增“组织关系”分栏，继续使用 Vben / Ant Design Vue 的 `Tabs`、`Card`、`Descriptions`、`Tag` 和 `Empty` 组合。
+- 对标 Frappe HRMS 的 employee profile 中心入口思路，ONES-ADMIN 将员工档案继续从静态详情推进为组织关系、任职记录、生命周期和合同的统一入口。
+- 补充 HRMS 管理接口测试、接口治理 Manifest 断言和员工档案 E2E 断言。
+- 产品版本递增至 `v0.0.89`。
+
 ## v0.0.88 - 2026-07-07
 
 - HRMS 新增员工任职记录接口 `GET /api/hr/employees/{id}/jobs`，复用 `hr:employee:detail` 权限和员工数据范围校验。

@@ -13,6 +13,7 @@ import com.ones.admin.common.web.PageResult;
 import com.ones.admin.hr.dto.HrEmployeeCreateRequest;
 import com.ones.admin.hr.dto.HrEmployeeJobResponse;
 import com.ones.admin.hr.dto.HrEmployeeLifecycleEventResponse;
+import com.ones.admin.hr.dto.HrEmployeeOrgContextResponse;
 import com.ones.admin.hr.dto.HrEmployeeQuery;
 import com.ones.admin.hr.dto.HrEmployeeRegularizeRequest;
 import com.ones.admin.hr.dto.HrEmployeeResignRequest;
@@ -184,6 +185,45 @@ public class HrEmployeeService {
         return jobs.stream()
                 .map(job -> toJobResponse(job, deptNames, positionNames, gradeNames, managerNames))
                 .toList();
+    }
+
+    public HrEmployeeOrgContextResponse getEmployeeOrgContext(Long employeeId) {
+        HrEmployeeEntity employee = getVisibleEmployee(employeeId);
+        DataScopeContext dataScope = dataScopeService.currentContext();
+        HrEmployeeEntity rawManager = employee.getManagerEmployeeId() == null
+                ? null
+                : employeeMapper.selectById(employee.getManagerEmployeeId());
+        HrEmployeeEntity manager = rawManager != null && dataScope.canAccess(rawManager.getDeptId(), rawManager.getUserId())
+                ? rawManager
+                : null;
+        LambdaQueryWrapper<HrEmployeeEntity> directReportQuery = new LambdaQueryWrapper<HrEmployeeEntity>()
+                .eq(HrEmployeeEntity::getManagerEmployeeId, employeeId)
+                .ne(HrEmployeeEntity::getEmploymentStatus, "RESIGNED")
+                .orderByAsc(HrEmployeeEntity::getEmployeeNo)
+                .orderByAsc(HrEmployeeEntity::getId);
+        applyDataScope(directReportQuery, dataScope);
+        List<HrEmployeeEntity> directReports = employeeMapper.selectList(directReportQuery);
+
+        List<HrEmployeeEntity> employeeNodes = new java.util.ArrayList<>(directReports);
+        employeeNodes.add(employee);
+        if (manager != null) {
+            employeeNodes.add(manager);
+        }
+        Map<Long, String> deptNames = loadDeptNames(employeeNodes);
+        Map<Long, String> positionNames = loadPositionNames(employeeNodes);
+        Map<Long, String> gradeNames = loadGradeNames(employeeNodes);
+        return new HrEmployeeOrgContextResponse(
+                employee.getId(),
+                employee.getDeptId(),
+                nameOf(deptNames, employee.getDeptId()),
+                buildDeptPath(employee.getDeptId()),
+                manager == null ? null : toOrgEmployeeNode(manager, deptNames, positionNames, gradeNames),
+                toOrgEmployeeNode(employee, deptNames, positionNames, gradeNames),
+                directReports.stream()
+                        .map(report -> toOrgEmployeeNode(report, deptNames, positionNames, gradeNames))
+                        .toList(),
+                directReports.size()
+        );
     }
 
     @Transactional
@@ -730,6 +770,47 @@ public class HrEmployeeService {
                 job.getCreatedAt(),
                 job.getUpdatedAt()
         );
+    }
+
+    private HrEmployeeOrgContextResponse.EmployeeNode toOrgEmployeeNode(
+            HrEmployeeEntity employee,
+            Map<Long, String> deptNames,
+            Map<Long, String> positionNames,
+            Map<Long, String> gradeNames
+    ) {
+        return new HrEmployeeOrgContextResponse.EmployeeNode(
+                employee.getId(),
+                employee.getEmployeeNo(),
+                employee.getRealName(),
+                employee.getDeptId(),
+                nameOf(deptNames, employee.getDeptId()),
+                employee.getPositionId(),
+                nameOf(positionNames, employee.getPositionId()),
+                employee.getGradeId(),
+                nameOf(gradeNames, employee.getGradeId()),
+                employee.getEmploymentStatus()
+        );
+    }
+
+    private List<HrEmployeeOrgContextResponse.DeptNode> buildDeptPath(Long deptId) {
+        if (deptId == null) {
+            return List.of();
+        }
+        List<SystemDeptEntity> path = new java.util.ArrayList<>();
+        Long cursor = deptId;
+        Set<Long> visited = new java.util.HashSet<>();
+        while (cursor != null && visited.add(cursor)) {
+            SystemDeptEntity dept = deptMapper.selectById(cursor);
+            if (dept == null) {
+                break;
+            }
+            path.add(dept);
+            cursor = dept.getParentId();
+        }
+        java.util.Collections.reverse(path);
+        return path.stream()
+                .map(dept -> new HrEmployeeOrgContextResponse.DeptNode(dept.getId(), dept.getName()))
+                .toList();
     }
 
     private Map<Long, String> loadDeptNamesFromJobs(List<HrEmployeeJobEntity> jobs) {

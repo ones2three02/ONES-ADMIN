@@ -62,6 +62,17 @@ class HrManagementControllerTest {
         String employeeResponse = createEmployee(token, suffix, positionId, gradeId, idCardNumber);
         assertThat(employeeResponse).doesNotContain(idCardNumber);
         long employeeId = objectMapper.readTree(employeeResponse).at("/data/id").asLong();
+        String managerResponse = createEmployee(token, "MGR" + suffix, positionId, gradeId, "110101198801011234");
+        long managerId = objectMapper.readTree(managerResponse).at("/data/id").asLong();
+        String reportResponse = createEmployee(
+                token,
+                "RPT" + suffix,
+                positionId,
+                gradeId,
+                "110101199501011234",
+                employeeId
+        );
+        long reportEmployeeId = objectMapper.readTree(reportResponse).at("/data/id").asLong();
 
         mockMvc.perform(get("/api/hr/employees/" + employeeId)
                         .header("Authorization", "Bearer " + token))
@@ -93,7 +104,7 @@ class HrManagementControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.idCardMasked").value("110****5678"));
 
-        transferEmployee(token, employeeId, transferPositionId, transferGradeId);
+        transferEmployee(token, employeeId, transferPositionId, transferGradeId, managerId);
         mockMvc.perform(get("/api/hr/employees/" + employeeId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
@@ -186,6 +197,23 @@ class HrManagementControllerTest {
                 .andExpect(jsonPath("$.data[1].effectiveDate").value("2026-07-01"))
                 .andExpect(jsonPath("$.data[1].endDate").value("2026-07-31"))
                 .andExpect(jsonPath("$.data[1].changeReason").value("员工入职初始化任职记录"));
+
+        mockMvc.perform(get("/api/hr/employees/" + employeeId + "/org-context")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.employeeId").value(employeeId))
+                .andExpect(jsonPath("$.data.deptName").value("ONES 总部"))
+                .andExpect(jsonPath("$.data.deptPath.length()").value(1))
+                .andExpect(jsonPath("$.data.deptPath[0].name").value("ONES 总部"))
+                .andExpect(jsonPath("$.data.manager.id").value(managerId))
+                .andExpect(jsonPath("$.data.manager.realName").value("张三"))
+                .andExpect(jsonPath("$.data.current.id").value(employeeId))
+                .andExpect(jsonPath("$.data.current.realName").value("张三丰"))
+                .andExpect(jsonPath("$.data.current.positionName").value("架构师"))
+                .andExpect(jsonPath("$.data.directReportCount").value(1))
+                .andExpect(jsonPath("$.data.directReports[0].id").value(reportEmployeeId))
+                .andExpect(jsonPath("$.data.directReports[0].realName").value("张三"))
+                .andExpect(jsonPath("$.data.directReports[0].positionName").value("运维工程师"));
 
         mockMvc.perform(post("/api/hr/employees/" + employeeId + "/transfer")
                         .header("Authorization", "Bearer " + token)
@@ -491,11 +519,21 @@ class HrManagementControllerTest {
     }
 
     private void transferEmployee(String token, long employeeId, long positionId, long gradeId) throws Exception {
+        transferEmployee(token, employeeId, positionId, gradeId, null);
+    }
+
+    private void transferEmployee(
+            String token,
+            long employeeId,
+            long positionId,
+            long gradeId,
+            Long managerEmployeeId
+    ) throws Exception {
         String body = objectMapper.writeValueAsString(new HrEmployeeTransferRequest(
                 1L,
                 positionId,
                 gradeId,
-                null,
+                managerEmployeeId,
                 "FULL_TIME",
                 LocalDate.of(2026, 8, 1),
                 "组织架构调整"
@@ -608,6 +646,46 @@ class HrManagementControllerTest {
                 positionId,
                 gradeId,
                 null,
+                "FULL_TIME",
+                "PROBATION",
+                LocalDate.of(2026, 7, 1),
+                LocalDate.of(2026, 10, 1),
+                "HRMS Phase 1A 测试员工"
+        ));
+        return mockMvc.perform(post("/api/hr/employees")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id", notNullValue()))
+                .andExpect(jsonPath("$.data.employeeNo").value("E" + suffix))
+                .andExpect(jsonPath("$.data.employmentStatus").value("PROBATION"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+    }
+
+    private String createEmployee(
+            String token,
+            String suffix,
+            long positionId,
+            long gradeId,
+            String idCardNumber,
+            Long managerEmployeeId
+    ) throws Exception {
+        String body = objectMapper.writeValueAsString(new HrEmployeeCreateRequest(
+                "E" + suffix,
+                "张三",
+                "三三",
+                "MALE",
+                "13800138000",
+                "zhangsan" + suffix + "@ones.local",
+                idCardNumber,
+                null,
+                1L,
+                positionId,
+                gradeId,
+                managerEmployeeId,
                 "FULL_TIME",
                 "PROBATION",
                 LocalDate.of(2026, 7, 1),

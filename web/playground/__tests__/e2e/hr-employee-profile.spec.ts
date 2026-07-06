@@ -59,11 +59,19 @@ test.describe('HRMS Employee Profile', () => {
     await expect(page.getByRole('tab', { name: '基础信息' })).toBeVisible();
     await expect(page.getByRole('tab', { name: '合同' })).toBeVisible();
     await expect(page.getByRole('tab', { name: '任职记录' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: '组织关系' })).toBeVisible();
     await expect(page.getByRole('tab', { name: '生命周期' })).toBeVisible();
 
     await page.getByRole('tab', { name: '任职记录' }).click();
     await expect(
       profileDrawer.getByText('员工入职初始化任职记录'),
+    ).toBeVisible();
+
+    await page.getByRole('tab', { name: '组织关系' }).click();
+    await expect(profileDrawer.getByText('组织路径')).toBeVisible();
+    await expect(profileDrawer.getByText('当前员工')).toBeVisible();
+    await expect(
+      profileDrawer.locator('.ant-tag').filter({ hasText: 'ONES 总部' }),
     ).toBeVisible();
   });
 });

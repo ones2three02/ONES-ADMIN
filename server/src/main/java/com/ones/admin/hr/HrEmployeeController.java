@@ -10,6 +10,7 @@ import com.ones.admin.common.web.PageResult;
 import com.ones.admin.hr.dto.HrEmployeeCreateRequest;
 import com.ones.admin.hr.dto.HrEmployeeJobResponse;
 import com.ones.admin.hr.dto.HrEmployeeLifecycleEventResponse;
+import com.ones.admin.hr.dto.HrEmployeeOrgContextResponse;
 import com.ones.admin.hr.dto.HrEmployeeQuery;
 import com.ones.admin.hr.dto.HrEmployeeRegularizeRequest;
 import com.ones.admin.hr.dto.HrEmployeeResignRequest;
@@ -79,6 +80,14 @@ public class HrEmployeeController {
     @ApiResourceMetadata(sinceVersion = "v0.0.88", riskLevel = ApiRiskLevel.MEDIUM)
     public ApiResult<List<HrEmployeeJobResponse>> listEmployeeJobs(@PathVariable Long id) {
         return ApiResult.ok(employeeService.listEmployeeJobs(id));
+    }
+
+    @GetMapping("/{id}/org-context")
+    @SaCheckPermission("hr:employee:detail")
+    @Operation(operationId = "HrEmployeeController_getEmployeeOrgContext", summary = "查询员工组织关系")
+    @ApiResourceMetadata(sinceVersion = "v0.0.89", riskLevel = ApiRiskLevel.MEDIUM)
+    public ApiResult<HrEmployeeOrgContextResponse> getEmployeeOrgContext(@PathVariable Long id) {
+        return ApiResult.ok(employeeService.getEmployeeOrgContext(id));
     }
 
     @GetMapping("/{id}/lifecycle-events")
