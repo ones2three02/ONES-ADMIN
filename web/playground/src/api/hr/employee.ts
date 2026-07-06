@@ -105,6 +105,25 @@ export namespace HrEmployeeApi {
     createdByName?: string;
     createdAt: string;
   }
+
+  export interface EmployeeJob {
+    id: string;
+    employeeId: string;
+    deptId?: string;
+    deptName?: string;
+    positionId?: string;
+    positionName?: string;
+    gradeId?: string;
+    gradeName?: string;
+    managerEmployeeId?: string;
+    managerName?: string;
+    employmentType: string;
+    effectiveDate: string;
+    endDate?: string;
+    changeReason?: string;
+    createdAt?: string;
+    updatedAt?: string;
+  }
 }
 
 export async function getEmployeeList(params: HrEmployeeApi.EmployeeQuery) {
@@ -152,6 +171,21 @@ export async function resignEmployee(id: string | number, data: HrEmployeeApi.Re
 
 export async function getEmployeeLifecycleEvents(id: string | number) {
   return await requestClient.get<HrEmployeeApi.LifecycleEvent[]>(`/hr/employees/${id}/lifecycle-events`);
+}
+
+export async function getEmployeeJobs(id: string | number) {
+  const res = await requestClient.get<HrEmployeeApi.EmployeeJob[]>(`/hr/employees/${id}/jobs`);
+  return res.map((item) => ({
+    ...item,
+    id: String(item.id),
+    employeeId: String(item.employeeId),
+    deptId: item.deptId ? String(item.deptId) : undefined,
+    gradeId: item.gradeId ? String(item.gradeId) : undefined,
+    managerEmployeeId: item.managerEmployeeId
+      ? String(item.managerEmployeeId)
+      : undefined,
+    positionId: item.positionId ? String(item.positionId) : undefined,
+  }));
 }
 
 export async function exportEmployees(params: HrEmployeeApi.EmployeeQuery) {

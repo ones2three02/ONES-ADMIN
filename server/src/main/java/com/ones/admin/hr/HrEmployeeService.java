@@ -11,6 +11,7 @@ import com.ones.admin.common.security.SensitiveDataMaskingUtils;
 import com.ones.admin.common.web.CsvExportUtils;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.hr.dto.HrEmployeeCreateRequest;
+import com.ones.admin.hr.dto.HrEmployeeJobResponse;
 import com.ones.admin.hr.dto.HrEmployeeLifecycleEventResponse;
 import com.ones.admin.hr.dto.HrEmployeeQuery;
 import com.ones.admin.hr.dto.HrEmployeeRegularizeRequest;
@@ -167,6 +168,21 @@ public class HrEmployeeService {
                         .orderByDesc(HrEmployeeLifecycleEventEntity::getId))
                 .stream()
                 .map(this::toLifecycleEventResponse)
+                .toList();
+    }
+
+    public List<HrEmployeeJobResponse> listEmployeeJobs(Long employeeId) {
+        getVisibleEmployee(employeeId);
+        List<HrEmployeeJobEntity> jobs = employeeJobMapper.selectList(new LambdaQueryWrapper<HrEmployeeJobEntity>()
+                .eq(HrEmployeeJobEntity::getEmployeeId, employeeId)
+                .orderByDesc(HrEmployeeJobEntity::getEffectiveDate)
+                .orderByDesc(HrEmployeeJobEntity::getId));
+        Map<Long, String> deptNames = loadDeptNamesFromJobs(jobs);
+        Map<Long, String> positionNames = loadPositionNamesFromJobs(jobs);
+        Map<Long, String> gradeNames = loadGradeNamesFromJobs(jobs);
+        Map<Long, String> managerNames = loadManagerNamesFromJobs(jobs);
+        return jobs.stream()
+                .map(job -> toJobResponse(job, deptNames, positionNames, gradeNames, managerNames))
                 .toList();
     }
 
@@ -687,6 +703,81 @@ public class HrEmployeeService {
                 event.getCreatedBy(),
                 event.getCreatedAt()
         );
+    }
+
+    private HrEmployeeJobResponse toJobResponse(
+            HrEmployeeJobEntity job,
+            Map<Long, String> deptNames,
+            Map<Long, String> positionNames,
+            Map<Long, String> gradeNames,
+            Map<Long, String> managerNames
+    ) {
+        return new HrEmployeeJobResponse(
+                job.getId(),
+                job.getEmployeeId(),
+                job.getDeptId(),
+                nameOf(deptNames, job.getDeptId()),
+                job.getPositionId(),
+                nameOf(positionNames, job.getPositionId()),
+                job.getGradeId(),
+                nameOf(gradeNames, job.getGradeId()),
+                job.getManagerEmployeeId(),
+                nameOf(managerNames, job.getManagerEmployeeId()),
+                job.getEmploymentType(),
+                job.getEffectiveDate(),
+                job.getEndDate(),
+                job.getChangeReason(),
+                job.getCreatedAt(),
+                job.getUpdatedAt()
+        );
+    }
+
+    private Map<Long, String> loadDeptNamesFromJobs(List<HrEmployeeJobEntity> jobs) {
+        List<Long> ids = uniqueJobIds(jobs, HrEmployeeJobEntity::getDeptId);
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return deptMapper.selectBatchIds(ids)
+                .stream()
+                .collect(Collectors.toMap(SystemDeptEntity::getId, SystemDeptEntity::getName));
+    }
+
+    private Map<Long, String> loadPositionNamesFromJobs(List<HrEmployeeJobEntity> jobs) {
+        List<Long> ids = uniqueJobIds(jobs, HrEmployeeJobEntity::getPositionId);
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return positionMapper.selectBatchIds(ids)
+                .stream()
+                .collect(Collectors.toMap(HrPositionEntity::getId, HrPositionEntity::getPositionName));
+    }
+
+    private Map<Long, String> loadGradeNamesFromJobs(List<HrEmployeeJobEntity> jobs) {
+        List<Long> ids = uniqueJobIds(jobs, HrEmployeeJobEntity::getGradeId);
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return jobGradeMapper.selectBatchIds(ids)
+                .stream()
+                .collect(Collectors.toMap(HrJobGradeEntity::getId, HrJobGradeEntity::getGradeName));
+    }
+
+    private Map<Long, String> loadManagerNamesFromJobs(List<HrEmployeeJobEntity> jobs) {
+        List<Long> ids = uniqueJobIds(jobs, HrEmployeeJobEntity::getManagerEmployeeId);
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return employeeMapper.selectBatchIds(ids)
+                .stream()
+                .collect(Collectors.toMap(HrEmployeeEntity::getId, HrEmployeeEntity::getRealName));
+    }
+
+    private List<Long> uniqueJobIds(List<HrEmployeeJobEntity> jobs, Function<HrEmployeeJobEntity, Long> idGetter) {
+        return jobs.stream()
+                .map(idGetter)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
     }
 
     private Map<String, Object> readLifecycleDetail(String detailJson) {

@@ -23,6 +23,7 @@ import {
 import {
   getEmployee,
   getEmployeeContracts,
+  getEmployeeJobs,
   getEmployeeLifecycleEvents,
 } from '#/api';
 
@@ -39,6 +40,7 @@ import {
 const employee = ref<HrEmployeeApi.HrEmployee>();
 const contracts = ref<HrContractApi.HrContract[]>([]);
 const events = ref<HrEmployeeApi.LifecycleEvent[]>([]);
+const jobs = ref<HrEmployeeApi.EmployeeJob[]>([]);
 const loading = ref(false);
 const { hasAccessByCodes } = useAccess();
 
@@ -60,6 +62,7 @@ const [Drawer, drawerApi] = useVbenDrawer({
     employee.value = undefined;
     contracts.value = [];
     events.value = [];
+    jobs.value = [];
     try {
       await Promise.all([
         getHrDictOptions(HR_GENDER_DICT),
@@ -68,16 +71,18 @@ const [Drawer, drawerApi] = useVbenDrawer({
         getHrDictOptions(HR_CONTRACT_TYPE_DICT),
         getHrDictOptions(HR_CONTRACT_STATUS_DICT),
       ]);
-      const [detail, contractRows, lifecycleRows] = await Promise.all([
+      const [detail, contractRows, lifecycleRows, jobRows] = await Promise.all([
         getEmployee(row.id),
         canViewContracts.value ? getEmployeeContracts(row.id) : Promise.resolve([]),
         canViewLifecycle.value
           ? getEmployeeLifecycleEvents(row.id)
           : Promise.resolve([]),
+        getEmployeeJobs(row.id),
       ]);
       employee.value = detail;
       contracts.value = contractRows;
       events.value = lifecycleRows;
+      jobs.value = jobRows;
     } finally {
       loading.value = false;
     }
@@ -152,7 +157,7 @@ function statusColor(status?: string) {
 
 function lifecycleColor(type: string) {
   switch (type) {
-    case 'HIRE': {
+    case 'ONBOARD': {
       return 'green';
     }
     case 'REGULARIZE': {
@@ -168,6 +173,10 @@ function lifecycleColor(type: string) {
       return 'gray';
     }
   }
+}
+
+function jobRange(job: HrEmployeeApi.EmployeeJob) {
+  return `${empty(job.effectiveDate)} 至 ${empty(job.endDate)}`;
 }
 </script>
 
@@ -247,6 +256,50 @@ function lifecycleColor(type: string) {
               </div>
             </Card>
           </div>
+          <Empty v-else :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+        </TabPane>
+
+        <TabPane key="jobs" tab="任职记录">
+          <Timeline v-if="jobs.length" class="mt-2">
+            <TimelineItem
+              v-for="job in jobs"
+              :key="job.id"
+              :color="job.endDate ? 'gray' : 'green'"
+            >
+              <Card variant="borderless">
+                <div class="flex flex-col gap-3">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="font-medium">{{ empty(job.positionName) }}</span>
+                      <Tag :color="job.endDate ? 'default' : 'success'">
+                        {{ job.endDate ? '历史任职' : '当前任职' }}
+                      </Tag>
+                    </div>
+                    <span class="text-muted-foreground text-xs">
+                      {{ jobRange(job) }}
+                    </span>
+                  </div>
+                  <Descriptions bordered :column="2" size="small">
+                    <DescriptionsItem label="部门">
+                      {{ empty(job.deptName) }}
+                    </DescriptionsItem>
+                    <DescriptionsItem label="职级">
+                      {{ empty(job.gradeName) }}
+                    </DescriptionsItem>
+                    <DescriptionsItem label="直属上级">
+                      {{ empty(job.managerName) }}
+                    </DescriptionsItem>
+                    <DescriptionsItem label="用工类型">
+                      {{ dictLabel(HR_EMPLOYMENT_TYPE_DICT, job.employmentType) }}
+                    </DescriptionsItem>
+                    <DescriptionsItem label="变动原因" :span="2">
+                      {{ empty(job.changeReason) }}
+                    </DescriptionsItem>
+                  </Descriptions>
+                </div>
+              </Card>
+            </TimelineItem>
+          </Timeline>
           <Empty v-else :image="Empty.PRESENTED_IMAGE_SIMPLE" />
         </TabPane>
 

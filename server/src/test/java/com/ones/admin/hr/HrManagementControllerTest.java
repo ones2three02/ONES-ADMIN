@@ -169,6 +169,24 @@ class HrManagementControllerTest {
                 .andExpect(jsonPath("$.data[3].eventType").value("ONBOARD"))
                 .andExpect(jsonPath("$.data[3].detail.employeeNo").value("E" + suffix));
 
+        mockMvc.perform(get("/api/hr/employees/" + employeeId + "/jobs")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].employeeId").value(employeeId))
+                .andExpect(jsonPath("$.data[0].positionName").value("架构师"))
+                .andExpect(jsonPath("$.data[0].gradeName").value("P8"))
+                .andExpect(jsonPath("$.data[0].employmentType").value("FULL_TIME"))
+                .andExpect(jsonPath("$.data[0].effectiveDate").value("2026-08-01"))
+                .andExpect(jsonPath("$.data[0].endDate").value("2026-12-31"))
+                .andExpect(jsonPath("$.data[0].changeReason").value("组织架构调整"))
+                .andExpect(jsonPath("$.data[1].employeeId").value(employeeId))
+                .andExpect(jsonPath("$.data[1].positionName").value("运维工程师"))
+                .andExpect(jsonPath("$.data[1].gradeName").value("P7"))
+                .andExpect(jsonPath("$.data[1].effectiveDate").value("2026-07-01"))
+                .andExpect(jsonPath("$.data[1].endDate").value("2026-07-31"))
+                .andExpect(jsonPath("$.data[1].changeReason").value("员工入职初始化任职记录"));
+
         mockMvc.perform(post("/api/hr/employees/" + employeeId + "/transfer")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
