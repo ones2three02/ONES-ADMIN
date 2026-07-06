@@ -11,7 +11,7 @@ import { Button, message, Upload } from 'antdv-next';
 import { useVbenForm } from '#/adapter/form';
 import {
   createContract,
-  getFileMetadata,
+  getContractAttachmentMetadata,
   updateContract,
   uploadSystemFile,
 } from '#/api';
@@ -30,6 +30,10 @@ const attachmentLoading = ref(false);
 const uploadLoading = ref(false);
 
 type ContractFormValues = Partial<HrContractApi.SaveRequest>;
+type AttachmentMetadataContext = {
+  attachmentFileId?: string;
+  id?: string | number;
+};
 type UploadRequestOptions = {
   file: Blob | File | string;
   onError?: (error: Error) => void;
@@ -90,7 +94,7 @@ const [Drawer, drawerApi] = useVbenDrawer({
       await nextTick();
       if (data && data.contract) {
         formApi.setValues(data.contract);
-        await loadAttachmentMetadata(data.contract.attachmentFileId);
+        await loadAttachmentMetadata(data.contract);
       }
     }
   },
@@ -134,15 +138,15 @@ function resetAttachment() {
   uploadLoading.value = false;
 }
 
-async function loadAttachmentMetadata(fileId?: string) {
+async function loadAttachmentMetadata(contract?: AttachmentMetadataContext) {
   attachmentFile.value = undefined;
-  attachmentFileId.value = fileId;
-  if (!fileId) {
+  attachmentFileId.value = contract?.attachmentFileId;
+  if (!contract?.id || !contract.attachmentFileId) {
     return undefined;
   }
   attachmentLoading.value = true;
   try {
-    const metadata = await getFileMetadata(fileId);
+    const metadata = await getContractAttachmentMetadata(contract.id);
     attachmentFile.value = metadata;
     attachmentFileId.value = metadata.id;
     await formApi.setFieldValue('attachmentFileId', metadata.id, false);
@@ -198,7 +202,14 @@ async function handleCustomUpload(options: UploadRequestOptions) {
 async function previewAttachment() {
   const file =
     attachmentFile.value ||
-    (await loadAttachmentMetadata(attachmentFileId.value));
+    (await loadAttachmentMetadata(
+      contractId.value && attachmentFileId.value
+        ? {
+            attachmentFileId: attachmentFileId.value,
+            id: contractId.value,
+          }
+        : undefined,
+    ));
   if (!file?.url) {
     message.warning($t('hr.contract.attachmentOpenUnavailable'));
     return;
@@ -265,7 +276,7 @@ async function previewAttachment() {
               :loading="attachmentLoading"
               size="small"
               type="link"
-              v-access:code="['system:file:read']"
+              v-access:code="['hr:contract:list']"
               @click="previewAttachment"
             >
               {{ $t('hr.contract.viewAttachment') }}

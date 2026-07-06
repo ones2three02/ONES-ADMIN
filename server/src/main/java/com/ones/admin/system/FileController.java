@@ -49,15 +49,18 @@ public class FileController {
     private final FileStorageProperties fileStorageProperties;
     private final FileStorageService fileStorageService;
     private final FileMetadataService fileMetadataService;
+    private final FileAccessService fileAccessService;
 
     public FileController(
             FileStorageProperties fileStorageProperties,
             FileStorageService fileStorageService,
-            FileMetadataService fileMetadataService
+            FileMetadataService fileMetadataService,
+            FileAccessService fileAccessService
     ) {
         this.fileStorageProperties = fileStorageProperties;
         this.fileStorageService = fileStorageService;
         this.fileMetadataService = fileMetadataService;
+        this.fileAccessService = fileAccessService;
     }
 
     @PostMapping("/upload")
@@ -116,12 +119,14 @@ public class FileController {
 
     @GetMapping("/{filename:.+}")
     @Operation(operationId = "FileController_download", summary = "访问文件")
-    @ApiAccessPolicy(value = ApiAuthType.LOGIN, reason = "文件访问依赖登录态保护，文件级授权后续随文件元数据表补齐")
+    @ApiAccessPolicy(value = ApiAuthType.LOGIN, reason = "文件下载按元数据业务归属执行二次授权，未绑定文件要求 system:file:read，HR 合同附件要求合同权限和员工数据范围")
+    @ApiResourceMetadata(sinceVersion = "v0.0.84", riskLevel = ApiRiskLevel.MEDIUM)
     public ResponseEntity<Resource> download(@PathVariable String filename) throws IOException {
         Optional<SystemFileEntity> metadata = fileMetadataService.findByStoredName(filename);
         if (metadata.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+        fileAccessService.assertDownloadAllowed(metadata.get());
         FileStorageService.StoredResource storedResource = fileStorageService.load(filename)
                 .orElse(null);
         if (storedResource == null) {

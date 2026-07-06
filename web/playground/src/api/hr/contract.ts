@@ -1,4 +1,5 @@
 import { requestClient } from '#/api/request';
+import { normalizeFileMetadata, type SystemFileApi } from '#/api/system/file';
 
 export namespace HrContractApi {
   export interface HrContract {
@@ -57,6 +58,13 @@ export async function getExpiringContracts(days?: number) {
     employeeId: String(item.employeeId),
     attachmentFileId: item.attachmentFileId ? String(item.attachmentFileId) : undefined,
   })) as HrContractApi.HrContract[];
+}
+
+export async function getContractAttachmentMetadata(contractId: string | number) {
+  const response = await requestClient.get<SystemFileApi.FileMetadata>(
+    `/hr/contracts/${contractId}/attachment/metadata`,
+  );
+  return normalizeFileMetadata(response);
 }
 
 export async function createContract(employeeId: string | number, data: HrContractApi.SaveRequest) {

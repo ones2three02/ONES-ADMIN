@@ -5,19 +5,27 @@ import com.ones.admin.auth.dto.LoginRequest;
 import com.ones.admin.hr.dto.HrEmployeeCreateRequest;
 import com.ones.admin.hr.dto.HrJobGradeSaveRequest;
 import com.ones.admin.hr.dto.HrPositionSaveRequest;
+import com.ones.admin.hr.entity.HrEmployeeContractEntity;
+import com.ones.admin.hr.mapper.HrEmployeeContractMapper;
+import com.ones.admin.common.code.CommonErrorCode;
+import com.ones.admin.system.FileStorageService;
 import com.ones.admin.system.SystemErrorCode;
+import com.ones.admin.system.entity.SystemFileEntity;
 import com.ones.admin.system.entity.SystemPermissionEntity;
 import com.ones.admin.system.entity.SystemRolePermissionEntity;
+import com.ones.admin.system.mapper.SystemFileMapper;
 import com.ones.admin.system.mapper.SystemPermissionMapper;
 import com.ones.admin.system.mapper.SystemRolePermissionMapper;
 import com.ones.admin.system.dto.DeptSaveRequest;
 import com.ones.admin.system.dto.RoleSaveRequest;
 import com.ones.admin.system.dto.UserCreateRequest;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.charset.StandardCharsets;
@@ -27,6 +35,9 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -47,6 +58,15 @@ class HrDataScopeControllerTest {
 
     @Autowired
     private SystemRolePermissionMapper rolePermissionMapper;
+
+    @Autowired
+    private SystemFileMapper fileMapper;
+
+    @Autowired
+    private HrEmployeeContractMapper contractMapper;
+
+    @MockitoBean
+    private FileStorageService fileStorageService;
 
     @Test
     void hrEmployeeReadApisRespectRoleDataScope() throws Exception {
@@ -87,8 +107,10 @@ class HrDataScopeControllerTest {
                 gradeId,
                 null
         );
-        createContract(adminToken, visibleEmployeeId, "VC" + suffix);
-        createContract(adminToken, hiddenEmployeeId, "HC" + suffix);
+        long visibleContractId = createContract(adminToken, visibleEmployeeId, "VC" + suffix);
+        long hiddenContractId = createContract(adminToken, hiddenEmployeeId, "HC" + suffix);
+        SystemFileEntity visibleAttachment = createContractAttachment(visibleContractId, "visible-contract-" + suffix + ".pdf");
+        SystemFileEntity hiddenAttachment = createContractAttachment(hiddenContractId, "hidden-contract-" + suffix + ".pdf");
 
         String hrToken = login(username, "hrscope123");
 
@@ -122,6 +144,37 @@ class HrDataScopeControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0].employeeNo").value("VE" + suffix));
+
+        mockMvc.perform(get("/api/hr/contracts/" + visibleContractId + "/attachment/metadata")
+                        .header("Authorization", "Bearer " + hrToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.id").value(visibleAttachment.getId()))
+                .andExpect(jsonPath("$.data.businessType").value("HR_EMPLOYEE_CONTRACT"))
+                .andExpect(jsonPath("$.data.businessId").value(String.valueOf(visibleContractId)));
+
+        mockMvc.perform(get("/api/hr/contracts/" + hiddenContractId + "/attachment/metadata")
+                        .header("Authorization", "Bearer " + hrToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HrErrorCode.EMPLOYEE_DATA_SCOPE_DENIED.code()));
+
+        given(fileStorageService.load(visibleAttachment.getStoredName()))
+                .willReturn(java.util.Optional.of(new FileStorageService.StoredResource(
+                        new ByteArrayResource("visible contract".getBytes()),
+                        MediaType.APPLICATION_PDF,
+                        visibleAttachment.getStoredName()
+                )));
+        mockMvc.perform(get("/api/system/files/" + visibleAttachment.getStoredName())
+                        .header("Authorization", "Bearer " + hrToken))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string("visible contract"));
+        verify(fileStorageService).load(visibleAttachment.getStoredName());
+
+        mockMvc.perform(get("/api/system/files/" + hiddenAttachment.getStoredName())
+                        .header("Authorization", "Bearer " + hrToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+        verify(fileStorageService, never()).load(hiddenAttachment.getStoredName());
 
         String exportResponse = mockMvc.perform(get("/api/hr/employees/export")
                         .header("Authorization", "Bearer " + hrToken)
@@ -375,8 +428,8 @@ class HrDataScopeControllerTest {
         return objectMapper.readTree(response).at("/data/id").asLong();
     }
 
-    private void createContract(String token, long employeeId, String contractNo) throws Exception {
-        mockMvc.perform(post("/api/hr/employees/" + employeeId + "/contracts")
+    private long createContract(String token, long employeeId, String contractNo) throws Exception {
+        String response = mockMvc.perform(post("/api/hr/employees/" + employeeId + "/contracts")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
@@ -386,7 +439,32 @@ class HrDataScopeControllerTest {
                                 "startDate", "2026-07-01",
                                 "endDate", LocalDate.now().plusDays(90).toString()
                         ))))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id", notNullValue()))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        return objectMapper.readTree(response).at("/data/id").asLong();
+    }
+
+    private SystemFileEntity createContractAttachment(long contractId, String originalName) {
+        SystemFileEntity file = new SystemFileEntity();
+        file.setOriginalName(originalName);
+        file.setStoredName(originalName);
+        file.setUrl("/api/system/files/" + originalName);
+        file.setContentType(MediaType.APPLICATION_PDF_VALUE);
+        file.setExtension("pdf");
+        file.setSizeBytes(128L);
+        file.setStorageType("LOCAL");
+        file.setStatus("ACTIVE");
+        file.setUploadedBy(1L);
+        file.setBusinessType("HR_EMPLOYEE_CONTRACT");
+        file.setBusinessId(String.valueOf(contractId));
+        fileMapper.insert(file);
+        HrEmployeeContractEntity contract = contractMapper.selectById(contractId);
+        contract.setAttachmentFileId(file.getId());
+        contractMapper.updateById(contract);
+        return file;
     }
 
     private String login(String username, String password) throws Exception {

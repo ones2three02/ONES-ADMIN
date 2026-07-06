@@ -9,6 +9,7 @@ import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.hr.dto.HrEmployeeContractResponse;
 import com.ones.admin.hr.dto.HrEmployeeContractSaveRequest;
 import com.ones.admin.hr.dto.HrEmployeeContractTerminateRequest;
+import com.ones.admin.system.dto.FileMetadataResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -56,6 +57,14 @@ public class HrEmployeeContractController {
             @RequestParam(required = false) Integer days
     ) {
         return ApiResult.ok(contractService.listExpiringContracts(days));
+    }
+
+    @GetMapping("/contracts/{contractId}/attachment/metadata")
+    @SaCheckPermission("hr:contract:list")
+    @Operation(operationId = "HrEmployeeContractController_getAttachmentMetadata", summary = "查询合同附件元数据")
+    @ApiResourceMetadata(sinceVersion = "v0.0.84", riskLevel = ApiRiskLevel.MEDIUM)
+    public ApiResult<FileMetadataResponse> getAttachmentMetadata(@PathVariable Long contractId) {
+        return ApiResult.ok(contractService.getAttachmentMetadata(contractId));
     }
 
     @PostMapping("/employees/{employeeId}/contracts")

@@ -9,7 +9,7 @@ interface PageResult<T> {
   total: number;
 }
 
-function normalizeMetadata<T extends { id: number | string; uploadedBy?: number | string }>(
+export function normalizeFileMetadata<T extends { id: number | string; uploadedBy?: number | string }>(
   item: T,
 ) {
   return {
@@ -26,7 +26,7 @@ function normalizePage<T extends { id: number | string; uploadedBy?: number | st
   response: PageResult<T>,
 ) {
   return {
-    items: response.list.map((item) => normalizeMetadata(item)),
+    items: response.list.map((item) => normalizeFileMetadata(item)),
     total: response.total,
   };
 }
@@ -92,7 +92,7 @@ export async function getFileMetadata(id: number | string) {
   const response = await requestClient.get<SystemFileApi.FileMetadata>(
     `/system/files/${id}/metadata`,
   );
-  return normalizeMetadata(response);
+  return normalizeFileMetadata(response);
 }
 
 export async function uploadSystemFile(file: File) {
@@ -100,12 +100,12 @@ export async function uploadSystemFile(file: File) {
     '/system/files/upload',
     { file },
   );
-  return normalizeMetadata(response);
+  return normalizeFileMetadata(response);
 }
 
 export async function deleteSystemFile(id: string) {
   const response = await requestClient.delete<SystemFileApi.FileMetadata>(
     `/system/files/${id}`,
   );
-  return normalizeMetadata(response);
+  return normalizeFileMetadata(response);
 }

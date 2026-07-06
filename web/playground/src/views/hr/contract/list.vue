@@ -11,10 +11,10 @@ import { Button, Card, InputSearch, message, TabPane, Tabs } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import {
+  getContractAttachmentMetadata,
   getEmployeeContracts,
   getEmployeeList,
   getExpiringContracts,
-  getFileMetadata,
 } from '#/api';
 import { $t } from '#/locales';
 
@@ -162,7 +162,7 @@ async function onViewAttachment(row: HrContractApi.HrContract) {
     return;
   }
   try {
-    const metadata = await getFileMetadata(row.attachmentFileId);
+    const metadata = await getContractAttachmentMetadata(row.id);
     if (!metadata.url) {
       message.warning($t('hr.contract.attachmentOpenUnavailable'));
       return;
@@ -238,7 +238,7 @@ watch(searchEmployeeValue, () => {
                   v-if="row.attachmentFileId"
                   size="small"
                   type="link"
-                  v-access:code="['system:file:read']"
+                  v-access:code="['hr:contract:list']"
                   @click="onViewAttachment(row)"
                 >
                   <template #icon>

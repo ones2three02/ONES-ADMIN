@@ -7,6 +7,7 @@ import com.ones.admin.system.dto.UserCreateRequest;
 import com.ones.admin.system.entity.SystemFileEntity;
 import com.ones.admin.system.mapper.SystemFileMapper;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -234,6 +235,58 @@ class FileControllerTest {
                 .andExpect(status().isNotFound());
 
         verify(fileStorageService, never()).load("deleted-temporary.txt");
+    }
+
+    @Test
+    void rejectDownloadUnboundFileWhenUserHasNoFileReadPermission() throws Exception {
+        String storedName = "read-protected-" + System.nanoTime() + ".txt";
+        SystemFileEntity file = newFile(storedName, "txt", "ACTIVE");
+        fileMapper.insert(file);
+
+        String adminToken = login("admin", "admin123");
+        String username = "file_download_" + System.nanoTime();
+        String createBody = objectMapper.writeValueAsString(new UserCreateRequest(
+                username,
+                "文件下载权限测试用户",
+                "operator123",
+                1L,
+                "用于验证未绑定文件下载权限",
+                true,
+                List.of("OPERATOR")
+        ));
+        mockMvc.perform(post("/api/system/users")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createBody))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/system/files/" + storedName)
+                        .header("Authorization", "Bearer " + login(username, "operator123")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+
+        verify(fileStorageService, never()).load(storedName);
+    }
+
+    @Test
+    void downloadUnboundFileWhenUserHasFileReadPermission() throws Exception {
+        String storedName = "read-allowed-" + System.nanoTime() + ".txt";
+        SystemFileEntity file = newFile(storedName, "txt", "ACTIVE");
+        file.setContentType(MediaType.TEXT_PLAIN_VALUE);
+        fileMapper.insert(file);
+        given(fileStorageService.load(storedName))
+                .willReturn(java.util.Optional.of(new FileStorageService.StoredResource(
+                        new ByteArrayResource("hello".getBytes()),
+                        MediaType.TEXT_PLAIN,
+                        storedName
+                )));
+
+        mockMvc.perform(get("/api/system/files/" + storedName)
+                        .header("Authorization", "Bearer " + login()))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string("hello"));
+
+        verify(fileStorageService).load(storedName);
     }
 
     @Test

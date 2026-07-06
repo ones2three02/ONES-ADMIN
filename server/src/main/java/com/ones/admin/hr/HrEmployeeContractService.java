@@ -12,6 +12,7 @@ import com.ones.admin.hr.mapper.HrEmployeeMapper;
 import com.ones.admin.system.DataScopeService;
 import com.ones.admin.system.FileMetadataService;
 import com.ones.admin.system.SystemErrorCode;
+import com.ones.admin.system.dto.FileMetadataResponse;
 import com.ones.admin.system.entity.SystemFileEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -86,6 +87,20 @@ public class HrEmployeeContractService {
                 })
                 .map(contract -> toResponse(contract, employees.get(contract.getEmployeeId())))
                 .toList();
+    }
+
+    public FileMetadataResponse getAttachmentMetadata(Long contractId) {
+        HrEmployeeContractEntity contract = getRequiredContract(contractId);
+        getVisibleEmployee(contract.getEmployeeId());
+        Long attachmentFileId = contract.getAttachmentFileId();
+        if (attachmentFileId == null) {
+            throw new BusinessException(SystemErrorCode.FILE_NOT_FOUND);
+        }
+        SystemFileEntity file = fileMetadataService.getRequiredEntity(attachmentFileId);
+        if (!isContractAttachmentFile(file, contract)) {
+            throw new BusinessException(SystemErrorCode.FILE_NOT_FOUND);
+        }
+        return fileMetadataService.toResponse(file);
     }
 
     @Transactional
@@ -200,6 +215,13 @@ public class HrEmployeeContractService {
                 String.valueOf(contract.getId())
         );
         bindContractAttachment(contract);
+    }
+
+    private boolean isContractAttachmentFile(SystemFileEntity file, HrEmployeeContractEntity contract) {
+        return file != null
+                && java.util.Objects.equals(file.getId(), contract.getAttachmentFileId())
+                && CONTRACT_ATTACHMENT_BUSINESS_TYPE.equals(file.getBusinessType())
+                && java.util.Objects.equals(file.getBusinessId(), String.valueOf(contract.getId()));
     }
 
     private HrEmployeeEntity getRequiredEmployee(Long employeeId) {
