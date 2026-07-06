@@ -285,14 +285,16 @@ public class SystemDataInitializer implements ApplicationRunner {
         ensureMenu(apiResources.getId(), "SystemApiResourcePublish", "接口资源发布", "/system/api-resources#publish",
                 null, null, "system:api:publish", "lucide:badge-check", "button", 52);
 
-        ensureMenu(system.getId(), "SystemAuditLoginLog", "登录日志查询", "/system#audit-login-log",
-                null, null, "system:audit:login-log", "lucide:shield-check", "button", 60);
-        ensureMenu(system.getId(), "SystemAuditOperationLog", "操作日志查询", "/system#audit-operation-log",
-                null, null, "system:audit:operation-log", "lucide:scroll-text", "button", 61);
-        ensureMenu(system.getId(), "SystemAuditRetention", "审计保留策略", "/system#audit-retention",
-                null, null, "system:audit:retention", "lucide:archive-restore", "button", 62);
+        SystemMenuEntity audit = ensureMenu(system.getId(), "SystemAudit", "审计日志", "/system/audit",
+                "/system/audit/list", null, "system:audit:login-log", "lucide:shield-check", "menu", 60);
+        ensureMenu(audit.getId(), "SystemAuditLoginLog", "登录日志查询", "/system/audit#login-log",
+                null, null, "system:audit:login-log", "lucide:log-in", "button", 61);
+        ensureMenu(audit.getId(), "SystemAuditOperationLog", "操作日志查询", "/system/audit#operation-log",
+                null, null, "system:audit:operation-log", "lucide:scroll-text", "button", 62);
+        ensureMenu(audit.getId(), "SystemAuditRetention", "审计保留策略", "/system/audit#retention",
+                null, null, "system:audit:retention", "lucide:archive-restore", "button", 63);
         ensureMenu(system.getId(), "SystemFileUpload", "文件上传", "/system#file-upload",
-                null, null, "system:file:upload", "lucide:upload", "button", 63);
+                null, null, "system:file:upload", "lucide:upload", "button", 64);
 
         SystemMenuEntity hrms = ensureMenu(null, "HRMS", "人力资源管理", "/hr",
                 "BasicLayout", null, null, "lucide:users", "catalog", 200);

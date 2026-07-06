@@ -27,6 +27,9 @@
   "apiResource": {
     "title": "接口管理"
   },
+  "audit": {
+    "title": "审计日志"
+  },
   "menu": {
     "list": "菜单列表",
     "activeIcon": "激活图标",

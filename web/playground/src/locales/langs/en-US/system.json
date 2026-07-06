@@ -26,6 +26,9 @@
   "apiResource": {
     "title": "API Management"
   },
+  "audit": {
+    "title": "Audit Logs"
+  },
   "menu": {
     "title": "Menu Management",
     "parent": "Parent Menu",

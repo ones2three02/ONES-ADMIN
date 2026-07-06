@@ -57,6 +57,15 @@ const routes: RouteRecordRaw[] = [
         },
         component: () => import('#/views/system/api-resource/list.vue'),
       },
+      {
+        path: '/system/audit',
+        name: 'SystemAudit',
+        meta: {
+          icon: 'lucide:shield-check',
+          title: $t('system.audit.title'),
+        },
+        component: () => import('#/views/system/audit/list.vue'),
+      },
     ],
   },
 ];

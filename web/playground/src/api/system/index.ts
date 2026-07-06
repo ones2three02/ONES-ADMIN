@@ -1,4 +1,5 @@
 export * from './api-resource';
+export * from './audit';
 export * from './dept';
 export * from './menu';
 export * from './overview';
