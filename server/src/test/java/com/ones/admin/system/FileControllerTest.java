@@ -127,6 +127,57 @@ class FileControllerTest {
     }
 
     @Test
+    void listFileMetadataByStatusAndBusinessType() throws Exception {
+        SystemFileEntity activeFile = newFile("active-contract.pdf", "pdf", "ACTIVE");
+        activeFile.setBusinessType("HR_EMPLOYEE_CONTRACT");
+        activeFile.setBusinessId("1001");
+        fileMapper.insert(activeFile);
+        SystemFileEntity deletedFile = newFile("deleted-report.txt", "txt", "DELETED");
+        fileMapper.insert(deletedFile);
+
+        mockMvc.perform(get("/api/system/files")
+                        .param("pageNum", "1")
+                        .param("pageSize", "10")
+                        .param("status", "ACTIVE")
+                        .param("businessType", "HR_EMPLOYEE_CONTRACT")
+                        .param("businessId", "1001")
+                        .header("Authorization", "Bearer " + login()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].id").value(activeFile.getId()))
+                .andExpect(jsonPath("$.data.list[0].originalName").value("active-contract.pdf"))
+                .andExpect(jsonPath("$.data.list[0].businessType").value("HR_EMPLOYEE_CONTRACT"))
+                .andExpect(jsonPath("$.data.list[0].status").value("ACTIVE"));
+    }
+
+    @Test
+    void rejectListWhenUserHasNoFileReadPermission() throws Exception {
+        String adminToken = login("admin", "admin123");
+        String username = "file_reader_" + System.nanoTime();
+        String createBody = objectMapper.writeValueAsString(new UserCreateRequest(
+                username,
+                "文件列表权限测试用户",
+                "operator123",
+                1L,
+                "用于验证文件列表权限",
+                true,
+                List.of("OPERATOR")
+        ));
+        mockMvc.perform(post("/api/system/users")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        mockMvc.perform(get("/api/system/files")
+                        .header("Authorization", "Bearer " + login(username, "operator123")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+    }
+
+    @Test
     void softDeleteUnboundFileAndHideMetadata() throws Exception {
         given(fileStorageService.store(any(MultipartFile.class), any()))
                 .willAnswer(invocation -> {
@@ -274,6 +325,20 @@ class FileControllerTest {
 
     private String login() throws Exception {
         return login("admin", "admin123");
+    }
+
+    private SystemFileEntity newFile(String originalName, String extension, String status) {
+        SystemFileEntity file = new SystemFileEntity();
+        file.setOriginalName(originalName);
+        file.setStoredName(originalName);
+        file.setUrl("/api/system/files/" + originalName);
+        file.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+        file.setExtension(extension);
+        file.setSizeBytes(128L);
+        file.setStorageType("LOCAL");
+        file.setStatus(status);
+        file.setUploadedBy(1L);
+        return file;
     }
 
     private String login(String username, String password) throws Exception {

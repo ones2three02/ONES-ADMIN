@@ -9,10 +9,13 @@ import com.ones.admin.common.web.ApiLifecycleStatus;
 import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.common.web.ApiRiskLevel;
+import com.ones.admin.common.web.PageResult;
+import com.ones.admin.system.dto.FileMetadataQuery;
 import com.ones.admin.system.dto.FileMetadataResponse;
 import com.ones.admin.system.entity.SystemFileEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -59,7 +62,7 @@ public class FileController {
 
     @PostMapping("/upload")
     @SaCheckPermission("system:file:upload")
-    @Operation(summary = "上传文件")
+    @Operation(operationId = "FileController_upload", summary = "上传文件")
     @RepeatSubmit
     @ApiResourceMetadata(riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<FileUploadResponse> upload(@RequestParam("file") MultipartFile file) throws IOException {
@@ -86,9 +89,17 @@ public class FileController {
         return ApiResult.ok(FileUploadResponse.from(metadata));
     }
 
+    @GetMapping
+    @SaCheckPermission("system:file:read")
+    @Operation(operationId = "FileController_listMetadata", summary = "查询文件元数据列表")
+    @ApiResourceMetadata(sinceVersion = "v0.0.82", riskLevel = ApiRiskLevel.MEDIUM)
+    public ApiResult<PageResult<FileMetadataResponse>> listMetadata(@Valid FileMetadataQuery query) {
+        return ApiResult.ok(fileMetadataService.queryPage(query));
+    }
+
     @GetMapping("/{id:\\d+}/metadata")
     @SaCheckPermission("system:file:read")
-    @Operation(summary = "查询文件元数据")
+    @Operation(operationId = "FileController_getMetadata", summary = "查询文件元数据")
     @ApiResourceMetadata(sinceVersion = "v0.0.80", riskLevel = ApiRiskLevel.MEDIUM)
     public ApiResult<FileMetadataResponse> getMetadata(@PathVariable Long id) {
         return ApiResult.ok(fileMetadataService.getRequired(id));
@@ -96,7 +107,7 @@ public class FileController {
 
     @DeleteMapping("/{id:\\d+}")
     @SaCheckPermission("system:file:delete")
-    @Operation(summary = "删除文件元数据")
+    @Operation(operationId = "FileController_deleteMetadata", summary = "删除文件元数据")
     @RepeatSubmit
     @ApiResourceMetadata(sinceVersion = "v0.0.81", riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<FileMetadataResponse> deleteMetadata(@PathVariable Long id) {
@@ -104,7 +115,7 @@ public class FileController {
     }
 
     @GetMapping("/{filename:.+}")
-    @Operation(summary = "访问文件")
+    @Operation(operationId = "FileController_download", summary = "访问文件")
     @ApiAccessPolicy(value = ApiAuthType.LOGIN, reason = "文件访问依赖登录态保护，文件级授权后续随文件元数据表补齐")
     public ResponseEntity<Resource> download(@PathVariable String filename) throws IOException {
         Optional<SystemFileEntity> metadata = fileMetadataService.findByStoredName(filename);

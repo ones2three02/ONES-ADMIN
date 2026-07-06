@@ -32,6 +32,9 @@
   "dict": {
     "title": "Data Dictionary"
   },
+  "file": {
+    "title": "File Management"
+  },
   "menu": {
     "title": "Menu Management",
     "parent": "Parent Menu",

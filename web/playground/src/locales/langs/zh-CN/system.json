@@ -33,6 +33,9 @@
   "dict": {
     "title": "数据字典"
   },
+  "file": {
+    "title": "文件管理"
+  },
   "menu": {
     "list": "菜单列表",
     "activeIcon": "激活图标",

@@ -2,14 +2,18 @@ package com.ones.admin.system;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.ones.admin.common.exception.BusinessException;
+import com.ones.admin.common.web.PageResult;
+import com.ones.admin.system.dto.FileMetadataQuery;
 import com.ones.admin.system.dto.FileMetadataResponse;
 import com.ones.admin.system.entity.SystemFileEntity;
 import com.ones.admin.system.mapper.SystemFileMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -53,6 +57,19 @@ public class FileMetadataService {
 
     public FileMetadataResponse getRequired(Long fileId) {
         return toResponse(getRequiredEntity(fileId));
+    }
+
+    public PageResult<FileMetadataResponse> queryPage(FileMetadataQuery query) {
+        IPage<SystemFileEntity> page = fileMapper.selectPage(
+                query.toMyBatisPage(),
+                buildQueryWrapper(query)
+        );
+        return PageResult.of(
+                page,
+                page.getRecords().stream()
+                        .map(this::toResponse)
+                        .toList()
+        );
     }
 
     public SystemFileEntity getRequiredEntity(Long fileId) {
@@ -149,6 +166,40 @@ public class FileMetadataService {
         );
     }
 
+    private LambdaQueryWrapper<SystemFileEntity> buildQueryWrapper(FileMetadataQuery query) {
+        LambdaQueryWrapper<SystemFileEntity> wrapper = new LambdaQueryWrapper<SystemFileEntity>()
+                .orderByDesc(SystemFileEntity::getCreatedAt)
+                .orderByDesc(SystemFileEntity::getId);
+        if (hasText(query.getOriginalName())) {
+            wrapper.like(SystemFileEntity::getOriginalName, query.getOriginalName().trim());
+        }
+        if (hasText(query.getExtension())) {
+            wrapper.eq(SystemFileEntity::getExtension, query.getExtension().trim().toLowerCase(Locale.ROOT));
+        }
+        if (hasText(query.getStorageType())) {
+            wrapper.eq(SystemFileEntity::getStorageType, query.getStorageType().trim().toUpperCase(Locale.ROOT));
+        }
+        if (hasText(query.getStatus())) {
+            wrapper.eq(SystemFileEntity::getStatus, query.getStatus().trim().toUpperCase(Locale.ROOT));
+        }
+        if (hasText(query.getBusinessType())) {
+            wrapper.eq(SystemFileEntity::getBusinessType, query.getBusinessType().trim());
+        }
+        if (hasText(query.getBusinessId())) {
+            wrapper.eq(SystemFileEntity::getBusinessId, query.getBusinessId().trim());
+        }
+        if (query.getUploadedBy() != null) {
+            wrapper.eq(SystemFileEntity::getUploadedBy, query.getUploadedBy());
+        }
+        if (query.getStartTime() != null) {
+            wrapper.ge(SystemFileEntity::getCreatedAt, query.getStartTime());
+        }
+        if (query.getEndTime() != null) {
+            wrapper.le(SystemFileEntity::getCreatedAt, query.getEndTime());
+        }
+        return wrapper;
+    }
+
     private String bucketName() {
         return FileStorageProperties.StorageType.MINIO.equals(fileStorageProperties.getStorageType())
                 ? fileStorageProperties.getMinio().getBucket()
@@ -164,6 +215,10 @@ public class FileMetadataService {
 
     private boolean isActive(SystemFileEntity file) {
         return file.getStatus() == null || STATUS_ACTIVE.equals(file.getStatus());
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isBlank();
     }
 
     private boolean sameBusiness(SystemFileEntity file, String businessType, String businessId) {

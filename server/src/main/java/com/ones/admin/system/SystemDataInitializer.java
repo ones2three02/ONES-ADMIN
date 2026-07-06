@@ -332,6 +332,15 @@ public class SystemDataInitializer implements ApplicationRunner {
         ensureMenu(dict.getId(), "SystemDictItemDelete", "字典项删除", "/system/dict#item-delete",
                 null, null, "system:dict:item:delete", "carbon:trash-can", "button", 63);
 
+        SystemMenuEntity file = ensureMenu(system.getId(), "SystemFile", "文件管理", "/system/file",
+                "/system/file/list", null, "system:file:read", "lucide:folder-open", "menu", 64);
+        ensureMenu(file.getId(), "SystemFileRead", "文件元数据查询", "/system/file#read",
+                null, null, "system:file:read", "lucide:file-search", "button", 65);
+        ensureMenu(file.getId(), "SystemFileUpload", "文件上传", "/system/file#upload",
+                null, null, "system:file:upload", "lucide:upload", "button", 66);
+        ensureMenu(file.getId(), "SystemFileDelete", "文件删除", "/system/file#delete",
+                null, null, "system:file:delete", "lucide:file-x-2", "button", 67);
+
         SystemMenuEntity audit = ensureMenu(system.getId(), "SystemAudit", "审计日志", "/system/audit",
                 "/system/audit/list", null, "system:audit:login-log", "lucide:shield-check", "menu", 70);
         ensureMenu(audit.getId(), "SystemAuditLoginLog", "登录日志查询", "/system/audit#login-log",
@@ -340,12 +349,6 @@ public class SystemDataInitializer implements ApplicationRunner {
                 null, null, "system:audit:operation-log", "lucide:scroll-text", "button", 72);
         ensureMenu(audit.getId(), "SystemAuditRetention", "审计保留策略", "/system/audit#retention",
                 null, null, "system:audit:retention", "lucide:archive-restore", "button", 73);
-        ensureMenu(system.getId(), "SystemFileRead", "文件元数据查询", "/system#file-read",
-                null, null, "system:file:read", "lucide:file-search", "button", 74);
-        ensureMenu(system.getId(), "SystemFileUpload", "文件上传", "/system#file-upload",
-                null, null, "system:file:upload", "lucide:upload", "button", 75);
-        ensureMenu(system.getId(), "SystemFileDelete", "文件删除", "/system#file-delete",
-                null, null, "system:file:delete", "lucide:file-x-2", "button", 76);
 
         SystemMenuEntity hrms = ensureMenu(null, "HRMS", "人力资源管理", "/hr",
                 "BasicLayout", null, null, "lucide:users", "catalog", 200);
