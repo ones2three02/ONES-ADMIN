@@ -181,7 +181,9 @@ class HrManagementControllerTest {
                         .param("pageSize", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.total").value(1))
-                .andExpect(jsonPath("$.data.list[0].employeeNo").value("E" + suffix));
+                .andExpect(jsonPath("$.data.list[0].employeeNo").value("E" + suffix))
+                .andExpect(jsonPath("$.data.list[0].mobile").value("139****9000"))
+                .andExpect(jsonPath("$.data.list[0].email").value("z****" + suffix.charAt(suffix.length() - 1) + "@ones.local"));
 
         String exportResponse = mockMvc.perform(get("/api/hr/employees/export")
                         .header("Authorization", "Bearer " + token)
@@ -200,9 +202,13 @@ class HrManagementControllerTest {
                 .contains("ONES 总部")
                 .contains("架构师")
                 .contains("P8")
+                .contains("139****9000")
+                .contains("z****" + suffix.charAt(suffix.length() - 1) + "@ones.local")
                 .contains("110****5678")
                 .doesNotContain(idCardNumber)
-                .doesNotContain("110101199001015678");
+                .doesNotContain("110101199001015678")
+                .doesNotContain("13900139000")
+                .doesNotContain("zhangsanfeng" + suffix + "@ones.local");
 
         String overviewResponse = mockMvc.perform(get("/api/hr/overview")
                         .header("Authorization", "Bearer " + token))

@@ -6,7 +6,7 @@ import { computed, nextTick, ref } from 'vue';
 import { useVbenDrawer } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
-import { createEmployee, updateEmployee } from '#/api';
+import { createEmployee, getEmployee, updateEmployee } from '#/api';
 import { $t } from '#/locales';
 
 import { useFormSchema } from '../data';
@@ -45,6 +45,7 @@ const [Drawer, drawerApi] = useVbenDrawer({
       formApi.resetForm();
       await nextTick();
       if (editingEmployee.value) {
+        editingEmployee.value = await getEmployee(editingEmployee.value.id);
         formApi.setValues({
           ...editingEmployee.value,
           idCardNumber: undefined,

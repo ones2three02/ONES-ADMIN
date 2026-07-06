@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ones.admin.common.exception.BusinessException;
+import com.ones.admin.common.security.SensitiveDataMaskingUtils;
 import com.ones.admin.common.web.CsvExportUtils;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.hr.dto.HrEmployeeCreateRequest;
@@ -108,7 +109,7 @@ public class HrEmployeeService {
         IPage<HrEmployeeEntity> page = employeeMapper.selectPage(query.toMyBatisPage(), buildEmployeeQuery(query, true));
         List<HrEmployeeResponse> records = page.getRecords()
                 .stream()
-                .map(this::toResponse)
+                .map(employee -> toResponse(employee, false))
                 .toList();
         return PageResult.of(page, records);
     }
@@ -133,8 +134,8 @@ public class HrEmployeeService {
                 employee.getRealName(),
                 employee.getPreferredName(),
                 employee.getGender(),
-                employee.getMobile(),
-                employee.getEmail(),
+                SensitiveDataMaskingUtils.maskMobile(employee.getMobile()),
+                SensitiveDataMaskingUtils.maskEmail(employee.getEmail()),
                 employee.getIdCardMasked(),
                 nameOf(deptNames, employee.getDeptId()),
                 nameOf(positionNames, employee.getPositionId()),
@@ -153,7 +154,7 @@ public class HrEmployeeService {
     }
 
     public HrEmployeeResponse getEmployee(Long id) {
-        return toResponse(getVisibleEmployee(id));
+        return toResponse(getVisibleEmployee(id), true);
     }
 
     public List<HrEmployeeLifecycleEventResponse> listLifecycleEvents(Long employeeId) {
@@ -204,7 +205,7 @@ public class HrEmployeeService {
 
         createInitialJob(employee);
         createLifecycleEvent(employee);
-        return toResponse(employeeMapper.selectById(employee.getId()));
+        return toResponse(employeeMapper.selectById(employee.getId()), true);
     }
 
     @Transactional
@@ -224,7 +225,7 @@ public class HrEmployeeService {
         employee.setRemark(normalizeNullable(request.remark()));
         employee.setUpdatedAt(LocalDateTime.now());
         employeeMapper.updateById(employee);
-        return toResponse(employeeMapper.selectById(employee.getId()));
+        return toResponse(employeeMapper.selectById(employee.getId()), true);
     }
 
     @Transactional
@@ -273,7 +274,7 @@ public class HrEmployeeService {
                 employeeSnapshot(employee),
                 request.changeReason()
         );
-        return toResponse(employeeMapper.selectById(employee.getId()));
+        return toResponse(employeeMapper.selectById(employee.getId()), true);
     }
 
     @Transactional
@@ -305,7 +306,7 @@ public class HrEmployeeService {
                 employeeSnapshot(employee),
                 request.remark()
         );
-        return toResponse(employeeMapper.selectById(employee.getId()));
+        return toResponse(employeeMapper.selectById(employee.getId()), true);
     }
 
     @Transactional
@@ -335,7 +336,7 @@ public class HrEmployeeService {
                 employeeSnapshot(employee),
                 request.resignationReason()
         );
-        return toResponse(employeeMapper.selectById(employee.getId()));
+        return toResponse(employeeMapper.selectById(employee.getId()), true);
     }
 
     private LambdaQueryWrapper<HrEmployeeEntity> buildEmployeeQuery(HrEmployeeQuery query, boolean applyDataScope) {
@@ -576,7 +577,7 @@ public class HrEmployeeService {
         }
     }
 
-    private HrEmployeeResponse toResponse(HrEmployeeEntity employee) {
+    private HrEmployeeResponse toResponse(HrEmployeeEntity employee, boolean exposeSensitive) {
         SystemDeptEntity dept = employee.getDeptId() == null ? null : deptMapper.selectById(employee.getDeptId());
         HrPositionEntity position = employee.getPositionId() == null ? null : positionMapper.selectById(employee.getPositionId());
         HrJobGradeEntity grade = employee.getGradeId() == null ? null : jobGradeMapper.selectById(employee.getGradeId());
@@ -589,8 +590,8 @@ public class HrEmployeeService {
                 employee.getRealName(),
                 employee.getPreferredName(),
                 employee.getGender(),
-                employee.getMobile(),
-                employee.getEmail(),
+                exposeSensitive ? employee.getMobile() : SensitiveDataMaskingUtils.maskMobile(employee.getMobile()),
+                exposeSensitive ? employee.getEmail() : SensitiveDataMaskingUtils.maskEmail(employee.getEmail()),
                 employee.getIdCardMasked(),
                 employee.getUserId(),
                 employee.getDeptId(),
@@ -720,13 +721,7 @@ public class HrEmployeeService {
         if (!hasText(idCardNumber)) {
             return null;
         }
-        String normalized = idCardNumber.trim();
-        if (normalized.length() <= 4) {
-            return "****";
-        }
-        String suffix = normalized.substring(normalized.length() - 4);
-        int prefixLength = Math.min(3, normalized.length() - 4);
-        return normalized.substring(0, prefixLength) + "****" + suffix;
+        return SensitiveDataMaskingUtils.maskIdCard(idCardNumber);
     }
 
     private boolean hasText(String value) {
