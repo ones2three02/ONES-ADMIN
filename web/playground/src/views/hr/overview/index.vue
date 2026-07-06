@@ -11,6 +11,12 @@ import { Alert, Button, Card, Empty, Skeleton, Statistic, Tag } from 'antdv-next
 import { getHrOverview } from '#/api';
 import { $t } from '#/locales';
 
+import {
+  getHrDictOption,
+  getHrDictOptions,
+  HR_EMPLOYMENT_STATUS_DICT,
+} from '../dict-options';
+
 defineOptions({ name: 'HrOverview' });
 
 const overview = ref<HrOverviewApi.Overview>();
@@ -75,13 +81,7 @@ function percent(value: number, total: number) {
 }
 
 function statusColor(code: string) {
-  const colors: Record<string, string> = {
-    ACTIVE: 'success',
-    PROBATION: 'processing',
-    RESIGNED: 'default',
-    SUSPENDED: 'warning',
-  };
-  return colors[code] || 'default';
+  return getHrDictOption(HR_EMPLOYMENT_STATUS_DICT, code)?.color ?? 'default';
 }
 
 async function loadOverview() {
@@ -96,8 +96,9 @@ async function loadOverview() {
   }
 }
 
-onMounted(() => {
-  loadOverview();
+onMounted(async () => {
+  await getHrDictOptions(HR_EMPLOYMENT_STATUS_DICT);
+  await loadOverview();
 });
 </script>
 

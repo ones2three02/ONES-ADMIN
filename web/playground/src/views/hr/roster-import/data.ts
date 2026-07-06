@@ -2,6 +2,8 @@ import type { VxeTableGridColumns } from '#/adapter/vxe-table';
 
 import { $t } from '#/locales';
 
+import { formatHrDictLabel, HR_ROSTER_IMPORT_STATUS_DICT } from '../dict-options';
+
 export function useColumns(): VxeTableGridColumns {
   return [
     {
@@ -18,17 +20,8 @@ export function useColumns(): VxeTableGridColumns {
       field: 'status',
       title: $t('hr.rosterImport.status'),
       width: 120,
-      formatter: ({ cellValue }) => {
-        const statuses: any = {
-          PENDING: '处理中',
-          PARSING: '解析中',
-          SUCCESS: '导入成功',
-          PARTIAL_SUCCESS: '部分成功',
-          FAILED: '导入失败',
-          VALIDATION_FAILED: '校验失败',
-        };
-        return statuses[cellValue] || cellValue;
-      },
+      formatter: ({ cellValue }) =>
+        formatHrDictLabel(HR_ROSTER_IMPORT_STATUS_DICT, cellValue),
     },
     {
       field: 'totalCount',

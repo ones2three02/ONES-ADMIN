@@ -9,6 +9,7 @@ import {
   getHrDictOptions,
   HR_EMPLOYMENT_STATUS_DICT,
   HR_EMPLOYMENT_TYPE_DICT,
+  HR_GENDER_DICT,
 } from '../dict-options';
 
 async function getEmployeeOptions() {
@@ -40,12 +41,11 @@ export function useFormSchema(): VbenFormSchema[] {
       label: $t('hr.employee.preferredName'),
     },
     {
-      component: 'Select',
+      component: 'ApiSelect',
       componentProps: {
-        options: [
-          { label: '男', value: 'MALE' },
-          { label: '女', value: 'FEMALE' },
-        ],
+        api: () => getHrDictOptions(HR_GENDER_DICT),
+        labelField: 'label',
+        valueField: 'value',
       },
       fieldName: 'gender',
       label: $t('hr.employee.gender'),
@@ -326,7 +326,7 @@ export function useColumns(): VxeTableGridColumns {
       field: 'gender',
       title: $t('hr.employee.gender'),
       width: 80,
-      formatter: ({ cellValue }) => (cellValue === 'MALE' ? '男' : '女'),
+      formatter: ({ cellValue }) => formatHrDictLabel(HR_GENDER_DICT, cellValue),
     },
     {
       field: 'mobile',

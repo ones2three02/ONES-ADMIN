@@ -1,10 +1,19 @@
 import type { SystemDictApi } from '#/api';
 
-import { getDictOptions } from '#/api';
+import {
+  formatDictOptionLabel,
+  getCachedDictOption,
+  getCachedDictOptions,
+  getDictFallbackOptions,
+  registerDictFallbackOptions,
+} from '#/api';
 
+export const HR_CONTRACT_STATUS_DICT = 'hr_contract_status';
 export const HR_CONTRACT_TYPE_DICT = 'hr_contract_type';
 export const HR_EMPLOYMENT_STATUS_DICT = 'hr_employment_status';
 export const HR_EMPLOYMENT_TYPE_DICT = 'hr_employment_type';
+export const HR_GENDER_DICT = 'hr_gender';
+export const HR_ROSTER_IMPORT_STATUS_DICT = 'hr_roster_import_status';
 
 const fallbackEmploymentTypeOptions: SystemDictApi.DictOption[] = [
   { color: 'success', label: '全职(正式)', sortOrder: 10, value: 'FULL_TIME' },
@@ -37,37 +46,51 @@ const fallbackContractTypeOptions: SystemDictApi.DictOption[] = [
   { color: 'warning', label: '劳务合同', sortOrder: 40, value: 'SERVICE' },
 ];
 
+const fallbackGenderOptions: SystemDictApi.DictOption[] = [
+  { color: 'blue', label: '男', sortOrder: 10, value: 'MALE' },
+  { color: 'magenta', label: '女', sortOrder: 20, value: 'FEMALE' },
+];
+
+const fallbackContractStatusOptions: SystemDictApi.DictOption[] = [
+  { color: 'default', label: '草稿', sortOrder: 10, value: 'DRAFT' },
+  { color: 'success', label: '履约中', sortOrder: 20, value: 'ACTIVE' },
+  { color: 'warning', label: '即将到期', sortOrder: 30, value: 'EXPIRING' },
+  { color: 'error', label: '已终止', sortOrder: 40, value: 'TERMINATED' },
+];
+
+const fallbackRosterImportStatusOptions: SystemDictApi.DictOption[] = [
+  { color: 'processing', label: '解析中', sortOrder: 10, value: 'PARSING' },
+  { color: 'error', label: '校验失败', sortOrder: 20, value: 'VALIDATION_FAILED' },
+  { color: 'warning', label: '部分成功', sortOrder: 30, value: 'PARTIAL_SUCCESS' },
+  { color: 'success', label: '导入成功', sortOrder: 40, value: 'SUCCESS' },
+  { color: 'error', label: '导入失败', sortOrder: 50, value: 'FAILED' },
+];
+
 const fallbackMap: Record<string, SystemDictApi.DictOption[]> = {
+  [HR_CONTRACT_STATUS_DICT]: fallbackContractStatusOptions,
   [HR_CONTRACT_TYPE_DICT]: fallbackContractTypeOptions,
   [HR_EMPLOYMENT_STATUS_DICT]: fallbackEmploymentStatusOptions,
   [HR_EMPLOYMENT_TYPE_DICT]: fallbackEmploymentTypeOptions,
+  [HR_GENDER_DICT]: fallbackGenderOptions,
+  [HR_ROSTER_IMPORT_STATUS_DICT]: fallbackRosterImportStatusOptions,
 };
 
-const cache = new Map<string, SystemDictApi.DictOption[]>();
+Object.entries(fallbackMap).forEach(([dictCode, options]) => {
+  registerDictFallbackOptions(dictCode, options);
+});
 
 export async function getHrDictOptions(dictCode: string) {
-  if (cache.has(dictCode)) {
-    return cache.get(dictCode)!;
-  }
-  try {
-    const options = await getDictOptions(dictCode);
-    cache.set(dictCode, options);
-    return options;
-  } catch {
-    const fallback = fallbackMap[dictCode] ?? [];
-    cache.set(dictCode, fallback);
-    return fallback;
-  }
+  return getCachedDictOptions(dictCode);
 }
 
 export function getHrDictFallbackOptions(dictCode: string) {
-  return fallbackMap[dictCode] ?? [];
+  return getDictFallbackOptions(dictCode);
+}
+
+export function getHrDictOption(dictCode: string, value?: string) {
+  return getCachedDictOption(dictCode, value);
 }
 
 export function formatHrDictLabel(dictCode: string, value?: string) {
-  if (!value) {
-    return '-';
-  }
-  const options = cache.get(dictCode) ?? fallbackMap[dictCode] ?? [];
-  return options.find((item) => item.value === value)?.label ?? value;
+  return formatDictOptionLabel(dictCode, value);
 }

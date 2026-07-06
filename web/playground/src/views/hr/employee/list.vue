@@ -19,6 +19,7 @@ import {
   getHrDictOptions,
   HR_EMPLOYMENT_STATUS_DICT,
   HR_EMPLOYMENT_TYPE_DICT,
+  HR_GENDER_DICT,
 } from '../dict-options';
 import Form from './modules/form.vue';
 import Lifecycle from './modules/lifecycle.vue';
@@ -177,6 +178,7 @@ function searchDept(value: string) {
 
 onMounted(async () => {
   await Promise.all([
+    getHrDictOptions(HR_GENDER_DICT),
     getHrDictOptions(HR_EMPLOYMENT_TYPE_DICT),
     getHrDictOptions(HR_EMPLOYMENT_STATUS_DICT),
   ]);

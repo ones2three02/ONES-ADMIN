@@ -6,6 +6,7 @@ import { $t } from '#/locales';
 import {
   formatHrDictLabel,
   getHrDictOptions,
+  HR_CONTRACT_STATUS_DICT,
   HR_CONTRACT_TYPE_DICT,
 } from '../dict-options';
 
@@ -108,14 +109,7 @@ export function useColumns(): VxeTableGridColumns {
       field: 'status',
       title: $t('hr.contract.status'),
       width: 120,
-      formatter: ({ cellValue }) => {
-        const statuses: any = {
-          ACTIVE: '履约中',
-          TERMINATED: '已终止',
-          EXPIRED: '已到期',
-        };
-        return statuses[cellValue] || cellValue;
-      },
+      formatter: ({ cellValue }) => formatHrDictLabel(HR_CONTRACT_STATUS_DICT, cellValue),
     },
     {
       field: 'startDate',

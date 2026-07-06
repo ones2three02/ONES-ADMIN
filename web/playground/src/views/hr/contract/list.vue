@@ -14,7 +14,11 @@ import { getEmployeeContracts, getEmployeeList, getExpiringContracts } from '#/a
 import { $t } from '#/locales';
 
 import { useColumns, useExpiringColumns } from './data';
-import { getHrDictOptions, HR_CONTRACT_TYPE_DICT } from '../dict-options';
+import {
+  getHrDictOptions,
+  HR_CONTRACT_STATUS_DICT,
+  HR_CONTRACT_TYPE_DICT,
+} from '../dict-options';
 import Form from './modules/form.vue';
 import TerminateForm from './modules/terminate-form.vue';
 
@@ -144,7 +148,10 @@ function onTerminateContract(row: HrContractApi.HrContract) {
 }
 
 onMounted(async () => {
-  await getHrDictOptions(HR_CONTRACT_TYPE_DICT);
+  await Promise.all([
+    getHrDictOptions(HR_CONTRACT_TYPE_DICT),
+    getHrDictOptions(HR_CONTRACT_STATUS_DICT),
+  ]);
   loadEmployeeList();
   expiringGridApi.query();
 });

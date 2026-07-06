@@ -22,6 +22,7 @@ export namespace HrContractApi {
   export interface SaveRequest {
     contractNo: string;
     contractType: string;
+    status: string;
     startDate: string;
     endDate?: string;
     probationMonths?: number;

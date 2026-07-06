@@ -2,6 +2,7 @@ export * from './api-resource';
 export * from './audit';
 export * from './dept';
 export * from './dict';
+export * from './dict-options';
 export * from './menu';
 export * from './overview';
 export * from './role';

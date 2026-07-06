@@ -449,7 +449,11 @@ public class SystemDataInitializer implements ApplicationRunner {
         ensureDictItem(employmentStatus, "停职", "SUSPENDED", "warning", 30);
         ensureDictItem(employmentStatus, "已离职", "RESIGNED", "error", 40);
 
-        SystemDictTypeEntity contractType = ensureDictType("hr_contract_type", "合同类型", "HRMS 员工合同类型", 30);
+        SystemDictTypeEntity gender = ensureDictType("hr_gender", "性别", "HRMS 员工性别", 30);
+        ensureDictItem(gender, "男", "MALE", "blue", 10);
+        ensureDictItem(gender, "女", "FEMALE", "magenta", 20);
+
+        SystemDictTypeEntity contractType = ensureDictType("hr_contract_type", "合同类型", "HRMS 员工合同类型", 40);
         ensureDictItem(contractType, "固定期限劳动合同", "FIXED_TERM", "processing", 10);
         ensureDictItem(contractType, "无固定期限劳动合同", "OPEN_ENDED", "success", 20);
         ensureDictItem(contractType, "实习协议", "INTERNSHIP", "blue", 30);
@@ -458,6 +462,21 @@ public class SystemDataInitializer implements ApplicationRunner {
         disableDictItem(contractType.getDictCode(), "UNFIXED");
         disableDictItem(contractType.getDictCode(), "DISPATCH");
         disableDictItem(contractType.getDictCode(), "INTERN");
+
+        SystemDictTypeEntity contractStatus = ensureDictType("hr_contract_status", "合同状态", "HRMS 员工合同状态", 50);
+        ensureDictItem(contractStatus, "草稿", "DRAFT", "default", 10);
+        ensureDictItem(contractStatus, "履约中", "ACTIVE", "success", 20);
+        ensureDictItem(contractStatus, "即将到期", "EXPIRING", "warning", 30);
+        ensureDictItem(contractStatus, "已终止", "TERMINATED", "error", 40);
+        disableDictItem(contractStatus.getDictCode(), "EXPIRED");
+
+        SystemDictTypeEntity rosterImportStatus = ensureDictType("hr_roster_import_status", "花名册导入状态", "HRMS 花名册导入批次状态", 60);
+        ensureDictItem(rosterImportStatus, "解析中", "PARSING", "processing", 10);
+        ensureDictItem(rosterImportStatus, "校验失败", "VALIDATION_FAILED", "error", 20);
+        ensureDictItem(rosterImportStatus, "部分成功", "PARTIAL_SUCCESS", "warning", 30);
+        ensureDictItem(rosterImportStatus, "导入成功", "SUCCESS", "success", 40);
+        ensureDictItem(rosterImportStatus, "导入失败", "FAILED", "error", 50);
+        disableDictItem(rosterImportStatus.getDictCode(), "PENDING");
     }
 
     private SystemDictTypeEntity ensureDictType(String dictCode, String dictName, String remark, int sortOrder) {

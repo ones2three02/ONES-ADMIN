@@ -50,6 +50,31 @@ class DictControllerTest {
                 .andExpect(jsonPath("$.data[*].value").value(org.hamcrest.Matchers.not(hasItem("FIXED"))))
                 .andExpect(jsonPath("$.data[*].value").value(org.hamcrest.Matchers.not(hasItem("UNFIXED"))));
 
+        mockMvc.perform(get("/api/system/dicts/hr_gender/options")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].value", hasItem("MALE")))
+                .andExpect(jsonPath("$.data[*].value", hasItem("FEMALE")));
+
+        mockMvc.perform(get("/api/system/dicts/hr_contract_status/options")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].value", hasItem("DRAFT")))
+                .andExpect(jsonPath("$.data[*].value", hasItem("ACTIVE")))
+                .andExpect(jsonPath("$.data[*].value", hasItem("EXPIRING")))
+                .andExpect(jsonPath("$.data[*].value", hasItem("TERMINATED")))
+                .andExpect(jsonPath("$.data[*].value").value(org.hamcrest.Matchers.not(hasItem("EXPIRED"))));
+
+        mockMvc.perform(get("/api/system/dicts/hr_roster_import_status/options")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].value", hasItem("PARSING")))
+                .andExpect(jsonPath("$.data[*].value", hasItem("VALIDATION_FAILED")))
+                .andExpect(jsonPath("$.data[*].value", hasItem("PARTIAL_SUCCESS")))
+                .andExpect(jsonPath("$.data[*].value", hasItem("SUCCESS")))
+                .andExpect(jsonPath("$.data[*].value", hasItem("FAILED")))
+                .andExpect(jsonPath("$.data[*].value").value(org.hamcrest.Matchers.not(hasItem("PENDING"))));
+
         String createTypeBody = objectMapper.writeValueAsString(new DictTypeSaveRequest(
                 "qa_status",
                 "质检状态",

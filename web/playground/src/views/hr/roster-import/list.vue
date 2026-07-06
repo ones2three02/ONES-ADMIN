@@ -2,7 +2,7 @@
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 import type { HrRosterImportApi } from '#/api';
 
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import { Page, useVbenModal } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
@@ -14,6 +14,11 @@ import { downloadRosterTemplate, getRosterImportBatches, uploadRosterFile } from
 import { $t } from '#/locales';
 
 import { useColumns } from './data';
+import {
+  getHrDictOption,
+  getHrDictOptions,
+  HR_ROSTER_IMPORT_STATUS_DICT,
+} from '../dict-options';
 import ErrorsModal from './modules/errors.vue';
 
 const [Errors, errorsModalApi] = useVbenModal({
@@ -143,14 +148,19 @@ function handleViewErrors(row: HrRosterImportApi.ImportBatch) {
 }
 
 function statusTag(status?: string) {
-  const statusMap: Record<string, { color: string; text: string }> = {
-    PARSING: { color: 'processing', text: '解析中' },
-    PARTIAL_SUCCESS: { color: 'warning', text: '部分成功' },
-    SUCCESS: { color: 'success', text: '导入成功' },
-    VALIDATION_FAILED: { color: 'error', text: '校验失败' },
+  if (!status) {
+    return { color: 'default', text: '-' };
+  }
+  const option = getHrDictOption(HR_ROSTER_IMPORT_STATUS_DICT, status);
+  return {
+    color: option?.color ?? 'default',
+    text: option?.label ?? status,
   };
-  return status ? (statusMap[status] ?? { color: 'default', text: status }) : { color: 'default', text: '-' };
 }
+
+onMounted(async () => {
+  await getHrDictOptions(HR_ROSTER_IMPORT_STATUS_DICT);
+});
 </script>
 <template>
   <Page auto-content-height :title="$t('hr.rosterImport.title')">

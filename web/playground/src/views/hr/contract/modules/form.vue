@@ -17,6 +17,8 @@ const employeeId = ref<string | number>();
 const contractId = ref<string | number>();
 const isEdit = ref(false);
 
+type ContractFormValues = Partial<HrContractApi.SaveRequest>;
+
 const [Form, formApi] = useVbenForm({
   schema: useFormSchema(),
   showDefaultActions: false,
@@ -26,13 +28,18 @@ const [Drawer, drawerApi] = useVbenDrawer({
   async onConfirm() {
     const { valid } = await formApi.validate();
     if (!valid) return;
-    const values = await formApi.getValues();
+    const values = (await formApi.getValues()) as ContractFormValues;
     if (!employeeId.value) return;
+
+    const payload: HrContractApi.SaveRequest = {
+      ...(values as HrContractApi.SaveRequest),
+      status: dataStatus(values, isEdit.value),
+    };
 
     drawerApi.lock();
     (isEdit.value && contractId.value
-      ? updateContract(employeeId.value, contractId.value, values as any)
-      : createContract(employeeId.value, values as any))
+      ? updateContract(employeeId.value, contractId.value, payload)
+      : createContract(employeeId.value, payload))
       .then(() => {
         emits('success');
         drawerApi.close();
@@ -74,6 +81,10 @@ const getDrawerTitle = computed(() => {
     ? $t('hr.contract.edit')
     : $t('hr.contract.create');
 });
+
+function dataStatus(values: ContractFormValues, editing: boolean) {
+  return editing && values.status ? values.status : 'ACTIVE';
+}
 </script>
 <template>
   <Drawer :title="getDrawerTitle">
