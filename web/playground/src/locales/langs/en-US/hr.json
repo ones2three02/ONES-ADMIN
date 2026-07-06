@@ -1,5 +1,8 @@
 {
   "title": "HRMS",
+  "overview": {
+    "title": "HR Overview"
+  },
   "employee": {
     "title": "Employees",
     "list": "Employee Directory",

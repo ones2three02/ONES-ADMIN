@@ -2,12 +2,12 @@
 
 ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
-当前产品版本：`v0.0.69`
+当前产品版本：`v0.0.70`
 
 ## 当前能力
 
-- 后端：Spring Boot 3.5.9、Java 21、Maven Enforcer、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、Flyway、MySQL、Redis、RabbitMQ、MinIO、统一响应、统一异常、TraceId 链路追踪、登录认证、角色权限、动态菜单、用户 CRUD、HRMS 岗位/职级/员工基础接口、HRMS 员工基础信息编辑、HRMS 员工调岗/转正/离职生命周期、HRMS 员工生命周期时间线查询、HRMS 员工合同列表/新增/编辑/终止/到期查询接口、HRMS 花名册模板下载/批量导入/批次与错误行查询接口、HRMS 员工花名册 CSV 导出、系统/认证/时区/HRMS 写操作审计、接口资源治理、接口治理聚合报告、接口治理评分维度、接口治理发布就绪摘要、接口治理负责人待办摘要、接口管理参考基准、接口治理推荐动作、接口治理动作项、HRMS 一期企业级设计、接口版本元数据治理、接口生命周期治理、接口受众治理、高风险写接口策略治理、写接口操作审计覆盖治理、公开接口访问策略治理、公开接口开放原因治理、接口治理修复建议、Actuator、Swagger UI。
-- 前端：Vue3、Vite、TypeScript、Vben / Ant Design Vue 组件体系、Pinia、Vue Router、Axios 请求拦截、错误提示 TraceId 展示、Vben 风格企业级安全登录页、ONES/1S 核心视觉与白天/夜间品牌资源、飞书优先的紧凑企业登录入口、管理布局、工作台、用户管理页、接口管理页、接口调用方筛选与展示、发布门禁、发布就绪、负责人待办和治理规则视图、HRMS 员工列表导出入口、HRMS 花名册导入页、Playwright 登录冒烟用例。
+- 后端：Spring Boot 3.5.9、Java 21、Maven Enforcer、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、Flyway、MySQL、Redis、RabbitMQ、MinIO、统一响应、统一异常、TraceId 链路追踪、登录认证、角色权限、动态菜单、用户 CRUD、HRMS 岗位/职级/员工基础接口、HRMS 员工基础信息编辑、HRMS 员工调岗/转正/离职生命周期、HRMS 员工生命周期时间线查询、HRMS 员工合同列表/新增/编辑/终止/到期查询接口、HRMS 花名册模板下载/批量导入/批次与错误行查询接口、HRMS 员工花名册 CSV 导出、HRMS 人力概览统计接口、系统/认证/时区/HRMS 写操作审计、接口资源治理、接口治理聚合报告、接口治理评分维度、接口治理发布就绪摘要、接口治理负责人待办摘要、接口管理参考基准、接口治理推荐动作、接口治理动作项、HRMS 一期企业级设计、接口版本元数据治理、接口生命周期治理、接口受众治理、高风险写接口策略治理、写接口操作审计覆盖治理、公开接口访问策略治理、公开接口开放原因治理、接口治理修复建议、Actuator、Swagger UI。
+- 前端：Vue3、Vite、TypeScript、Vben / Ant Design Vue 组件体系、Pinia、Vue Router、Axios 请求拦截、错误提示 TraceId 展示、Vben 风格企业级安全登录页、ONES/1S 核心视觉与白天/夜间品牌资源、飞书优先的紧凑企业登录入口、管理布局、工作台、用户管理页、接口管理页、接口调用方筛选与展示、发布门禁、发布就绪、负责人待办和治理规则视图、HRMS 人力概览页、HRMS 员工列表导出入口、HRMS 花名册导入页、Playwright 登录冒烟用例。
 - 认证：`Authorization: Bearer <token>`，由 Sa-Token 签发与校验。
 - 演示账号：`admin / admin123`
 

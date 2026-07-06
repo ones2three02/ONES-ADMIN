@@ -1,5 +1,6 @@
 package com.ones.admin.hr;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ones.admin.auth.dto.LoginRequest;
 import com.ones.admin.hr.dto.HrEmployeeCreateRequest;
@@ -202,6 +203,33 @@ class HrManagementControllerTest {
                 .contains("110****5678")
                 .doesNotContain(idCardNumber)
                 .doesNotContain("110101199001015678");
+
+        String overviewResponse = mockMvc.perform(get("/api/hr/overview")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.generatedAt", notNullValue()))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode overview = objectMapper.readTree(overviewResponse).path("data");
+        assertThat(overview.path("employeeCount").asLong()).isGreaterThanOrEqualTo(1L);
+        assertThat(overview.path("resignedEmployeeCount").asLong()).isGreaterThanOrEqualTo(1L);
+        assertThat(overview.path("departmentCount").asLong()).isGreaterThanOrEqualTo(1L);
+        assertThat(overview.path("activeContractCount").asLong()).isGreaterThanOrEqualTo(1L);
+        assertThat(overview.path("expiringContractCount").asLong()).isGreaterThanOrEqualTo(1L);
+        assertThat(metricValue(overview.path("employmentStatusStats"), "RESIGNED")).isGreaterThanOrEqualTo(1L);
+        assertThat(metricValue(overview.path("departmentStats"), "ONES 总部")).isGreaterThanOrEqualTo(1L);
+        assertThat(metricValue(overview.path("lifecycleEventStats"), "ONBOARD")).isGreaterThanOrEqualTo(1L);
+        assertThat(metricValue(overview.path("lifecycleEventStats"), "RESIGN")).isGreaterThanOrEqualTo(1L);
+    }
+
+    private long metricValue(JsonNode metrics, String codeOrName) {
+        for (JsonNode item : metrics) {
+            if (codeOrName.equals(item.path("code").asText()) || codeOrName.equals(item.path("name").asText())) {
+                return item.path("value").asLong();
+            }
+        }
+        return 0L;
     }
 
     private long createEmployeeContract(String token, long employeeId, String suffix) throws Exception {

@@ -87,6 +87,7 @@ public class SystemDataInitializer implements ApplicationRunner {
                 ensurePermission("system:api:list", "接口资源查询"),
                 ensurePermission("system:api:publish", "接口资源发布"),
                 ensurePermission("system:file:upload", "文件上传"),
+                ensurePermission("hr:overview:view", "人力概览查看"),
                 ensurePermission("hr:employee:list", "员工查询"),
                 ensurePermission("hr:employee:detail", "员工详情"),
                 ensurePermission("hr:employee:lifecycle", "员工生命周期查询"),
@@ -295,6 +296,9 @@ public class SystemDataInitializer implements ApplicationRunner {
 
         SystemMenuEntity hrms = ensureMenu(null, "HRMS", "人力资源管理", "/hr",
                 "BasicLayout", null, null, "lucide:users", "catalog", 200);
+
+        ensureMenu(hrms.getId(), "HrOverview", "人力概览", "/hr/overview",
+                "/hr/overview/index", null, "hr:overview:view", "lucide:chart-no-axes-combined", "menu", 5);
 
         SystemMenuEntity hrEmployee = ensureMenu(hrms.getId(), "HrEmployee", "员工管理", "/hr/employee",
                 "/hr/employee/list", null, "hr:employee:list", "lucide:users", "menu", 10);

@@ -13,6 +13,15 @@ const routes: RouteRecordRaw[] = [
     path: '/hr',
     children: [
       {
+        path: '/hr/overview',
+        name: 'HrOverview',
+        meta: {
+          icon: 'lucide:chart-no-axes-combined',
+          title: $t('hr.overview.title'),
+        },
+        component: () => import('#/views/hr/overview/index.vue'),
+      },
+      {
         path: '/hr/employee',
         name: 'HrEmployee',
         meta: {
