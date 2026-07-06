@@ -7,12 +7,14 @@ import { computed, h, onMounted, ref } from 'vue';
 import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
 
-import { Alert, Button, Card, Skeleton, Statistic, Tag } from 'antdv-next';
+import { Alert, Button, Card, Empty, Skeleton, Statistic, Tag } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   getApiResourceGovernanceReport,
   getApiResourceList,
+  getApiResourceManifestSnapshots,
+  getLatestApiResourceManifestSnapshot,
 } from '#/api';
 import { $t } from '#/locales';
 
@@ -22,7 +24,12 @@ defineOptions({ name: 'SystemApiResources' });
 
 const governanceReport =
   ref<SystemApiResourceApi.ApiResourceGovernanceReport>();
+const manifestSnapshots = ref<SystemApiResourceApi.ApiResourceManifestSnapshot[]>([]);
+const latestManifestSnapshot =
+  ref<SystemApiResourceApi.ApiResourceManifestSnapshot>();
+const manifestSnapshotTotal = ref(0);
 const loadingOverview = ref(false);
+const loadingSnapshots = ref(false);
 const loadError = ref('');
 
 const summary = computed(() => governanceReport.value?.summary);
@@ -198,16 +205,59 @@ const governanceRuleSummaries = computed(
 const governanceCategorySummaries = computed(
   () => governance.value?.categorySummaries ?? [],
 );
+const latestBaselineStatus = computed(() => {
+  if (!latestManifestSnapshot.value) {
+    return {
+      color: 'warning',
+      text: '待归档',
+    };
+  }
+  if (latestManifestSnapshot.value.checksum === governanceReport.value?.manifest.checksum) {
+    return {
+      color: 'success',
+      text: '已对齐',
+    };
+  }
+  return {
+    color: 'warning',
+    text: '有变更',
+  };
+});
 
 async function loadOverview() {
   loadingOverview.value = true;
   loadError.value = '';
   try {
     governanceReport.value = await getApiResourceGovernanceReport();
+    await loadManifestSnapshots();
   } catch {
     loadError.value = '接口治理报告加载失败，请稍后重试';
   } finally {
     loadingOverview.value = false;
+  }
+}
+
+async function loadManifestSnapshots() {
+  loadingSnapshots.value = true;
+  try {
+    const [latestSnapshot, snapshotPage] = await Promise.allSettled([
+      getLatestApiResourceManifestSnapshot(),
+      getApiResourceManifestSnapshots({
+        page: 1,
+        pageSize: 5,
+      }),
+    ]);
+    latestManifestSnapshot.value =
+      latestSnapshot.status === 'fulfilled' ? latestSnapshot.value : undefined;
+    if (snapshotPage.status === 'fulfilled') {
+      manifestSnapshots.value = snapshotPage.value.list;
+      manifestSnapshotTotal.value = snapshotPage.value.total;
+    } else {
+      manifestSnapshots.value = [];
+      manifestSnapshotTotal.value = 0;
+    }
+  } finally {
+    loadingSnapshots.value = false;
   }
 }
 
@@ -258,6 +308,22 @@ function getOwnerActionStatusText(
     return '跟踪';
   }
   return '完成';
+}
+
+function formatDateTime(value?: string) {
+  if (!value) {
+    return '-';
+  }
+  return new Date(value).toLocaleString('zh-CN', {
+    hour12: false,
+  });
+}
+
+function shortChecksum(value?: string) {
+  if (!value) {
+    return '-';
+  }
+  return value.length > 12 ? `${value.slice(0, 12)}...` : value;
 }
 
 onMounted(() => {
@@ -414,6 +480,117 @@ onMounted(() => {
         v-if="governanceReport"
         class="mb-4 grid gap-4 xl:grid-cols-2"
       >
+        <Card variant="borderless">
+          <div class="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2 font-medium">
+                <IconifyIcon
+                  class="size-4 text-primary"
+                  icon="lucide:archive"
+                />
+                Manifest 基线
+              </div>
+              <div class="text-muted-foreground mt-1 text-xs">
+                将接口契约作为版本资产归档，给 Jenkins 门禁、人工复核和破坏性变更对比提供基线。
+              </div>
+            </div>
+            <Tag :color="latestBaselineStatus.color">
+              {{ latestBaselineStatus.text }}
+            </Tag>
+          </div>
+
+          <div class="mb-4 grid gap-3 sm:grid-cols-3">
+            <div class="rounded border border-border p-3">
+              <div class="text-muted-foreground text-xs">当前版本</div>
+              <div class="mt-1 text-sm font-medium">
+                {{ governanceReport.manifest.applicationVersion }}
+              </div>
+            </div>
+            <div class="rounded border border-border p-3">
+              <div class="text-muted-foreground text-xs">当前接口数</div>
+              <div class="mt-1 text-sm font-medium">
+                {{ governanceReport.manifest.total }}
+              </div>
+            </div>
+            <div class="rounded border border-border p-3">
+              <div class="text-muted-foreground text-xs">当前指纹</div>
+              <div class="mt-1 truncate text-sm font-medium">
+                {{ shortChecksum(governanceReport.manifest.checksum) }}
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4 rounded border border-border p-3">
+            <div class="mb-2 flex items-center justify-between gap-3">
+              <span class="text-sm font-medium">最新归档快照</span>
+              <Tag color="processing">
+                {{ manifestSnapshotTotal }} 条历史
+              </Tag>
+            </div>
+            <template v-if="latestManifestSnapshot">
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <div class="text-muted-foreground text-xs">快照版本</div>
+                  <div class="mt-1 text-sm font-medium">
+                    {{ latestManifestSnapshot.applicationVersion }}
+                  </div>
+                </div>
+                <div>
+                  <div class="text-muted-foreground text-xs">归档时间</div>
+                  <div class="mt-1 text-sm font-medium">
+                    {{ formatDateTime(latestManifestSnapshot.createdAt) }}
+                  </div>
+                </div>
+                <div>
+                  <div class="text-muted-foreground text-xs">接口数</div>
+                  <div class="mt-1 text-sm font-medium">
+                    {{ latestManifestSnapshot.total }}
+                  </div>
+                </div>
+                <div>
+                  <div class="text-muted-foreground text-xs">快照指纹</div>
+                  <div class="mt-1 truncate text-sm font-medium">
+                    {{ shortChecksum(latestManifestSnapshot.checksum) }}
+                  </div>
+                </div>
+              </div>
+            </template>
+            <Empty v-else :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+          </div>
+
+          <Skeleton v-if="loadingSnapshots && manifestSnapshots.length === 0" active />
+          <div v-else class="space-y-3">
+            <div
+              v-for="snapshot in manifestSnapshots"
+              :key="snapshot.id"
+              class="rounded border border-border p-3"
+            >
+              <div class="mb-2 flex items-center justify-between gap-2">
+                <div class="flex min-w-0 items-center gap-2">
+                  <Tag color="blue">{{ snapshot.applicationVersion }}</Tag>
+                  <span class="truncate text-xs font-medium">
+                    {{ shortChecksum(snapshot.checksum) }}
+                  </span>
+                </div>
+                <Tag :color="snapshot.publishStatus === 'PASSED' ? 'success' : 'warning'">
+                  {{ snapshot.publishStatus }}
+                </Tag>
+              </div>
+              <div class="text-muted-foreground flex flex-wrap gap-3 text-xs">
+                <span>接口 {{ snapshot.total }}</span>
+                <span>{{ snapshot.checksumAlgorithm }}</span>
+                <span>{{ formatDateTime(snapshot.createdAt) }}</span>
+              </div>
+              <div
+                v-if="snapshot.reviewReason"
+                class="text-muted-foreground mt-2 line-clamp-2 text-xs"
+              >
+                {{ snapshot.reviewReason }}
+              </div>
+            </div>
+          </div>
+        </Card>
+
         <Card variant="borderless">
           <div class="mb-4 flex items-start justify-between gap-3">
             <div>

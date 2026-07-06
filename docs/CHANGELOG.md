@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.71 - 2026-07-06
+
+- 前端接口管理页新增 Manifest 基线视图，展示当前 Manifest 版本、接口数、指纹、最新归档快照、历史快照列表和发布状态。
+- 前端 API client 补齐 `/system/api-resources/manifest/snapshots` 与 `/system/api-resources/manifest/snapshots/latest` 类型和请求方法，让 Jenkins 使用的接口契约基线能力也能被后台页面直接承接。
+- 通过 agent-reach GitHub/dev 路由复核 API Management、API Catalog、OpenAPI Diff 开源项目，继续吸收“版本资产化、基线可见、差异可追踪”的接口治理思路。
+- 产品版本递增至 `v0.0.71`。
+
 ## v0.0.70 - 2026-07-06
 
 - HRMS 新增人力概览后端接口 `GET /api/hr/overview`，输出员工总数、在职/试用期/离职人数、部门数量、有效合同、30 天内到期合同、30 天内待转正、员工状态分布、部门分布和近 30 天生命周期事件。

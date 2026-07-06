@@ -210,6 +210,18 @@ export namespace SystemApiResourceApi {
     gate: ApiResourceManifestGate;
   }
 
+  export interface ApiResourceManifestSnapshot {
+    applicationVersion: string;
+    checksum: string;
+    checksumAlgorithm: string;
+    createdAt: string;
+    id: number;
+    manifest?: ApiResourceManifest;
+    publishStatus: string;
+    reviewReason?: string;
+    total: number;
+  }
+
   export interface ApiResourceReferenceBenchmark {
     category: 'API_CATALOG' | 'API_GATEWAY' | 'API_MANAGEMENT' | 'HRMS';
     lesson: string;
@@ -333,6 +345,14 @@ interface ApiResourceListParams {
   riskLevel?: string;
 }
 
+interface ApiResourceManifestSnapshotListParams {
+  applicationVersion?: string;
+  checksum?: string;
+  page?: number;
+  pageNum?: number;
+  pageSize?: number;
+}
+
 export async function getApiResourceList(params: ApiResourceListParams) {
   const response = await requestClient.get<
     PageResult<SystemApiResourceApi.ApiResource>
@@ -364,5 +384,26 @@ export async function getApiResourceGovernance() {
 export async function getApiResourceGovernanceReport() {
   return requestClient.get<SystemApiResourceApi.ApiResourceGovernanceReport>(
     '/system/api-resources/governance/report',
+  );
+}
+
+export async function getApiResourceManifestSnapshots(
+  params: ApiResourceManifestSnapshotListParams,
+) {
+  const response = await requestClient.get<
+    PageResult<SystemApiResourceApi.ApiResourceManifestSnapshot>
+  >('/system/api-resources/manifest/snapshots', {
+    params: {
+      ...params,
+      pageNum: params.page ?? params.pageNum,
+    },
+  });
+
+  return response;
+}
+
+export async function getLatestApiResourceManifestSnapshot() {
+  return requestClient.get<SystemApiResourceApi.ApiResourceManifestSnapshot>(
+    '/system/api-resources/manifest/snapshots/latest',
   );
 }

@@ -73,6 +73,7 @@
 - 接口治理聚合报告已补充 `qualityScore` 与 `qualityDimensions`，按 SECURITY、AUDIT、CONTRACT、LIFECYCLE、CATALOG、DOCUMENTATION 六个维度输出治理评分、扣分数量、参考基准和整改建议，便于 Jenkins 设置趋势阈值，也便于前端接口管理页展示维度健康度。
 - 接口治理聚合报告已补充 `releaseReadiness`，将 Manifest Gate、基线快照、治理评分和动作项汇总为机器可读发布状态，Jenkins 可直接读取 `ready`、`status`、`blockingCheckCount` 和 `nextActionCode`。
 - 接口治理聚合报告已补充 `ownerActionSummaries`，按负责人聚合治理动作总数、打开动作数、阻断动作数、P0/P1/P2 待办、分类和下一步动作，便于 Jenkins 和接口管理页按团队追踪整改负载。
+- 接口管理前端已在 v0.0.71 补齐 Manifest 基线视图，直接展示当前 Manifest 指纹、最新归档快照、历史快照列表和发布状态，让 Jenkins 使用的接口契约基线也能被后台页面审阅。
 - 接口管理参考基准已覆盖 Backstage 的 API Catalog、Gravitee 的 API Management 生命周期、Kong/APISIX/Tyk 的网关策略、Spectral 的 OpenAPI 规则校验和 oasdiff 的破坏性变更识别；ONES-ADMIN 当前优先吸收“目录资产化、策略门禁化、契约可比对、整改动作可跟踪”四类能力。
 - 已将 `operationId` 纳入接口清单、CSV、Manifest、Manifest 指纹和 Manifest Diff，接口操作标识变化按破坏性变更处理。
 - 已建立 `operationId` 命名规范和唯一性门禁，当前格式为 `^[A-Z][A-Za-z0-9]*_[a-z][A-Za-z0-9]*$`，重复或非法命名会作为治理错误阻断发布。
