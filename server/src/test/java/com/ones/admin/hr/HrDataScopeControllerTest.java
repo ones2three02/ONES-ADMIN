@@ -150,6 +150,73 @@ class HrDataScopeControllerTest {
                 .andExpect(jsonPath("$.data.list[0].employeeNo").value("VE" + suffix));
     }
 
+    @Test
+    void hrEmployeeSensitiveFieldsRequireDedicatedPermission() throws Exception {
+        String adminToken = login("admin", "admin123");
+        String suffix = String.valueOf(System.nanoTime());
+
+        long roleId = createHrRole(adminToken, "HR_SENSITIVE_LIMIT_" + suffix, "ALL");
+        grantPermissions(roleId,
+                "hr:employee:list",
+                "hr:employee:detail",
+                "hr:employee:update");
+        String username = "hrsensitive" + suffix;
+        createUser(adminToken, username, 1L, "HR_SENSITIVE_LIMIT_" + suffix);
+
+        long positionId = createPosition(adminToken, "SEN-" + suffix, 1L);
+        long gradeId = createJobGrade(adminToken, "SG-" + suffix);
+        long employeeId = createEmployee(
+                adminToken,
+                "SE" + suffix,
+                "敏感字段员工",
+                1L,
+                positionId,
+                gradeId,
+                null
+        );
+
+        mockMvc.perform(get("/api/hr/employees/" + employeeId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.mobile").value("13800138000"))
+                .andExpect(jsonPath("$.data.email").value(("SE" + suffix).toLowerCase() + "@ones.local"))
+                .andExpect(jsonPath("$.data.sensitiveVisible").value(true));
+
+        String hrToken = login(username, "hrscope123");
+        mockMvc.perform(get("/api/hr/employees/" + employeeId)
+                        .header("Authorization", "Bearer " + hrToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.mobile").value("138****8000"))
+                .andExpect(jsonPath("$.data.email").value("s****" + suffix.charAt(suffix.length() - 1) + "@ones.local"))
+                .andExpect(jsonPath("$.data.sensitiveVisible").value(false));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/hr/employees/" + employeeId)
+                        .header("Authorization", "Bearer " + hrToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "realName", "敏感字段员工-已更新",
+                                "preferredName", "敏感",
+                                "gender", "MALE",
+                                "mobile", "13900139000",
+                                "email", "leaked" + suffix + "@ones.local",
+                                "probationEndDate", "2026-10-01",
+                                "remark", "无敏感查看权限时不允许更新联系方式"
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.realName").value("敏感字段员工-已更新"))
+                .andExpect(jsonPath("$.data.mobile").value("138****8000"))
+                .andExpect(jsonPath("$.data.email").value("s****" + suffix.charAt(suffix.length() - 1) + "@ones.local"))
+                .andExpect(jsonPath("$.data.sensitiveVisible").value(false));
+
+        mockMvc.perform(get("/api/hr/employees/" + employeeId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.realName").value("敏感字段员工-已更新"))
+                .andExpect(jsonPath("$.data.mobile").value("13800138000"))
+                .andExpect(jsonPath("$.data.email").value(("SE" + suffix).toLowerCase() + "@ones.local"))
+                .andExpect(jsonPath("$.data.sensitiveVisible").value(true));
+    }
+
     private long createDept(String token, String name, Long parentId) throws Exception {
         String response = mockMvc.perform(post("/api/system/dept")
                         .header("Authorization", "Bearer " + token)

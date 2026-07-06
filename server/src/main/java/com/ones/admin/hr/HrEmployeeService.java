@@ -51,6 +51,7 @@ public class HrEmployeeService {
 
     private static final Set<String> EMPLOYMENT_TYPES = Set.of("FULL_TIME", "PART_TIME", "INTERN", "OUTSOURCED");
     private static final Set<String> EMPLOYMENT_STATUSES = Set.of("ACTIVE", "PROBATION", "SUSPENDED", "RESIGNED");
+    private static final String SENSITIVE_VIEW_PERMISSION = "hr:employee:sensitive:view";
     private static final int MAX_EXPORT_ROWS = 5000;
     private static final List<String> EXPORT_HEADERS = List.of(
             "employeeNo",
@@ -154,7 +155,7 @@ public class HrEmployeeService {
     }
 
     public HrEmployeeResponse getEmployee(Long id) {
-        return toResponse(getVisibleEmployee(id), true);
+        return toResponse(getVisibleEmployee(id), canViewSensitiveFields());
     }
 
     public List<HrEmployeeLifecycleEventResponse> listLifecycleEvents(Long employeeId) {
@@ -205,17 +206,20 @@ public class HrEmployeeService {
 
         createInitialJob(employee);
         createLifecycleEvent(employee);
-        return toResponse(employeeMapper.selectById(employee.getId()), true);
+        return toResponse(employeeMapper.selectById(employee.getId()), canViewSensitiveFields());
     }
 
     @Transactional
     public HrEmployeeResponse updateEmployee(Long id, HrEmployeeUpdateRequest request) {
         HrEmployeeEntity employee = getVisibleEmployee(id);
+        boolean exposeSensitive = canViewSensitiveFields();
         employee.setRealName(request.realName().trim());
         employee.setPreferredName(normalizeNullable(request.preferredName()));
         employee.setGender(normalizeNullable(request.gender()));
-        employee.setMobile(normalizeNullable(request.mobile()));
-        employee.setEmail(normalizeNullable(request.email()));
+        if (exposeSensitive) {
+            employee.setMobile(normalizeNullable(request.mobile()));
+            employee.setEmail(normalizeNullable(request.email()));
+        }
         if (hasText(request.idCardNumber())) {
             employee.setIdCardMasked(maskIdCard(request.idCardNumber()));
             employee.setIdCardEncrypted(null);
@@ -225,7 +229,7 @@ public class HrEmployeeService {
         employee.setRemark(normalizeNullable(request.remark()));
         employee.setUpdatedAt(LocalDateTime.now());
         employeeMapper.updateById(employee);
-        return toResponse(employeeMapper.selectById(employee.getId()), true);
+        return toResponse(employeeMapper.selectById(employee.getId()), exposeSensitive);
     }
 
     @Transactional
@@ -274,7 +278,7 @@ public class HrEmployeeService {
                 employeeSnapshot(employee),
                 request.changeReason()
         );
-        return toResponse(employeeMapper.selectById(employee.getId()), true);
+        return toResponse(employeeMapper.selectById(employee.getId()), canViewSensitiveFields());
     }
 
     @Transactional
@@ -306,7 +310,7 @@ public class HrEmployeeService {
                 employeeSnapshot(employee),
                 request.remark()
         );
-        return toResponse(employeeMapper.selectById(employee.getId()), true);
+        return toResponse(employeeMapper.selectById(employee.getId()), canViewSensitiveFields());
     }
 
     @Transactional
@@ -336,7 +340,7 @@ public class HrEmployeeService {
                 employeeSnapshot(employee),
                 request.resignationReason()
         );
-        return toResponse(employeeMapper.selectById(employee.getId()), true);
+        return toResponse(employeeMapper.selectById(employee.getId()), canViewSensitiveFields());
     }
 
     private LambdaQueryWrapper<HrEmployeeEntity> buildEmployeeQuery(HrEmployeeQuery query, boolean applyDataScope) {
@@ -593,6 +597,7 @@ public class HrEmployeeService {
                 exposeSensitive ? employee.getMobile() : SensitiveDataMaskingUtils.maskMobile(employee.getMobile()),
                 exposeSensitive ? employee.getEmail() : SensitiveDataMaskingUtils.maskEmail(employee.getEmail()),
                 employee.getIdCardMasked(),
+                exposeSensitive,
                 employee.getUserId(),
                 employee.getDeptId(),
                 dept == null ? null : dept.getName(),
@@ -611,6 +616,10 @@ public class HrEmployeeService {
                 employee.getCreatedAt(),
                 employee.getUpdatedAt()
         );
+    }
+
+    private boolean canViewSensitiveFields() {
+        return StpUtil.isLogin() && StpUtil.hasPermission(SENSITIVE_VIEW_PERMISSION);
     }
 
     private Map<Long, String> loadDeptNames(List<HrEmployeeEntity> employees) {

@@ -53,12 +53,20 @@ export function useFormSchema(): VbenFormSchema[] {
     },
     {
       component: 'Input',
+      dependencies: {
+        disabled: (values) => values.id && values.sensitiveVisible === false,
+        triggerFields: ['id', 'sensitiveVisible'],
+      },
       fieldName: 'mobile',
       label: $t('hr.employee.mobile'),
       rules: 'required',
     },
     {
       component: 'Input',
+      dependencies: {
+        disabled: (values) => values.id && values.sensitiveVisible === false,
+        triggerFields: ['id', 'sensitiveVisible'],
+      },
       fieldName: 'email',
       label: $t('hr.employee.email'),
       rules: 'required',

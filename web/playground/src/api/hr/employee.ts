@@ -10,6 +10,7 @@ export namespace HrEmployeeApi {
     mobile: string;
     email: string;
     idCardMasked?: string;
+    sensitiveVisible?: boolean;
     userId?: string;
     deptId: string;
     deptName?: string;

@@ -92,12 +92,14 @@ function buildUpdatePayload(values: Record<string, any>): HrEmployeeApi.UpdateRe
     realName: values.realName,
     preferredName: emptyToUndefined(values.preferredName) as string | undefined,
     gender: emptyToUndefined(values.gender) as string | undefined,
-    mobile: emptyToUndefined(values.mobile) as string | undefined,
-    email: emptyToUndefined(values.email) as string | undefined,
     userId: emptyToUndefined(values.userId) as string | undefined,
     probationEndDate: emptyToUndefined(values.probationEndDate) as string | undefined,
     remark: emptyToUndefined(values.remark) as string | undefined,
   };
+  if (values.sensitiveVisible !== false) {
+    payload.mobile = emptyToUndefined(values.mobile) as string | undefined;
+    payload.email = emptyToUndefined(values.email) as string | undefined;
+  }
   const idCardNumber = emptyToUndefined(values.idCardNumber) as string | undefined;
   if (idCardNumber) {
     payload.idCardNumber = idCardNumber;

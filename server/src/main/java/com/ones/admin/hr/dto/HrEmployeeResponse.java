@@ -12,6 +12,7 @@ public record HrEmployeeResponse(
         String mobile,
         String email,
         String idCardMasked,
+        boolean sensitiveVisible,
         Long userId,
         Long deptId,
         String deptName,
