@@ -9,6 +9,8 @@ import com.ones.admin.common.web.ApiLifecycleStatus;
 import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.common.web.ApiRiskLevel;
+import com.ones.admin.system.dto.FileMetadataResponse;
+import com.ones.admin.system.entity.SystemFileEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.Resource;
@@ -25,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -41,10 +44,16 @@ public class FileController {
 
     private final FileStorageProperties fileStorageProperties;
     private final FileStorageService fileStorageService;
+    private final FileMetadataService fileMetadataService;
 
-    public FileController(FileStorageProperties fileStorageProperties, FileStorageService fileStorageService) {
+    public FileController(
+            FileStorageProperties fileStorageProperties,
+            FileStorageService fileStorageService,
+            FileMetadataService fileMetadataService
+    ) {
         this.fileStorageProperties = fileStorageProperties;
         this.fileStorageService = fileStorageService;
+        this.fileMetadataService = fileMetadataService;
     }
 
     @PostMapping("/upload")
@@ -65,13 +74,30 @@ public class FileController {
         }
         String storedName = UUID.randomUUID() + "." + extension;
         FileStorageService.StoredFile storedFile = fileStorageService.store(file, storedName);
-        return ApiResult.ok(new FileUploadResponse(storedFile.url()));
+        FileMetadataResponse metadata = fileMetadataService.create(
+                safeFilename(file.getOriginalFilename()),
+                storedFile.storedName(),
+                storedFile.url(),
+                file.getContentType(),
+                extension,
+                file.getSize()
+        );
+        return ApiResult.ok(FileUploadResponse.from(metadata));
+    }
+
+    @GetMapping("/{id:\\d+}/metadata")
+    @SaCheckPermission("system:file:read")
+    @Operation(summary = "查询文件元数据")
+    @ApiResourceMetadata(sinceVersion = "v0.0.80", riskLevel = ApiRiskLevel.MEDIUM)
+    public ApiResult<FileMetadataResponse> getMetadata(@PathVariable Long id) {
+        return ApiResult.ok(fileMetadataService.getRequired(id));
     }
 
     @GetMapping("/{filename:.+}")
     @Operation(summary = "访问文件")
     @ApiAccessPolicy(value = ApiAuthType.LOGIN, reason = "文件访问依赖登录态保护，文件级授权后续随文件元数据表补齐")
     public ResponseEntity<Resource> download(@PathVariable String filename) throws IOException {
+        Optional<SystemFileEntity> metadata = fileMetadataService.findByStoredName(filename);
         FileStorageService.StoredResource storedResource = fileStorageService.load(filename)
                 .orElse(null);
         if (storedResource == null) {
@@ -79,8 +105,34 @@ public class FileController {
         }
         return ResponseEntity.ok()
                 .contentType(storedResource.mediaType())
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + storedResource.filename() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\""
+                        + contentDispositionFilename(metadata
+                        .map(SystemFileEntity::getOriginalName)
+                        .orElse(storedResource.filename())) + "\"")
                 .body(storedResource.resource());
+    }
+
+    private String safeFilename(String originalFilename) {
+        if (originalFilename == null || originalFilename.isBlank()) {
+            return "file." + UUID.randomUUID();
+        }
+        String filename = Path.of(originalFilename).getFileName().toString()
+                .replace('\r', '_')
+                .replace('\n', '_')
+                .replace('"', '_');
+        if (filename.isBlank()) {
+            return "file." + UUID.randomUUID();
+        }
+        return filename;
+    }
+
+    private String contentDispositionFilename(String filename) {
+        if (filename == null || filename.isBlank()) {
+            return "file";
+        }
+        return filename.replace('\r', '_')
+                .replace('\n', '_')
+                .replace('"', '_');
     }
 
     private String extensionOf(String originalFilename) {
@@ -102,6 +154,26 @@ public class FileController {
                 .anyMatch(value -> value.equals(extension));
     }
 
-    public record FileUploadResponse(String url) {
+    public record FileUploadResponse(
+            Long id,
+            String url,
+            String originalName,
+            Long sizeBytes,
+            String contentType,
+            String extension,
+            String storageType
+    ) {
+
+        private static FileUploadResponse from(FileMetadataResponse metadata) {
+            return new FileUploadResponse(
+                    metadata.id(),
+                    metadata.url(),
+                    metadata.originalName(),
+                    metadata.sizeBytes(),
+                    metadata.contentType(),
+                    metadata.extension(),
+                    metadata.storageType()
+            );
+        }
     }
 }

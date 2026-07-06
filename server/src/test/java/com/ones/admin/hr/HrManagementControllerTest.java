@@ -9,6 +9,9 @@ import com.ones.admin.hr.dto.HrEmployeeResignRequest;
 import com.ones.admin.hr.dto.HrEmployeeTransferRequest;
 import com.ones.admin.hr.dto.HrJobGradeSaveRequest;
 import com.ones.admin.hr.dto.HrPositionSaveRequest;
+import com.ones.admin.system.SystemErrorCode;
+import com.ones.admin.system.entity.SystemFileEntity;
+import com.ones.admin.system.mapper.SystemFileMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -39,6 +42,9 @@ class HrManagementControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private SystemFileMapper fileMapper;
 
     @Test
     void manageHrPhaseOneFoundation() throws Exception {
@@ -101,7 +107,10 @@ class HrManagementControllerTest {
                 .andExpect(jsonPath("$.data.employmentStatus").value("ACTIVE"))
                 .andExpect(jsonPath("$.data.probationEndDate").value("2026-09-30"));
 
-        long contractId = createEmployeeContract(token, employeeId, suffix);
+        long contractAttachmentFileId = createFileMetadata("contract-" + suffix + ".pdf");
+        long contractId = createEmployeeContract(token, employeeId, suffix, contractAttachmentFileId);
+        assertContractAttachmentBound(contractAttachmentFileId, contractId);
+        rejectContractWithMissingAttachment(token, employeeId, suffix);
         updateEmployeeContract(token, employeeId, contractId, suffix);
         LocalDate expiringEndDate = LocalDate.now().plusDays(20);
         long expiringContractId = createEmployeeContract(token, employeeId, "EXP-" + suffix, expiringEndDate);
@@ -134,6 +143,7 @@ class HrManagementControllerTest {
                 .andExpect(jsonPath("$.data[1].endDate").value("2028-12-31"))
                 .andExpect(jsonPath("$.data[1].probationMonths").value(3))
                 .andExpect(jsonPath("$.data[1].renewalRemindDate").value("2029-11-30"))
+                .andExpect(jsonPath("$.data[1].attachmentFileId").value(contractAttachmentFileId))
                 .andExpect(jsonPath("$.data[1].remark").value("合同提前终止"));
 
         resignEmployee(token, employeeId);
@@ -242,13 +252,28 @@ class HrManagementControllerTest {
         return createEmployeeContract(token, employeeId, suffix, LocalDate.of(2029, 6, 30));
     }
 
+    private long createEmployeeContract(String token, long employeeId, String suffix, long attachmentFileId) throws Exception {
+        return createEmployeeContract(token, employeeId, suffix, LocalDate.of(2029, 6, 30), attachmentFileId);
+    }
+
     private long createEmployeeContract(
             String token,
             long employeeId,
             String suffix,
             LocalDate endDate
     ) throws Exception {
-        Map<String, Object> request = Map.of(
+        return createEmployeeContract(token, employeeId, suffix, endDate, null);
+    }
+
+    private long createEmployeeContract(
+            String token,
+            long employeeId,
+            String suffix,
+            LocalDate endDate,
+            Long attachmentFileId
+    ) throws Exception {
+        java.util.Map<String, Object> request = new java.util.LinkedHashMap<>();
+        request.putAll(Map.of(
                 "contractNo", "C" + suffix,
                 "contractType", "FIXED_TERM",
                 "status", "ACTIVE",
@@ -257,7 +282,10 @@ class HrManagementControllerTest {
                 "probationMonths", 3,
                 "renewalRemindDate", endDate.minusDays(30).toString(),
                 "remark", "首签劳动合同"
-        );
+        ));
+        if (attachmentFileId != null) {
+            request.put("attachmentFileId", attachmentFileId);
+        }
         String response = mockMvc.perform(post("/api/hr/employees/" + employeeId + "/contracts")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -274,6 +302,10 @@ class HrManagementControllerTest {
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
+        if (attachmentFileId != null) {
+            assertThat(objectMapper.readTree(response).at("/data/attachmentFileId").asLong())
+                    .isEqualTo(attachmentFileId);
+        }
         return objectMapper.readTree(response).at("/data/id").asLong();
     }
 
@@ -298,6 +330,48 @@ class HrManagementControllerTest {
                 .andExpect(jsonPath("$.data.endDate").value("2029-12-31"))
                 .andExpect(jsonPath("$.data.renewalRemindDate").value("2029-11-30"))
                 .andExpect(jsonPath("$.data.remark").value("合同续签信息更新"));
+    }
+
+    private void rejectContractWithMissingAttachment(String token, long employeeId, String suffix) throws Exception {
+        java.util.Map<String, Object> request = new java.util.LinkedHashMap<>();
+        request.putAll(Map.of(
+                "contractNo", "CMISSING-" + suffix,
+                "contractType", "FIXED_TERM",
+                "status", "ACTIVE",
+                "startDate", "2026-07-01",
+                "endDate", "2029-06-30",
+                "probationMonths", 3,
+                "renewalRemindDate", "2029-05-31",
+                "remark", "缺失附件应失败"
+        ));
+        request.put("attachmentFileId", 9_999_999L);
+        mockMvc.perform(post("/api/hr/employees/" + employeeId + "/contracts")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(SystemErrorCode.FILE_NOT_FOUND.code()));
+    }
+
+    private long createFileMetadata(String originalName) {
+        SystemFileEntity file = new SystemFileEntity();
+        file.setOriginalName(originalName);
+        file.setStoredName(java.util.UUID.randomUUID() + ".pdf");
+        file.setUrl("/api/system/files/" + file.getStoredName());
+        file.setContentType(MediaType.APPLICATION_PDF_VALUE);
+        file.setExtension("pdf");
+        file.setSizeBytes(128L);
+        file.setStorageType("LOCAL");
+        file.setUploadedBy(1L);
+        fileMapper.insert(file);
+        return file.getId();
+    }
+
+    private void assertContractAttachmentBound(long fileId, long contractId) {
+        SystemFileEntity file = fileMapper.selectById(fileId);
+        assertThat(file).isNotNull();
+        assertThat(file.getBusinessType()).isEqualTo("HR_EMPLOYEE_CONTRACT");
+        assertThat(file.getBusinessId()).isEqualTo(String.valueOf(contractId));
     }
 
     private void terminateEmployeeContract(String token, long contractId, LocalDate terminateDate) throws Exception {

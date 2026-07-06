@@ -104,6 +104,7 @@ public class SystemDataInitializer implements ApplicationRunner {
                 ensurePermission("system:dict:item:create", "字典项新增"),
                 ensurePermission("system:dict:item:update", "字典项编辑"),
                 ensurePermission("system:dict:item:delete", "字典项删除"),
+                ensurePermission("system:file:read", "文件元数据查询"),
                 ensurePermission("system:file:upload", "文件上传"),
                 ensurePermission("hr:overview:view", "人力概览查看"),
                 ensurePermission("hr:employee:list", "员工查询"),
@@ -338,8 +339,10 @@ public class SystemDataInitializer implements ApplicationRunner {
                 null, null, "system:audit:operation-log", "lucide:scroll-text", "button", 72);
         ensureMenu(audit.getId(), "SystemAuditRetention", "审计保留策略", "/system/audit#retention",
                 null, null, "system:audit:retention", "lucide:archive-restore", "button", 73);
+        ensureMenu(system.getId(), "SystemFileRead", "文件元数据查询", "/system#file-read",
+                null, null, "system:file:read", "lucide:file-search", "button", 74);
         ensureMenu(system.getId(), "SystemFileUpload", "文件上传", "/system#file-upload",
-                null, null, "system:file:upload", "lucide:upload", "button", 74);
+                null, null, "system:file:upload", "lucide:upload", "button", 75);
 
         SystemMenuEntity hrms = ensureMenu(null, "HRMS", "人力资源管理", "/hr",
                 "BasicLayout", null, null, "lucide:users", "catalog", 200);

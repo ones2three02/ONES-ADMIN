@@ -10,6 +10,9 @@ import com.ones.admin.hr.entity.HrEmployeeEntity;
 import com.ones.admin.hr.mapper.HrEmployeeContractMapper;
 import com.ones.admin.hr.mapper.HrEmployeeMapper;
 import com.ones.admin.system.DataScopeService;
+import com.ones.admin.system.FileMetadataService;
+import com.ones.admin.system.SystemErrorCode;
+import com.ones.admin.system.entity.SystemFileEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,21 +31,25 @@ import java.util.stream.Collectors;
 @Service
 public class HrEmployeeContractService {
 
+    private static final String CONTRACT_ATTACHMENT_BUSINESS_TYPE = "HR_EMPLOYEE_CONTRACT";
     private static final Set<String> CONTRACT_TYPES = Set.of("FIXED_TERM", "OPEN_ENDED", "INTERNSHIP", "SERVICE");
     private static final Set<String> CONTRACT_STATUSES = Set.of("DRAFT", "ACTIVE", "EXPIRING", "TERMINATED");
 
     private final HrEmployeeContractMapper contractMapper;
     private final HrEmployeeMapper employeeMapper;
     private final DataScopeService dataScopeService;
+    private final FileMetadataService fileMetadataService;
 
     public HrEmployeeContractService(
             HrEmployeeContractMapper contractMapper,
             HrEmployeeMapper employeeMapper,
-            DataScopeService dataScopeService
+            DataScopeService dataScopeService,
+            FileMetadataService fileMetadataService
     ) {
         this.contractMapper = contractMapper;
         this.employeeMapper = employeeMapper;
         this.dataScopeService = dataScopeService;
+        this.fileMetadataService = fileMetadataService;
     }
 
     public List<HrEmployeeContractResponse> listContracts(Long employeeId) {
@@ -90,8 +97,9 @@ public class HrEmployeeContractService {
         HrEmployeeContractEntity contract = new HrEmployeeContractEntity();
         contract.setEmployeeId(employee.getId());
         contract.setContractNo(contractNo);
-        fillContract(contract, request);
+        fillContract(contract, request, null);
         contractMapper.insert(contract);
+        bindContractAttachment(contract);
         return toResponse(contractMapper.selectById(contract.getId()), employee);
     }
 
@@ -107,9 +115,11 @@ public class HrEmployeeContractService {
         assertContractNoAvailable(contractNo, contractId);
 
         contract.setContractNo(contractNo);
-        fillContract(contract, request);
+        Long previousAttachmentFileId = contract.getAttachmentFileId();
+        fillContract(contract, request, contract.getId());
         contract.setUpdatedAt(LocalDateTime.now());
         contractMapper.updateById(contract);
+        syncContractAttachment(previousAttachmentFileId, contract);
         return toResponse(contractMapper.selectById(contractId), employee);
     }
 
@@ -135,10 +145,11 @@ public class HrEmployeeContractService {
         return toResponse(contractMapper.selectById(contractId), getVisibleEmployee(contract.getEmployeeId()));
     }
 
-    private void fillContract(HrEmployeeContractEntity contract, HrEmployeeContractSaveRequest request) {
+    private void fillContract(HrEmployeeContractEntity contract, HrEmployeeContractSaveRequest request, Long contractId) {
         if (request.endDate() != null && request.endDate().isBefore(request.startDate())) {
             throw new BusinessException(HrErrorCode.EMPLOYEE_CONTRACT_DATE_INVALID);
         }
+        validateAttachmentFile(request.attachmentFileId(), contractId);
         contract.setContractType(normalizeEnum(request.contractType(), CONTRACT_TYPES));
         contract.setStatus(normalizeEnum(request.status(), CONTRACT_STATUSES));
         contract.setStartDate(request.startDate());
@@ -147,6 +158,48 @@ public class HrEmployeeContractService {
         contract.setRenewalRemindDate(request.renewalRemindDate());
         contract.setAttachmentFileId(request.attachmentFileId());
         contract.setRemark(normalizeNullable(request.remark()));
+    }
+
+    private void validateAttachmentFile(Long attachmentFileId, Long contractId) {
+        if (attachmentFileId == null) {
+            return;
+        }
+        SystemFileEntity file = fileMetadataService.getRequiredEntity(attachmentFileId);
+        String businessType = file.getBusinessType();
+        String businessId = file.getBusinessId();
+        if (businessType == null && businessId == null) {
+            return;
+        }
+        if (CONTRACT_ATTACHMENT_BUSINESS_TYPE.equals(businessType)
+                && contractId != null
+                && String.valueOf(contractId).equals(businessId)) {
+            return;
+        }
+        throw new BusinessException(SystemErrorCode.FILE_ALREADY_BOUND);
+    }
+
+    private void bindContractAttachment(HrEmployeeContractEntity contract) {
+        if (contract.getAttachmentFileId() == null) {
+            return;
+        }
+        fileMetadataService.bindBusiness(
+                contract.getAttachmentFileId(),
+                CONTRACT_ATTACHMENT_BUSINESS_TYPE,
+                String.valueOf(contract.getId())
+        );
+    }
+
+    private void syncContractAttachment(Long previousAttachmentFileId, HrEmployeeContractEntity contract) {
+        Long currentAttachmentFileId = contract.getAttachmentFileId();
+        if (java.util.Objects.equals(previousAttachmentFileId, currentAttachmentFileId)) {
+            return;
+        }
+        fileMetadataService.clearBusinessIfMatched(
+                previousAttachmentFileId,
+                CONTRACT_ATTACHMENT_BUSINESS_TYPE,
+                String.valueOf(contract.getId())
+        );
+        bindContractAttachment(contract);
     }
 
     private HrEmployeeEntity getRequiredEmployee(Long employeeId) {
