@@ -96,12 +96,12 @@ public interface ThirdPartyAuthProvider {
 
 ## Sa-Token 存储演进
 
-首版使用默认内存会话，方便本地启动。生产环境建议切换为 Redis：
+当前默认使用 Redis 会话，支持多实例共享登录态；本地 E2E 或临时 H2 验证可通过 `ONES_SECURITY_SESSION_STORAGE=memory` 显式切换为内存 DAO，避免非联调场景强依赖 Redis：
 
-- 引入 Sa-Token Redis/Jackson 插件。
 - 配置独立 Redis 库或独立 key 前缀。
 - 登录、踢人、续期、并发登录控制全部走 Redis。
 - 多实例部署时所有节点共享登录态。
+- 内存 DAO 只用于本地验证，不用于正式部署。
 
 ## 与 Spring Security 的边界
 

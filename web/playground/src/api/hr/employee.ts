@@ -1,3 +1,4 @@
+import { normalizeFileMetadata, type SystemFileApi } from '#/api/system/file';
 import { requestClient } from '#/api/request';
 
 export namespace HrEmployeeApi {
@@ -246,6 +247,33 @@ export async function getEmployeeOrgContext(id: string | number) {
     employeeId: String(res.employeeId),
     manager: normalizeOrgEmployeeNode(res.manager),
   };
+}
+
+export async function getEmployeeDocuments(id: string | number) {
+  const res = await requestClient.get<SystemFileApi.FileMetadata[]>(
+    `/hr/employees/${id}/documents`,
+  );
+  return res.map((item) => normalizeFileMetadata(item));
+}
+
+export async function bindEmployeeDocument(
+  employeeId: string | number,
+  fileId: string | number,
+) {
+  const res = await requestClient.post<SystemFileApi.FileMetadata>(
+    `/hr/employees/${employeeId}/documents/${fileId}`,
+  );
+  return normalizeFileMetadata(res);
+}
+
+export async function removeEmployeeDocument(
+  employeeId: string | number,
+  fileId: string | number,
+) {
+  const res = await requestClient.delete<SystemFileApi.FileMetadata>(
+    `/hr/employees/${employeeId}/documents/${fileId}`,
+  );
+  return normalizeFileMetadata(res);
 }
 
 export async function exportEmployees(params: HrEmployeeApi.EmployeeQuery) {

@@ -384,12 +384,12 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.89"))
-                .andExpect(jsonPath("$.data.summary.total").value(96))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.90"))
+                .andExpect(jsonPath("$.data.summary.total").value(99))
                 .andExpect(jsonPath("$.data.governance.passed").value(true))
-                .andExpect(jsonPath("$.data.governance.total").value(96))
-                .andExpect(jsonPath("$.data.manifest.total").value(96))
-                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.89"))
+                .andExpect(jsonPath("$.data.governance.total").value(99))
+                .andExpect(jsonPath("$.data.manifest.total").value(99))
+                .andExpect(jsonPath("$.data.latestGate.gate.currentVersion").value("v0.0.90"))
                 .andExpect(jsonPath("$.data.latestGate.gate.checks[0].checkCode").value("API_GOVERNANCE_ERROR"))
                 .andReturn()
                 .getResponse()
@@ -535,9 +535,9 @@ class ApiResourceControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.89"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.90"))
                 .andExpect(jsonPath("$.data.checksumAlgorithm").value("SHA-256"))
-                .andExpect(jsonPath("$.data.total").value(96))
+                .andExpect(jsonPath("$.data.total").value(99))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -642,6 +642,38 @@ class ApiResourceControllerTest {
         assertThat(employeeOrgContext.path("riskLevel").asText()).isEqualTo("MEDIUM");
         assertThat(employeeOrgContext.path("writeOperation").asBoolean()).isFalse();
         assertThat(permissionCodes(employeeOrgContext)).containsExactly("hr:employee:detail");
+
+        JsonNode employeeDocuments = findResource(firstManifest.path("resources"),
+                "GET", "/api/hr/employees/{id}/documents");
+        assertThat(employeeDocuments.path("operationId").asText())
+                .isEqualTo("HrEmployeeController_listEmployeeDocuments");
+        assertThat(employeeDocuments.path("owner").asText()).isEqualTo("人力平台组");
+        assertThat(employeeDocuments.path("sinceVersion").asText()).isEqualTo("v0.0.90");
+        assertThat(employeeDocuments.path("riskLevel").asText()).isEqualTo("MEDIUM");
+        assertThat(employeeDocuments.path("writeOperation").asBoolean()).isFalse();
+        assertThat(permissionCodes(employeeDocuments)).containsExactly("hr:employee:detail");
+
+        JsonNode bindEmployeeDocument = findResource(firstManifest.path("resources"),
+                "POST", "/api/hr/employees/{id}/documents/{fileId}");
+        assertThat(bindEmployeeDocument.path("operationId").asText())
+                .isEqualTo("HrEmployeeController_bindEmployeeDocument");
+        assertThat(bindEmployeeDocument.path("sinceVersion").asText()).isEqualTo("v0.0.90");
+        assertThat(bindEmployeeDocument.path("riskLevel").asText()).isEqualTo("HIGH");
+        assertThat(bindEmployeeDocument.path("writeOperation").asBoolean()).isTrue();
+        assertThat(bindEmployeeDocument.path("repeatSubmitProtected").asBoolean()).isTrue();
+        assertThat(bindEmployeeDocument.path("operationAuditProtected").asBoolean()).isTrue();
+        assertThat(permissionCodes(bindEmployeeDocument)).containsExactly("hr:employee:update");
+
+        JsonNode removeEmployeeDocument = findResource(firstManifest.path("resources"),
+                "DELETE", "/api/hr/employees/{id}/documents/{fileId}");
+        assertThat(removeEmployeeDocument.path("operationId").asText())
+                .isEqualTo("HrEmployeeController_removeEmployeeDocument");
+        assertThat(removeEmployeeDocument.path("sinceVersion").asText()).isEqualTo("v0.0.90");
+        assertThat(removeEmployeeDocument.path("riskLevel").asText()).isEqualTo("HIGH");
+        assertThat(removeEmployeeDocument.path("writeOperation").asBoolean()).isTrue();
+        assertThat(removeEmployeeDocument.path("repeatSubmitProtected").asBoolean()).isTrue();
+        assertThat(removeEmployeeDocument.path("operationAuditProtected").asBoolean()).isTrue();
+        assertThat(permissionCodes(removeEmployeeDocument)).containsExactly("hr:employee:update");
 
         JsonNode hrOverview = findResource(firstManifest.path("resources"),
                 "GET", "/api/hr/overview");
@@ -753,10 +785,10 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.data.saved").value(true))
                 .andExpect(jsonPath("$.data.gate.passed").value(true))
                 .andExpect(jsonPath("$.data.gate.status").value("PASSED_WITH_CHANGES"))
-                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.89"))
+                .andExpect(jsonPath("$.data.snapshot.applicationVersion").value("v0.0.90"))
                 .andExpect(jsonPath("$.data.snapshot.checksumAlgorithm").value("SHA-256"))
-                .andExpect(jsonPath("$.data.snapshot.total").value(96))
-                .andExpect(jsonPath("$.data.snapshot.manifest.total").value(96))
+                .andExpect(jsonPath("$.data.snapshot.total").value(99))
+                .andExpect(jsonPath("$.data.snapshot.manifest.total").value(99))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -852,7 +884,7 @@ class ApiResourceControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.changed").value(true))
                 .andExpect(jsonPath("$.data.previousVersion").value("v0.0.14"))
-                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.89"))
+                .andExpect(jsonPath("$.data.currentVersion").value("v0.0.90"))
                 .andExpect(jsonPath("$.data.addedCount").value(1))
                 .andExpect(jsonPath("$.data.removedCount").value(1))
                 .andExpect(jsonPath("$.data.modifiedCount").value(1))

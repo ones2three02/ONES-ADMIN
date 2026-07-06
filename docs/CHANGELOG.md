@@ -1,5 +1,15 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.90 - 2026-07-07
+
+- HRMS 新增员工资料附件接口：`GET /api/hr/employees/{id}/documents`、`POST /api/hr/employees/{id}/documents/{fileId}`、`DELETE /api/hr/employees/{id}/documents/{fileId}`。
+- 员工资料附件复用 `sys_file` 元数据和 `HR_EMPLOYEE_DOCUMENT` 业务归属，不新增数据库迁移；绑定要求员工数据范围可见且当前用户可访问未绑定临时文件。
+- 文件下载新增员工资料附件业务访问策略，必须同时满足 `hr:employee:detail` 权限和员工数据范围，避免附件 URL 脱离员工档案授权边界。
+- 员工档案抽屉新增“资料附件”分栏，沿用 Vben / Ant Design Vue 的 `Tabs`、`Card`、`Upload`、`Button`、`Tag` 和 `Empty` 组合，支持上传、查看和移除资料。
+- Sa-Token 会话存储新增 `ones.security.session.storage` 配置，正式默认 Redis，本地 E2E 可显式切换内存 DAO，避免测试启动误依赖未配置的 Redis。
+- 补充 HRMS 管理接口测试、数据范围下载授权测试、接口治理 Manifest 断言、前端类型检查和员工档案 E2E 断言。
+- 产品版本递增至 `v0.0.90`。
+
 ## v0.0.89 - 2026-07-07
 
 - HRMS 新增员工组织关系接口 `GET /api/hr/employees/{id}/org-context`，复用 `hr:employee:detail` 权限和员工数据范围校验。

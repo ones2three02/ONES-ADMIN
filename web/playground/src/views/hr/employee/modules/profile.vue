@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { HrContractApi, HrEmployeeApi } from '#/api';
+import type { HrContractApi, HrEmployeeApi, SystemFileApi } from '#/api';
 
 import { computed, ref } from 'vue';
 
@@ -8,24 +8,32 @@ import { useVbenDrawer } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
 
 import {
+  Button,
   Card,
   Descriptions,
   DescriptionsItem,
   Empty,
+  message,
+  Modal,
   Skeleton,
   TabPane,
   Tabs,
   Tag,
   Timeline,
   TimelineItem,
+  Upload,
 } from 'antdv-next';
 
 import {
+  bindEmployeeDocument,
   getEmployee,
   getEmployeeContracts,
+  getEmployeeDocuments,
   getEmployeeJobs,
   getEmployeeLifecycleEvents,
   getEmployeeOrgContext,
+  removeEmployeeDocument,
+  uploadSystemFile,
 } from '#/api';
 
 import {
@@ -43,13 +51,22 @@ const contracts = ref<HrContractApi.HrContract[]>([]);
 const events = ref<HrEmployeeApi.LifecycleEvent[]>([]);
 const jobs = ref<HrEmployeeApi.EmployeeJob[]>([]);
 const orgContext = ref<HrEmployeeApi.EmployeeOrgContext>();
+const documents = ref<SystemFileApi.FileMetadata[]>([]);
 const loading = ref(false);
+const documentUploadLoading = ref(false);
 const { hasAccessByCodes } = useAccess();
 
 const canViewContracts = computed(() => hasAccessByCodes(['hr:contract:list']));
 const canViewLifecycle = computed(() =>
   hasAccessByCodes(['hr:employee:lifecycle']),
 );
+const canManageDocuments = computed(() => hasAccessByCodes(['hr:employee:update']));
+
+type UploadRequestOptions = {
+  file: Blob | File | string;
+  onError?: (error: Error) => void;
+  onSuccess?: (data: SystemFileApi.FileMetadata) => void;
+};
 
 const [Drawer, drawerApi] = useVbenDrawer({
   async onOpenChange(isOpen) {
@@ -66,6 +83,7 @@ const [Drawer, drawerApi] = useVbenDrawer({
     events.value = [];
     jobs.value = [];
     orgContext.value = undefined;
+    documents.value = [];
     try {
       await Promise.all([
         getHrDictOptions(HR_GENDER_DICT),
@@ -74,7 +92,14 @@ const [Drawer, drawerApi] = useVbenDrawer({
         getHrDictOptions(HR_CONTRACT_TYPE_DICT),
         getHrDictOptions(HR_CONTRACT_STATUS_DICT),
       ]);
-      const [detail, contractRows, lifecycleRows, jobRows, organization] = await Promise.all([
+      const [
+        detail,
+        contractRows,
+        lifecycleRows,
+        jobRows,
+        organization,
+        documentRows,
+      ] = await Promise.all([
         getEmployee(row.id),
         canViewContracts.value ? getEmployeeContracts(row.id) : Promise.resolve([]),
         canViewLifecycle.value
@@ -82,12 +107,14 @@ const [Drawer, drawerApi] = useVbenDrawer({
           : Promise.resolve([]),
         getEmployeeJobs(row.id),
         getEmployeeOrgContext(row.id),
+        getEmployeeDocuments(row.id),
       ]);
       employee.value = detail;
       contracts.value = contractRows;
       events.value = lifecycleRows;
       jobs.value = jobRows;
       orgContext.value = organization;
+      documents.value = documentRows;
     } finally {
       loading.value = false;
     }
@@ -134,6 +161,11 @@ const summaryItems = computed(() => {
       icon: 'lucide:git-branch',
       label: '直属下级',
       value: `${orgContext.value?.directReportCount ?? 0}`,
+    },
+    {
+      icon: 'lucide:paperclip',
+      label: '资料附件',
+      value: `${documents.value.length}`,
     },
   ];
 });
@@ -206,13 +238,93 @@ function orgNodeMeta(node?: HrEmployeeApi.OrgEmployeeNode) {
     node.gradeName,
   ].filter(Boolean).join(' / ') || '-';
 }
+
+function formatFileSize(size?: number) {
+  if (size === undefined || size === null) {
+    return '-';
+  }
+  if (size < 1024) {
+    return `${size} B`;
+  }
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`;
+  }
+  return `${(size / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function errorMessageOf(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function normalizeError(error: unknown, fallback: string) {
+  return error instanceof Error ? error : new Error(fallback);
+}
+
+async function reloadDocuments() {
+  if (!employee.value?.id) {
+    documents.value = [];
+    return;
+  }
+  documents.value = await getEmployeeDocuments(employee.value.id);
+}
+
+async function handleDocumentUpload(options: UploadRequestOptions) {
+  const { file, onError, onSuccess } = options;
+  if (!(file instanceof File) || !employee.value?.id) {
+    const error = new Error('资料附件上传失败');
+    message.error(error.message);
+    onError?.(error);
+    return;
+  }
+  documentUploadLoading.value = true;
+  const hide = message.loading('正在上传资料附件...', 0);
+  try {
+    const uploadedFile = await uploadSystemFile(file);
+    const boundFile = await bindEmployeeDocument(employee.value.id, uploadedFile.id);
+    await reloadDocuments();
+    message.success('资料附件已上传');
+    onSuccess?.(boundFile);
+  } catch (error: unknown) {
+    const normalizedError = normalizeError(error, '资料附件上传失败');
+    message.error(errorMessageOf(normalizedError, '资料附件上传失败'));
+    onError?.(normalizedError);
+  } finally {
+    hide();
+    documentUploadLoading.value = false;
+  }
+}
+
+function openDocument(file: SystemFileApi.FileMetadata) {
+  if (!file.url) {
+    message.warning('资料附件暂不可访问');
+    return;
+  }
+  window.open(file.url, '_blank', 'noopener,noreferrer');
+}
+
+function confirmRemoveDocument(file: SystemFileApi.FileMetadata) {
+  if (!employee.value?.id) {
+    return;
+  }
+  Modal.confirm({
+    content: `确认移除资料附件「${file.originalName}」吗？`,
+    okButtonProps: { danger: true },
+    okText: '确认移除',
+    title: '移除资料附件',
+    async onOk() {
+      await removeEmployeeDocument(employee.value!.id, file.id);
+      message.success('资料附件已移除');
+      await reloadDocuments();
+    },
+  });
+}
 </script>
 
 <template>
   <Drawer :title="title" :footer="false" class="hr-employee-profile-drawer">
     <Skeleton v-if="loading && !employee" active />
     <div v-else-if="employee" class="flex flex-col gap-4 p-1">
-      <div class="grid gap-3 md:grid-cols-5">
+      <div class="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Card v-for="item in summaryItems" :key="item.label" variant="borderless">
           <div class="flex items-start justify-between gap-3">
             <div>
@@ -285,6 +397,73 @@ function orgNodeMeta(node?: HrEmployeeApi.OrgEmployeeNode) {
             </Card>
           </div>
           <Empty v-else :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+        </TabPane>
+
+        <TabPane key="documents" tab="资料附件">
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between gap-3">
+              <div class="text-muted-foreground text-sm">
+                共 {{ documents.length }} 个附件
+              </div>
+              <Upload
+                :custom-request="handleDocumentUpload"
+                :show-upload-list="false"
+                v-access:code="['system:file:upload']"
+              >
+                <Button
+                  :disabled="!canManageDocuments"
+                  :loading="documentUploadLoading"
+                  size="small"
+                  type="primary"
+                >
+                  <template #icon>
+                    <IconifyIcon icon="lucide:upload" />
+                  </template>
+                  上传资料
+                </Button>
+              </Upload>
+            </div>
+
+            <div v-if="documents.length" class="flex flex-col gap-3">
+              <Card v-for="file in documents" :key="file.id" variant="borderless">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex min-w-0 items-center gap-3">
+                    <div class="rounded bg-muted p-2 text-primary">
+                      <IconifyIcon class="size-5" icon="lucide:file-text" />
+                    </div>
+                    <div class="min-w-0">
+                      <div class="truncate text-sm font-medium">
+                        {{ file.originalName }}
+                      </div>
+                      <div class="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-xs">
+                        <Tag v-if="file.extension" color="blue">
+                          {{ file.extension.toUpperCase() }}
+                        </Tag>
+                        <span>{{ formatFileSize(file.sizeBytes) }}</span>
+                        <span v-if="file.storageType">{{ file.storageType }}</span>
+                        <span>{{ empty(file.createdAt) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex shrink-0 items-center gap-1">
+                    <Button size="small" type="link" @click="openDocument(file)">
+                      查看
+                    </Button>
+                    <Button
+                      v-if="canManageDocuments"
+                      danger
+                      size="small"
+                      type="link"
+                      @click="confirmRemoveDocument(file)"
+                    >
+                      移除
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+            <Empty v-else description="暂无资料附件" :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+          </div>
         </TabPane>
 
         <TabPane key="jobs" tab="任职记录">

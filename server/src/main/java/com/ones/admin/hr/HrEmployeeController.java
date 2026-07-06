@@ -17,6 +17,7 @@ import com.ones.admin.hr.dto.HrEmployeeResignRequest;
 import com.ones.admin.hr.dto.HrEmployeeResponse;
 import com.ones.admin.hr.dto.HrEmployeeTransferRequest;
 import com.ones.admin.hr.dto.HrEmployeeUpdateRequest;
+import com.ones.admin.system.dto.FileMetadataResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -24,6 +25,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -47,9 +49,14 @@ import java.util.List;
 public class HrEmployeeController {
 
     private final HrEmployeeService employeeService;
+    private final HrEmployeeDocumentService employeeDocumentService;
 
-    public HrEmployeeController(HrEmployeeService employeeService) {
+    public HrEmployeeController(
+            HrEmployeeService employeeService,
+            HrEmployeeDocumentService employeeDocumentService
+    ) {
         this.employeeService = employeeService;
+        this.employeeDocumentService = employeeDocumentService;
     }
 
     @GetMapping
@@ -90,6 +97,14 @@ public class HrEmployeeController {
         return ApiResult.ok(employeeService.getEmployeeOrgContext(id));
     }
 
+    @GetMapping("/{id}/documents")
+    @SaCheckPermission("hr:employee:detail")
+    @Operation(operationId = "HrEmployeeController_listEmployeeDocuments", summary = "查询员工资料附件")
+    @ApiResourceMetadata(sinceVersion = "v0.0.90", riskLevel = ApiRiskLevel.MEDIUM)
+    public ApiResult<List<FileMetadataResponse>> listEmployeeDocuments(@PathVariable Long id) {
+        return ApiResult.ok(employeeDocumentService.listDocuments(id));
+    }
+
     @GetMapping("/{id}/lifecycle-events")
     @SaCheckPermission("hr:employee:lifecycle")
     @Operation(operationId = "HrEmployeeController_listEmployeeLifecycleEvents", summary = "查询员工生命周期事件")
@@ -117,6 +132,30 @@ public class HrEmployeeController {
             @Valid @RequestBody HrEmployeeUpdateRequest request
     ) {
         return ApiResult.ok(employeeService.updateEmployee(id, request));
+    }
+
+    @PostMapping("/{id}/documents/{fileId}")
+    @SaCheckPermission("hr:employee:update")
+    @Operation(operationId = "HrEmployeeController_bindEmployeeDocument", summary = "绑定员工资料附件")
+    @RepeatSubmit
+    @ApiResourceMetadata(sinceVersion = "v0.0.90", riskLevel = ApiRiskLevel.HIGH)
+    public ApiResult<FileMetadataResponse> bindEmployeeDocument(
+            @PathVariable Long id,
+            @PathVariable Long fileId
+    ) {
+        return ApiResult.ok(employeeDocumentService.bindDocument(id, fileId));
+    }
+
+    @DeleteMapping("/{id}/documents/{fileId}")
+    @SaCheckPermission("hr:employee:update")
+    @Operation(operationId = "HrEmployeeController_removeEmployeeDocument", summary = "移除员工资料附件")
+    @RepeatSubmit
+    @ApiResourceMetadata(sinceVersion = "v0.0.90", riskLevel = ApiRiskLevel.HIGH)
+    public ApiResult<FileMetadataResponse> removeEmployeeDocument(
+            @PathVariable Long id,
+            @PathVariable Long fileId
+    ) {
+        return ApiResult.ok(employeeDocumentService.removeDocument(id, fileId));
     }
 
     @PostMapping("/{id}/transfer")

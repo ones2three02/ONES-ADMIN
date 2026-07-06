@@ -26,6 +26,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -103,6 +104,24 @@ class HrManagementControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.idCardMasked").value("110****5678"));
+
+        long employeeDocumentFileId = createFileMetadata("employee-document-" + suffix + ".pdf");
+        bindEmployeeDocument(token, employeeId, employeeDocumentFileId);
+        assertEmployeeDocumentBound(employeeDocumentFileId, employeeId);
+        mockMvc.perform(get("/api/hr/employees/" + employeeId + "/documents")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].id").value(employeeDocumentFileId))
+                .andExpect(jsonPath("$.data[0].originalName").value("employee-document-" + suffix + ".pdf"))
+                .andExpect(jsonPath("$.data[0].businessType").value("HR_EMPLOYEE_DOCUMENT"))
+                .andExpect(jsonPath("$.data[0].businessId").value(String.valueOf(employeeId)));
+        removeEmployeeDocument(token, employeeId, employeeDocumentFileId);
+        assertEmployeeDocumentDeleted(employeeDocumentFileId);
+        mockMvc.perform(get("/api/hr/employees/" + employeeId + "/documents")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(0));
 
         transferEmployee(token, employeeId, transferPositionId, transferGradeId, managerId);
         mockMvc.perform(get("/api/hr/employees/" + employeeId)
@@ -419,6 +438,41 @@ class HrManagementControllerTest {
         assertThat(file).isNotNull();
         assertThat(file.getBusinessType()).isEqualTo("HR_EMPLOYEE_CONTRACT");
         assertThat(file.getBusinessId()).isEqualTo(String.valueOf(contractId));
+    }
+
+    private void bindEmployeeDocument(String token, long employeeId, long fileId) throws Exception {
+        mockMvc.perform(post("/api/hr/employees/" + employeeId + "/documents/" + fileId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(fileId))
+                .andExpect(jsonPath("$.data.businessType").value("HR_EMPLOYEE_DOCUMENT"))
+                .andExpect(jsonPath("$.data.businessId").value(String.valueOf(employeeId)));
+    }
+
+    private void removeEmployeeDocument(String token, long employeeId, long fileId) throws Exception {
+        mockMvc.perform(delete("/api/hr/employees/" + employeeId + "/documents/" + fileId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(fileId))
+                .andExpect(jsonPath("$.data.status").value("DELETED"))
+                .andExpect(jsonPath("$.data.businessType").doesNotExist())
+                .andExpect(jsonPath("$.data.businessId").doesNotExist());
+    }
+
+    private void assertEmployeeDocumentBound(long fileId, long employeeId) {
+        SystemFileEntity file = fileMapper.selectById(fileId);
+        assertThat(file).isNotNull();
+        assertThat(file.getBusinessType()).isEqualTo("HR_EMPLOYEE_DOCUMENT");
+        assertThat(file.getBusinessId()).isEqualTo(String.valueOf(employeeId));
+    }
+
+    private void assertEmployeeDocumentDeleted(long fileId) {
+        SystemFileEntity file = fileMapper.selectById(fileId);
+        assertThat(file).isNotNull();
+        assertThat(file.getBusinessType()).isNull();
+        assertThat(file.getBusinessId()).isNull();
+        assertThat(file.getStatus()).isEqualTo("DELETED");
+        assertThat(file.getDeletedAt()).isNotNull();
     }
 
     private void terminateEmployeeContract(String token, long contractId, LocalDate terminateDate) throws Exception {

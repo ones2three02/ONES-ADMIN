@@ -58,9 +58,14 @@ test.describe('HRMS Employee Profile', () => {
     ).toBeVisible();
     await expect(page.getByRole('tab', { name: '基础信息' })).toBeVisible();
     await expect(page.getByRole('tab', { name: '合同' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: '资料附件' })).toBeVisible();
     await expect(page.getByRole('tab', { name: '任职记录' })).toBeVisible();
     await expect(page.getByRole('tab', { name: '组织关系' })).toBeVisible();
     await expect(page.getByRole('tab', { name: '生命周期' })).toBeVisible();
+
+    await page.getByRole('tab', { name: '资料附件' }).click();
+    await expect(profileDrawer.getByText('共 0 个附件')).toBeVisible();
+    await expect(profileDrawer.getByText('暂无资料附件')).toBeVisible();
 
     await page.getByRole('tab', { name: '任职记录' }).click();
     await expect(

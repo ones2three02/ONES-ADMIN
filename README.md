@@ -2,12 +2,12 @@
 
 ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
-当前产品版本：`v0.0.89`
+当前产品版本：`v0.0.90`
 
 ## 当前能力
 
-- 后端：Spring Boot 3.5.9、Java 21、Maven Enforcer、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、Flyway、MySQL、Redis、RabbitMQ、MinIO、统一响应、统一异常、TraceId 链路追踪、登录认证、角色权限、角色数据范围、动态菜单、用户 CRUD、系统数据字典类型/字典项管理、系统文件元数据、文件上传与 MinIO/本地存储切换、文件软删除与业务引用保护、文件资产分页查询、文件下载业务归属授权、上传人临时文件访问、HRMS 岗位/职级/员工基础接口、HRMS 员工基础信息编辑、HRMS 员工调岗/转正/离职生命周期、HRMS 员工生命周期时间线查询、HRMS 员工任职记录/岗位历史查询、HRMS 员工组织关系上下文查询、HRMS 员工合同列表/新增/编辑/终止/到期查询接口、HRMS 合同附件引用校验、HRMS 花名册模板下载/批量导入/批次与错误行查询接口、HRMS 员工花名册 CSV 导出、HRMS 人力概览统计接口、HRMS 员工主数据读接口数据范围强约束、HRMS 员工敏感字段脱敏、系统/认证/时区/HRMS 写操作审计、接口资源治理、接口治理聚合报告、接口治理评分维度、接口治理发布就绪摘要、接口治理负责人待办摘要、接口管理参考基准、接口治理推荐动作、接口治理动作项、HRMS 一期企业级设计、接口版本元数据治理、接口生命周期治理、接口受众治理、高风险写接口策略治理、写接口操作审计覆盖治理、公开接口访问策略治理、公开接口开放原因治理、接口治理修复建议、Actuator、Swagger UI。
-- 前端：Vue3、Vite、TypeScript、Vben / Ant Design Vue 组件体系、Pinia、Vue Router、Axios 请求拦截、错误提示 TraceId 展示、Vben 风格企业级安全登录页、ONES/1S 核心视觉与白天/夜间品牌资源、飞书优先的紧凑企业登录入口、管理布局、工作台、用户管理页、接口管理页、审计日志页、系统数据字典页、系统文件管理页、HRMS 员工/合同/花名册/概览字典选项接入、合同附件上传/查看/移除闭环、接口调用方筛选与展示、Manifest 基线快照、发布门禁、发布就绪、负责人待办和治理规则视图、HRMS 人力概览页、HRMS 员工档案抽屉、HRMS 任职记录分栏、HRMS 组织关系分栏、HRMS 员工列表导出入口、HRMS 花名册导入页、Playwright 登录冒烟用例。
+- 后端：Spring Boot 3.5.9、Java 21、Maven Enforcer、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、Flyway、MySQL、Redis、RabbitMQ、MinIO、统一响应、统一异常、TraceId 链路追踪、登录认证、角色权限、角色数据范围、动态菜单、用户 CRUD、系统数据字典类型/字典项管理、系统文件元数据、文件上传与 MinIO/本地存储切换、文件软删除与业务引用保护、文件资产分页查询、文件下载业务归属授权、上传人临时文件访问、HRMS 岗位/职级/员工基础接口、HRMS 员工基础信息编辑、HRMS 员工调岗/转正/离职生命周期、HRMS 员工生命周期时间线查询、HRMS 员工任职记录/岗位历史查询、HRMS 员工组织关系上下文查询、HRMS 员工资料附件绑定/解绑/查询、HRMS 员工合同列表/新增/编辑/终止/到期查询接口、HRMS 合同附件引用校验、HRMS 花名册模板下载/批量导入/批次与错误行查询接口、HRMS 员工花名册 CSV 导出、HRMS 人力概览统计接口、HRMS 员工主数据读接口数据范围强约束、HRMS 员工敏感字段脱敏、系统/认证/时区/HRMS 写操作审计、接口资源治理、接口治理聚合报告、接口治理评分维度、接口治理发布就绪摘要、接口治理负责人待办摘要、接口管理参考基准、接口治理推荐动作、接口治理动作项、HRMS 一期企业级设计、接口版本元数据治理、接口生命周期治理、接口受众治理、高风险写接口策略治理、写接口操作审计覆盖治理、公开接口访问策略治理、公开接口开放原因治理、接口治理修复建议、Actuator、Swagger UI。
+- 前端：Vue3、Vite、TypeScript、Vben / Ant Design Vue 组件体系、Pinia、Vue Router、Axios 请求拦截、错误提示 TraceId 展示、Vben 风格企业级安全登录页、ONES/1S 核心视觉与白天/夜间品牌资源、飞书优先的紧凑企业登录入口、管理布局、工作台、用户管理页、接口管理页、审计日志页、系统数据字典页、系统文件管理页、HRMS 员工/合同/花名册/概览字典选项接入、合同附件上传/查看/移除闭环、员工资料附件上传/查看/移除分栏、接口调用方筛选与展示、Manifest 基线快照、发布门禁、发布就绪、负责人待办和治理规则视图、HRMS 人力概览页、HRMS 员工档案抽屉、HRMS 任职记录分栏、HRMS 组织关系分栏、HRMS 员工列表导出入口、HRMS 花名册导入页、Playwright 登录冒烟用例。
 - 认证：`Authorization: Bearer <token>`，由 Sa-Token 签发与校验。
 - 演示账号：`admin / admin123`
 
@@ -43,7 +43,7 @@ server/config/application-local.yml
 
 本地中间件连接信息记录在 `docs/local/middleware-credentials.md`，该目录已加入 `.gitignore`，不会提交到 Git。
 
-默认 `ones.events.broker=none`、`ones.file.storage-type=local`，本地和测试环境不会强依赖 RabbitMQ 或 MinIO。需要启用开发环境中间件时，在 `server/config/application-local.yml` 或环境变量中改为 `ONES_EVENTS_BROKER=rabbitmq`、`ONES_FILE_STORAGE_TYPE=minio`，并补齐对应连接信息。MinIO 客户端默认对内网对象存储直连，只有明确需要走代理时才设置 `ONES_MINIO_PROXY_ENABLED=true`。
+默认 `ones.security.session.storage=redis`、`ones.security.repeat-submit.storage=redis`，正式环境依赖 Redis 保存登录态和防重票据；本地 E2E 或临时 H2 验证可显式设置 `ONES_SECURITY_SESSION_STORAGE=memory`、`ONES_REPEAT_SUBMIT_STORAGE=memory`，避免为了纯页面验证强依赖 Redis。默认 `ones.events.broker=none`、`ones.file.storage-type=local`，本地和测试环境不会强依赖 RabbitMQ 或 MinIO。需要启用开发环境中间件时，在 `server/config/application-local.yml` 或环境变量中改为 `ONES_EVENTS_BROKER=rabbitmq`、`ONES_FILE_STORAGE_TYPE=minio`，并补齐 RabbitMQ、MinIO 等连接信息；RabbitMQ 用户名和密码默认不提供兜底值，避免默认账号进入提交。MinIO 客户端默认对内网对象存储直连，只有明确需要走代理时才设置 `ONES_MINIO_PROXY_ENABLED=true`。
 
 ```bash
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
@@ -140,6 +140,9 @@ pnpm build
 | `GET` | `/api/hr/employees/{id}` | 查询 HRMS 员工详情 |
 | `POST` | `/api/hr/employees` | 新增 HRMS 员工，并写入任职记录和生命周期事件 |
 | `PUT` | `/api/hr/employees/{id}` | 编辑 HRMS 员工基础信息，不绕过调岗/转正/离职流程 |
+| `GET` | `/api/hr/employees/{id}/documents` | 查询 HRMS 员工资料附件 |
+| `POST` | `/api/hr/employees/{id}/documents/{fileId}` | 绑定 HRMS 员工资料附件 |
+| `DELETE` | `/api/hr/employees/{id}/documents/{fileId}` | 移除 HRMS 员工资料附件并软删除文件元数据 |
 | `GET` | `/api/hr/employees/{id}/lifecycle-events` | 查询 HRMS 员工生命周期时间线 |
 | `GET` | `/api/hr/employees/{employeeId}/contracts` | 查询 HRMS 员工合同列表 |
 | `GET` | `/api/hr/contracts/expiring` | 查询 HRMS 即将到期员工合同 |
@@ -166,7 +169,7 @@ pnpm build
 ## 后续路线
 
 1. 持续补充 Flyway 增量迁移脚本和数据库变更回滚说明。
-2. 将 Sa-Token 会话存储切换到 Redis，支持分布式部署。
+2. 为 Sa-Token Redis 会话补充独立库、Key 前缀、过期监控和多实例压测，完善分布式登录态运维能力。
 3. 完成系统参数等企业后台基础模块，继续推进文件管理页、文件访问策略、数据字典接入更多 HRMS 和系统表单，并将数据权限扩展到更多业务域、自定义部门集合和字段脱敏策略。
 4. 完成飞书 OAuth 回调、用户绑定和企业 SSO 后端适配层，再扩展企业微信、钉钉等其他第三方入口。
 5. 增加多租户、代码生成、工作流与监控告警，持续增强角色数据范围、字段级权限和跨租户隔离能力。

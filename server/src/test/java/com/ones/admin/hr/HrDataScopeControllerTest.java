@@ -111,6 +111,8 @@ class HrDataScopeControllerTest {
         long hiddenContractId = createContract(adminToken, hiddenEmployeeId, "HC" + suffix);
         SystemFileEntity visibleAttachment = createContractAttachment(visibleContractId, "visible-contract-" + suffix + ".pdf");
         SystemFileEntity hiddenAttachment = createContractAttachment(hiddenContractId, "hidden-contract-" + suffix + ".pdf");
+        SystemFileEntity visibleDocument = createEmployeeDocument(visibleEmployeeId, "visible-employee-document-" + suffix + ".pdf");
+        SystemFileEntity hiddenDocument = createEmployeeDocument(hiddenEmployeeId, "hidden-employee-document-" + suffix + ".pdf");
 
         String hrToken = login(username, "hrscope123");
 
@@ -158,6 +160,19 @@ class HrDataScopeControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(HrErrorCode.EMPLOYEE_DATA_SCOPE_DENIED.code()));
 
+        mockMvc.perform(get("/api/hr/employees/" + visibleEmployeeId + "/documents")
+                        .header("Authorization", "Bearer " + hrToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].id").value(visibleDocument.getId()))
+                .andExpect(jsonPath("$.data[0].businessType").value("HR_EMPLOYEE_DOCUMENT"))
+                .andExpect(jsonPath("$.data[0].businessId").value(String.valueOf(visibleEmployeeId)));
+
+        mockMvc.perform(get("/api/hr/employees/" + hiddenEmployeeId + "/documents")
+                        .header("Authorization", "Bearer " + hrToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HrErrorCode.EMPLOYEE_DATA_SCOPE_DENIED.code()));
+
         given(fileStorageService.load(visibleAttachment.getStoredName()))
                 .willReturn(java.util.Optional.of(new FileStorageService.StoredResource(
                         new ByteArrayResource("visible contract".getBytes()),
@@ -175,6 +190,24 @@ class HrDataScopeControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
         verify(fileStorageService, never()).load(hiddenAttachment.getStoredName());
+
+        given(fileStorageService.load(visibleDocument.getStoredName()))
+                .willReturn(java.util.Optional.of(new FileStorageService.StoredResource(
+                        new ByteArrayResource("visible document".getBytes()),
+                        MediaType.APPLICATION_PDF,
+                        visibleDocument.getStoredName()
+                )));
+        mockMvc.perform(get("/api/system/files/" + visibleDocument.getStoredName())
+                        .header("Authorization", "Bearer " + hrToken))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string("visible document"));
+        verify(fileStorageService).load(visibleDocument.getStoredName());
+
+        mockMvc.perform(get("/api/system/files/" + hiddenDocument.getStoredName())
+                        .header("Authorization", "Bearer " + hrToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+        verify(fileStorageService, never()).load(hiddenDocument.getStoredName());
 
         String exportResponse = mockMvc.perform(get("/api/hr/employees/export")
                         .header("Authorization", "Bearer " + hrToken)
@@ -464,6 +497,23 @@ class HrDataScopeControllerTest {
         HrEmployeeContractEntity contract = contractMapper.selectById(contractId);
         contract.setAttachmentFileId(file.getId());
         contractMapper.updateById(contract);
+        return file;
+    }
+
+    private SystemFileEntity createEmployeeDocument(long employeeId, String originalName) {
+        SystemFileEntity file = new SystemFileEntity();
+        file.setOriginalName(originalName);
+        file.setStoredName(originalName);
+        file.setUrl("/api/system/files/" + originalName);
+        file.setContentType(MediaType.APPLICATION_PDF_VALUE);
+        file.setExtension("pdf");
+        file.setSizeBytes(256L);
+        file.setStorageType("LOCAL");
+        file.setStatus("ACTIVE");
+        file.setUploadedBy(1L);
+        file.setBusinessType("HR_EMPLOYEE_DOCUMENT");
+        file.setBusinessId(String.valueOf(employeeId));
+        fileMapper.insert(file);
         return file;
     }
 

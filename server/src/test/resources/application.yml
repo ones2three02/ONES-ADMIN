@@ -31,6 +31,8 @@ sa-token:
 
 ones:
   security:
+    session:
+      storage: memory
     repeat-submit:
       storage: memory
   file:

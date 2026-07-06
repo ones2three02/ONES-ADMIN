@@ -37,8 +37,8 @@ spring:
   rabbitmq:
     host: ${ONES_RABBITMQ_HOST:localhost}
     port: ${ONES_RABBITMQ_PORT:5672}
-    username: ${ONES_RABBITMQ_USERNAME:guest}
-    password: ${ONES_RABBITMQ_PASSWORD:guest}
+    username: ${ONES_RABBITMQ_USERNAME:}
+    password: ${ONES_RABBITMQ_PASSWORD:}
     virtual-host: ${ONES_RABBITMQ_VHOST:/}
     connection-timeout: 3s
   servlet:
@@ -63,12 +63,14 @@ sa-token:
   is-print: false
 
 ones:
-  version: ${ONES_ADMIN_VERSION:v0.0.89}
+  version: ${ONES_ADMIN_VERSION:v0.0.90}
   audit:
     retention:
       login-log-days: ${ONES_AUDIT_LOGIN_LOG_RETENTION_DAYS:180}
       operation-log-days: ${ONES_AUDIT_OPERATION_LOG_RETENTION_DAYS:180}
   security:
+    session:
+      storage: ${ONES_SECURITY_SESSION_STORAGE:redis}
     login:
       max-failed-login-count: ${ONES_LOGIN_MAX_FAILED_COUNT:5}
       lock-duration: ${ONES_LOGIN_LOCK_DURATION:15m}
