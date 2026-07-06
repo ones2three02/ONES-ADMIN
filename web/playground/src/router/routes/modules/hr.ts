@@ -58,6 +58,15 @@ const routes: RouteRecordRaw[] = [
         component: () => import('#/views/hr/contract/list.vue'),
       },
       {
+        path: '/hr/document-warning',
+        name: 'HrDocumentWarning',
+        meta: {
+          icon: 'lucide:file-warning',
+          title: $t('hr.documentWarning.title'),
+        },
+        component: () => import('#/views/hr/document-warning/list.vue'),
+      },
+      {
         path: '/hr/roster-import',
         name: 'HrRosterImport',
         meta: {

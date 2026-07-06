@@ -1,5 +1,14 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.93 - 2026-07-07
+
+- HRMS 新增“资料预警”前端菜单页：`/hr/document-warning`，将 `v0.0.92` 的员工资料到期预警接口升级为可操作的 HR 运营视图。
+- 资料预警页沿用 Vben / Ant Design Vue 的 `Page`、`Card`、`Statistic`、`VxeGrid` 和 `VbenTableAction` 组合，提供 7/30/60/90 天预警窗口筛选、风险状态标签和附件查看动作。
+- 后端默认菜单树新增 `HrDocumentWarning` 菜单，复用 `hr:employee:detail` 权限，保证动态菜单、前端路由和接口权限保持一致。
+- 补充动态菜单路由测试，确保 `/hr/document-warning` 能随 HRMS 菜单初始化进入授权路由。
+- 本版本不新增数据库迁移，不新增后端接口，继续复用 `hr_employee_document`、`sys_file` 和既有文件下载授权策略。
+- 产品版本递增至 `v0.0.93`。
+
 ## v0.0.92 - 2026-07-07
 
 - HRMS 新增员工资料到期预警接口：`GET /api/hr/employees/documents/expiring`，默认查询 30 天内到期资料，`days` 支持 0 到 365 天。

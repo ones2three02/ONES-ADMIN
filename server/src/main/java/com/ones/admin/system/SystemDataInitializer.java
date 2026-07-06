@@ -403,6 +403,9 @@ public class SystemDataInitializer implements ApplicationRunner {
         ensureMenu(hrContract.getId(), "HrContractTerminate", "合同终止", "/hr/contract#terminate",
                 null, null, "hr:contract:terminate", "lucide:file-x-2", "button", 43);
 
+        ensureMenu(hrms.getId(), "HrDocumentWarning", "资料预警", "/hr/document-warning",
+                "/hr/document-warning/list", null, "hr:employee:detail", "lucide:file-warning", "menu", 45);
+
         SystemMenuEntity hrRosterImport = ensureMenu(hrms.getId(), "HrRosterImport", "花名册导入", "/hr/roster-import",
                 "/hr/roster-import/list", null, "hr:roster:list", "lucide:file-up", "menu", 50);
         ensureMenu(hrRosterImport.getId(), "HrRosterImportList", "导入批次查询", "/hr/roster-import#list",
