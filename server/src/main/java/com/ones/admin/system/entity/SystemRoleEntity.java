@@ -13,6 +13,7 @@ public class SystemRoleEntity {
     private Long id;
     private String code;
     private String name;
+    private String dataScope;
     private String remark;
     private Boolean enabled;
     private LocalDateTime createdAt;
@@ -40,6 +41,14 @@ public class SystemRoleEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDataScope() {
+        return dataScope;
+    }
+
+    public void setDataScope(String dataScope) {
+        this.dataScope = dataScope;
     }
 
     public String getRemark() {

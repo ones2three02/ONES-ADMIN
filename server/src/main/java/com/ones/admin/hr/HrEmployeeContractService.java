@@ -9,6 +9,7 @@ import com.ones.admin.hr.entity.HrEmployeeContractEntity;
 import com.ones.admin.hr.entity.HrEmployeeEntity;
 import com.ones.admin.hr.mapper.HrEmployeeContractMapper;
 import com.ones.admin.hr.mapper.HrEmployeeMapper;
+import com.ones.admin.system.DataScopeService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,17 +33,20 @@ public class HrEmployeeContractService {
 
     private final HrEmployeeContractMapper contractMapper;
     private final HrEmployeeMapper employeeMapper;
+    private final DataScopeService dataScopeService;
 
     public HrEmployeeContractService(
             HrEmployeeContractMapper contractMapper,
-            HrEmployeeMapper employeeMapper
+            HrEmployeeMapper employeeMapper,
+            DataScopeService dataScopeService
     ) {
         this.contractMapper = contractMapper;
         this.employeeMapper = employeeMapper;
+        this.dataScopeService = dataScopeService;
     }
 
     public List<HrEmployeeContractResponse> listContracts(Long employeeId) {
-        HrEmployeeEntity employee = getRequiredEmployee(employeeId);
+        HrEmployeeEntity employee = getVisibleEmployee(employeeId);
         return contractMapper.selectList(new LambdaQueryWrapper<HrEmployeeContractEntity>()
                         .eq(HrEmployeeContractEntity::getEmployeeId, employeeId)
                         .orderByDesc(HrEmployeeContractEntity::getStartDate)
@@ -69,13 +73,17 @@ public class HrEmployeeContractService {
                 .map(HrEmployeeContractEntity::getEmployeeId)
                 .collect(Collectors.toCollection(HashSet::new)));
         return contracts.stream()
+                .filter(contract -> {
+                    HrEmployeeEntity employee = employees.get(contract.getEmployeeId());
+                    return employee != null && dataScopeService.canAccess(employee.getDeptId(), employee.getUserId());
+                })
                 .map(contract -> toResponse(contract, employees.get(contract.getEmployeeId())))
                 .toList();
     }
 
     @Transactional
     public HrEmployeeContractResponse createContract(Long employeeId, HrEmployeeContractSaveRequest request) {
-        HrEmployeeEntity employee = getRequiredEmployee(employeeId);
+        HrEmployeeEntity employee = getVisibleEmployee(employeeId);
         String contractNo = normalizeCode(request.contractNo());
         assertContractNoAvailable(contractNo, null);
 
@@ -93,7 +101,7 @@ public class HrEmployeeContractService {
             Long contractId,
             HrEmployeeContractSaveRequest request
     ) {
-        HrEmployeeEntity employee = getRequiredEmployee(employeeId);
+        HrEmployeeEntity employee = getVisibleEmployee(employeeId);
         HrEmployeeContractEntity contract = getRequiredContract(employeeId, contractId);
         String contractNo = normalizeCode(request.contractNo());
         assertContractNoAvailable(contractNo, contractId);
@@ -111,6 +119,7 @@ public class HrEmployeeContractService {
             HrEmployeeContractTerminateRequest request
     ) {
         HrEmployeeContractEntity contract = getRequiredContract(contractId);
+        getVisibleEmployee(contract.getEmployeeId());
         if ("TERMINATED".equals(contract.getStatus())) {
             throw new BusinessException(HrErrorCode.EMPLOYEE_CONTRACT_ALREADY_TERMINATED);
         }
@@ -123,7 +132,7 @@ public class HrEmployeeContractService {
         contract.setRemark(normalizeNullable(request.reason()));
         contract.setUpdatedAt(LocalDateTime.now());
         contractMapper.updateById(contract);
-        return toResponse(contractMapper.selectById(contractId), getRequiredEmployee(contract.getEmployeeId()));
+        return toResponse(contractMapper.selectById(contractId), getVisibleEmployee(contract.getEmployeeId()));
     }
 
     private void fillContract(HrEmployeeContractEntity contract, HrEmployeeContractSaveRequest request) {
@@ -144,6 +153,14 @@ public class HrEmployeeContractService {
         HrEmployeeEntity employee = employeeMapper.selectById(employeeId);
         if (employee == null) {
             throw new BusinessException(HrErrorCode.EMPLOYEE_NOT_FOUND);
+        }
+        return employee;
+    }
+
+    private HrEmployeeEntity getVisibleEmployee(Long employeeId) {
+        HrEmployeeEntity employee = getRequiredEmployee(employeeId);
+        if (!dataScopeService.canAccess(employee.getDeptId(), employee.getUserId())) {
+            throw new BusinessException(HrErrorCode.EMPLOYEE_DATA_SCOPE_DENIED);
         }
         return employee;
     }

@@ -6,6 +6,7 @@ export namespace SystemRoleApi {
   export interface SystemRole {
     code?: string;
     createTime?: string;
+    dataScope: 'ALL' | 'DEPT' | 'DEPT_AND_CHILD' | 'SELF';
     id: string;
     name: string;
     permissions: string[];

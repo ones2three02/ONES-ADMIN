@@ -64,6 +64,7 @@ public class RoleManagementService {
         SystemRoleEntity role = new SystemRoleEntity();
         role.setCode(code);
         role.setName(name);
+        role.setDataScope(normalizeDataScope(request.dataScope(), DataScope.DEPT_AND_CHILD).name());
         role.setRemark(normalizeNullable(request.remark()));
         role.setEnabled(toEnabled(request.status()));
         roleMapper.insert(role);
@@ -85,6 +86,13 @@ public class RoleManagementService {
         }
         if (request.name() != null && !request.name().trim().isBlank()) {
             role.setName(request.name().trim());
+        }
+        if (request.dataScope() != null && !request.dataScope().trim().isBlank()) {
+            DataScope dataScope = normalizeDataScope(request.dataScope(), DataScope.DEPT_AND_CHILD);
+            if (superAdmin && dataScope != DataScope.ALL) {
+                throw new BusinessException(SystemErrorCode.SUPER_ADMIN_PERMISSION_LOCKED);
+            }
+            role.setDataScope(dataScope.name());
         }
         if (request.remark() != null) {
             role.setRemark(normalizeNullable(request.remark()));
@@ -227,6 +235,7 @@ public class RoleManagementService {
                 String.valueOf(role.getId()),
                 role.getCode(),
                 role.getName(),
+                normalizeDataScope(role.getDataScope(), defaultDataScope(role)).name(),
                 role.getRemark(),
                 Boolean.TRUE.equals(role.getEnabled()) ? 1 : 0,
                 role.getCreatedAt(),
@@ -234,5 +243,19 @@ public class RoleManagementService {
                         .map(String::valueOf)
                         .toList()
         );
+    }
+
+    private DataScope defaultDataScope(SystemRoleEntity role) {
+        return "SUPER_ADMIN".equals(role.getCode()) ? DataScope.ALL : DataScope.DEPT_AND_CHILD;
+    }
+
+    private DataScope normalizeDataScope(String dataScope, DataScope defaultScope) {
+        try {
+            return dataScope == null || dataScope.trim().isBlank()
+                    ? defaultScope
+                    : DataScope.from(dataScope);
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException(SystemErrorCode.ROLE_DATA_SCOPE_INVALID);
+        }
     }
 }

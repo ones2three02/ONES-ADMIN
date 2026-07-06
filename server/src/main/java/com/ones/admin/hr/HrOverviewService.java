@@ -8,6 +8,8 @@ import com.ones.admin.hr.entity.HrEmployeeLifecycleEventEntity;
 import com.ones.admin.hr.mapper.HrEmployeeContractMapper;
 import com.ones.admin.hr.mapper.HrEmployeeLifecycleEventMapper;
 import com.ones.admin.hr.mapper.HrEmployeeMapper;
+import com.ones.admin.system.DataScopeContext;
+import com.ones.admin.system.DataScopeService;
 import com.ones.admin.system.entity.SystemDeptEntity;
 import com.ones.admin.system.mapper.SystemDeptMapper;
 import org.springframework.stereotype.Service;
@@ -42,38 +44,58 @@ public class HrOverviewService {
     private final HrEmployeeContractMapper contractMapper;
     private final HrEmployeeLifecycleEventMapper lifecycleEventMapper;
     private final SystemDeptMapper deptMapper;
+    private final DataScopeService dataScopeService;
 
     public HrOverviewService(
             HrEmployeeMapper employeeMapper,
             HrEmployeeContractMapper contractMapper,
             HrEmployeeLifecycleEventMapper lifecycleEventMapper,
-            SystemDeptMapper deptMapper
+            SystemDeptMapper deptMapper,
+            DataScopeService dataScopeService
     ) {
         this.employeeMapper = employeeMapper;
         this.contractMapper = contractMapper;
         this.lifecycleEventMapper = lifecycleEventMapper;
         this.deptMapper = deptMapper;
+        this.dataScopeService = dataScopeService;
     }
 
     public HrOverviewResponse getOverview() {
         LocalDate today = LocalDate.now();
         LocalDate upcomingDate = today.plusDays(UPCOMING_DAYS);
         LocalDateTime lifecycleCreatedAfter = LocalDateTime.now().minusDays(UPCOMING_DAYS);
+        DataScopeContext dataScope = dataScopeService.currentContext();
         List<HrEmployeeEntity> employees = employeeMapper.selectList(new LambdaQueryWrapper<HrEmployeeEntity>()
                 .orderByAsc(HrEmployeeEntity::getDeptId)
-                .orderByAsc(HrEmployeeEntity::getId));
-        List<HrEmployeeContractEntity> contracts = contractMapper.selectList(new LambdaQueryWrapper<>());
+                .orderByAsc(HrEmployeeEntity::getId))
+                .stream()
+                .filter(employee -> dataScope.canAccess(employee.getDeptId(), employee.getUserId()))
+                .toList();
+        Set<Long> visibleEmployeeIds = employees.stream()
+                .map(HrEmployeeEntity::getId)
+                .collect(Collectors.toSet());
+        List<HrEmployeeContractEntity> contracts = visibleEmployeeIds.isEmpty()
+                ? List.of()
+                : contractMapper.selectList(new LambdaQueryWrapper<HrEmployeeContractEntity>()
+                .in(HrEmployeeContractEntity::getEmployeeId, visibleEmployeeIds));
         List<HrEmployeeLifecycleEventEntity> lifecycleEvents = lifecycleEventMapper.selectList(
                 new LambdaQueryWrapper<HrEmployeeLifecycleEventEntity>()
                         .ge(HrEmployeeLifecycleEventEntity::getCreatedAt, lifecycleCreatedAfter)
         );
+        if (!visibleEmployeeIds.isEmpty()) {
+            lifecycleEvents = lifecycleEvents.stream()
+                    .filter(event -> visibleEmployeeIds.contains(event.getEmployeeId()))
+                    .toList();
+        } else {
+            lifecycleEvents = List.of();
+        }
 
         return new HrOverviewResponse(
                 employees.size(),
                 countEmployeesByStatus(employees, "ACTIVE"),
                 countEmployeesByStatus(employees, "PROBATION"),
                 countEmployeesByStatus(employees, "RESIGNED"),
-                deptMapper.selectCount(new LambdaQueryWrapper<SystemDeptEntity>()),
+                countVisibleDepartments(dataScope),
                 countContractsByStatus(contracts, Set.of("ACTIVE", "EXPIRING")),
                 countExpiringContracts(contracts, today, upcomingDate),
                 countProbationDueEmployees(employees, today, upcomingDate),
@@ -84,6 +106,13 @@ public class HrOverviewService {
                 lifecycleEventStats(lifecycleEvents),
                 LocalDateTime.now()
         );
+    }
+
+    private long countVisibleDepartments(DataScopeContext dataScope) {
+        if (dataScope.isAll()) {
+            return deptMapper.selectCount(new LambdaQueryWrapper<SystemDeptEntity>());
+        }
+        return dataScope.deptIds().size();
     }
 
     private long countEmployeesByStatus(List<HrEmployeeEntity> employees, String status) {

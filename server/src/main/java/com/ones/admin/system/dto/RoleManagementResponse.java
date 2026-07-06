@@ -7,6 +7,7 @@ public record RoleManagementResponse(
         String id,
         String code,
         String name,
+        String dataScope,
         String remark,
         int status,
         LocalDateTime createTime,

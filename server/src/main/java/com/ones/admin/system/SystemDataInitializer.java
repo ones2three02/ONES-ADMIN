@@ -153,6 +153,11 @@ public class SystemDataInitializer implements ApplicationRunner {
                 .last("limit 1"));
         if (existing != null) {
             boolean changed = false;
+            String dataScope = "SUPER_ADMIN".equals(code) ? DataScope.ALL.name() : DataScope.DEPT_AND_CHILD.name();
+            if (existing.getDataScope() == null || existing.getDataScope().isBlank()) {
+                existing.setDataScope(dataScope);
+                changed = true;
+            }
             if (existing.getRemark() == null || existing.getRemark().isBlank()) {
                 existing.setRemark(remark);
                 changed = true;
@@ -166,6 +171,7 @@ public class SystemDataInitializer implements ApplicationRunner {
         SystemRoleEntity role = new SystemRoleEntity();
         role.setCode(code);
         role.setName(name);
+        role.setDataScope("SUPER_ADMIN".equals(code) ? DataScope.ALL.name() : DataScope.DEPT_AND_CHILD.name());
         role.setRemark(remark);
         role.setEnabled(true);
         roleMapper.insert(role);

@@ -23,6 +23,7 @@ public enum SystemErrorCode implements ErrorCode {
     SUPER_ADMIN_PERMISSION_LOCKED(4318, "超级管理员权限不能修改"),
     SUPER_ADMIN_CANNOT_DELETE(4319, "超级管理员角色不能删除"),
     ROLE_MENU_PERMISSION_NOT_FOUND(4320, "菜单权限不存在"),
+    ROLE_DATA_SCOPE_INVALID(4321, "角色数据范围不正确"),
 
     MENU_NOT_FOUND(4331, "菜单不存在"),
     MENU_CHILD_EXISTS(4332, "存在下级菜单，不能删除"),

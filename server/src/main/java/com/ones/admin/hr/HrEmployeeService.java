@@ -27,6 +27,8 @@ import com.ones.admin.hr.mapper.HrEmployeeLifecycleEventMapper;
 import com.ones.admin.hr.mapper.HrEmployeeMapper;
 import com.ones.admin.hr.mapper.HrJobGradeMapper;
 import com.ones.admin.hr.mapper.HrPositionMapper;
+import com.ones.admin.system.DataScopeContext;
+import com.ones.admin.system.DataScopeService;
 import com.ones.admin.system.entity.SystemDeptEntity;
 import com.ones.admin.system.mapper.SystemDeptMapper;
 import org.springframework.stereotype.Service;
@@ -79,6 +81,7 @@ public class HrEmployeeService {
     private final HrPositionMapper positionMapper;
     private final HrJobGradeMapper jobGradeMapper;
     private final SystemDeptMapper deptMapper;
+    private final DataScopeService dataScopeService;
     private final ObjectMapper objectMapper;
 
     public HrEmployeeService(
@@ -88,6 +91,7 @@ public class HrEmployeeService {
             HrPositionMapper positionMapper,
             HrJobGradeMapper jobGradeMapper,
             SystemDeptMapper deptMapper,
+            DataScopeService dataScopeService,
             ObjectMapper objectMapper
     ) {
         this.employeeMapper = employeeMapper;
@@ -96,11 +100,12 @@ public class HrEmployeeService {
         this.positionMapper = positionMapper;
         this.jobGradeMapper = jobGradeMapper;
         this.deptMapper = deptMapper;
+        this.dataScopeService = dataScopeService;
         this.objectMapper = objectMapper;
     }
 
     public PageResult<HrEmployeeResponse> queryEmployees(HrEmployeeQuery query) {
-        IPage<HrEmployeeEntity> page = employeeMapper.selectPage(query.toMyBatisPage(), buildEmployeeQuery(query));
+        IPage<HrEmployeeEntity> page = employeeMapper.selectPage(query.toMyBatisPage(), buildEmployeeQuery(query, true));
         List<HrEmployeeResponse> records = page.getRecords()
                 .stream()
                 .map(this::toResponse)
@@ -109,12 +114,12 @@ public class HrEmployeeService {
     }
 
     public String exportEmployees(HrEmployeeQuery query) {
-        Long total = employeeMapper.selectCount(buildEmployeeQuery(query));
+        Long total = employeeMapper.selectCount(buildEmployeeQuery(query, true));
         if (total > MAX_EXPORT_ROWS) {
             throw new BusinessException("员工花名册导出最多支持 " + MAX_EXPORT_ROWS + " 行，请缩小筛选条件后重试");
         }
 
-        List<HrEmployeeEntity> employees = employeeMapper.selectList(buildEmployeeQuery(query)
+        List<HrEmployeeEntity> employees = employeeMapper.selectList(buildEmployeeQuery(query, true)
                 .last("limit " + MAX_EXPORT_ROWS));
         Map<Long, String> deptNames = loadDeptNames(employees);
         Map<Long, String> positionNames = loadPositionNames(employees);
@@ -148,11 +153,11 @@ public class HrEmployeeService {
     }
 
     public HrEmployeeResponse getEmployee(Long id) {
-        return toResponse(getRequiredEmployee(id));
+        return toResponse(getVisibleEmployee(id));
     }
 
     public List<HrEmployeeLifecycleEventResponse> listLifecycleEvents(Long employeeId) {
-        getRequiredEmployee(employeeId);
+        getVisibleEmployee(employeeId);
         return lifecycleEventMapper.selectList(new LambdaQueryWrapper<HrEmployeeLifecycleEventEntity>()
                         .eq(HrEmployeeLifecycleEventEntity::getEmployeeId, employeeId)
                         .orderByDesc(HrEmployeeLifecycleEventEntity::getEventDate)
@@ -204,7 +209,7 @@ public class HrEmployeeService {
 
     @Transactional
     public HrEmployeeResponse updateEmployee(Long id, HrEmployeeUpdateRequest request) {
-        HrEmployeeEntity employee = getRequiredEmployee(id);
+        HrEmployeeEntity employee = getVisibleEmployee(id);
         employee.setRealName(request.realName().trim());
         employee.setPreferredName(normalizeNullable(request.preferredName()));
         employee.setGender(normalizeNullable(request.gender()));
@@ -224,7 +229,7 @@ public class HrEmployeeService {
 
     @Transactional
     public HrEmployeeResponse transferEmployee(Long id, HrEmployeeTransferRequest request) {
-        HrEmployeeEntity employee = getRequiredEmployee(id);
+        HrEmployeeEntity employee = getVisibleEmployee(id);
         ensureNotResigned(employee);
         if (request.effectiveDate().isBefore(employee.getHireDate())) {
             throw new BusinessException(HrErrorCode.EMPLOYEE_TRANSFER_DATE_INVALID);
@@ -273,7 +278,7 @@ public class HrEmployeeService {
 
     @Transactional
     public HrEmployeeResponse regularizeEmployee(Long id, HrEmployeeRegularizeRequest request) {
-        HrEmployeeEntity employee = getRequiredEmployee(id);
+        HrEmployeeEntity employee = getVisibleEmployee(id);
         ensureNotResigned(employee);
         if (!"PROBATION".equals(employee.getEmploymentStatus())) {
             throw new BusinessException(HrErrorCode.EMPLOYEE_REGULARIZE_STATUS_INVALID);
@@ -305,7 +310,7 @@ public class HrEmployeeService {
 
     @Transactional
     public HrEmployeeResponse resignEmployee(Long id, HrEmployeeResignRequest request) {
-        HrEmployeeEntity employee = getRequiredEmployee(id);
+        HrEmployeeEntity employee = getVisibleEmployee(id);
         ensureNotResigned(employee);
         if (request.leaveDate().isBefore(employee.getHireDate())) {
             throw new BusinessException(HrErrorCode.EMPLOYEE_RESIGN_DATE_INVALID);
@@ -333,10 +338,13 @@ public class HrEmployeeService {
         return toResponse(employeeMapper.selectById(employee.getId()));
     }
 
-    private LambdaQueryWrapper<HrEmployeeEntity> buildEmployeeQuery(HrEmployeeQuery query) {
+    private LambdaQueryWrapper<HrEmployeeEntity> buildEmployeeQuery(HrEmployeeQuery query, boolean applyDataScope) {
         LambdaQueryWrapper<HrEmployeeEntity> wrapper = new LambdaQueryWrapper<HrEmployeeEntity>()
                 .orderByDesc(HrEmployeeEntity::getCreatedAt)
                 .orderByDesc(HrEmployeeEntity::getId);
+        if (applyDataScope) {
+            applyDataScope(wrapper, dataScopeService.currentContext());
+        }
         if (hasText(query.getKeyword())) {
             String keyword = query.getKeyword().trim();
             wrapper.and(nested -> nested
@@ -362,6 +370,30 @@ public class HrEmployeeService {
                     normalizeEnum(query.getEmploymentStatus(), null, EMPLOYMENT_STATUSES));
         }
         return wrapper;
+    }
+
+    private void applyDataScope(LambdaQueryWrapper<HrEmployeeEntity> wrapper, DataScopeContext context) {
+        if (context.isAll()) {
+            return;
+        }
+        switch (context.dataScope()) {
+            case DEPT_AND_CHILD, DEPT -> {
+                if (context.deptIds().isEmpty()) {
+                    wrapper.apply("1 = 0");
+                } else {
+                    wrapper.in(HrEmployeeEntity::getDeptId, context.deptIds());
+                }
+            }
+            case SELF -> {
+                if (context.userId() == null) {
+                    wrapper.apply("1 = 0");
+                } else {
+                    wrapper.eq(HrEmployeeEntity::getUserId, context.userId());
+                }
+            }
+            case ALL -> {
+            }
+        }
     }
 
     private void createInitialJob(HrEmployeeEntity employee) {
@@ -482,6 +514,14 @@ public class HrEmployeeService {
         HrEmployeeEntity employee = employeeMapper.selectById(id);
         if (employee == null) {
             throw new BusinessException(HrErrorCode.EMPLOYEE_NOT_FOUND);
+        }
+        return employee;
+    }
+
+    private HrEmployeeEntity getVisibleEmployee(Long id) {
+        HrEmployeeEntity employee = getRequiredEmployee(id);
+        if (!dataScopeService.canAccess(employee.getDeptId(), employee.getUserId())) {
+            throw new BusinessException(HrErrorCode.EMPLOYEE_DATA_SCOPE_DENIED);
         }
         return employee;
     }
