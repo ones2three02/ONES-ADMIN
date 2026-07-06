@@ -70,7 +70,19 @@
     "terminate": "Terminate Contract",
     "terminateReason": "Terminate Reason",
     "expiringWarn": "Expiring Alert",
-    "expiringContracts": "Expiring Contracts"
+    "expiringContracts": "Expiring Contracts",
+    "attachment": "Contract Attachment",
+    "uploadAttachment": "Upload Attachment",
+    "replaceAttachment": "Replace Attachment",
+    "viewAttachment": "View Attachment",
+    "removeAttachment": "Remove Attachment",
+    "noAttachment": "No contract attachment",
+    "attachmentId": "Attachment ID",
+    "attachmentUploading": "Uploading contract attachment...",
+    "attachmentUploadSuccess": "Contract attachment uploaded",
+    "attachmentUploadError": "Failed to upload contract attachment",
+    "attachmentLoadError": "Failed to load contract attachment",
+    "attachmentOpenUnavailable": "Attachment URL is unavailable"
   },
   "rosterImport": {
     "title": "Roster Import",

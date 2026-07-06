@@ -69,6 +69,15 @@ export function useFormSchema(): VbenFormSchema[] {
       fieldName: 'remark',
       label: $t('hr.contract.remark'),
     },
+    {
+      component: 'Input',
+      dependencies: {
+        show: false,
+        triggerFields: ['contractNo'],
+      },
+      fieldName: 'attachmentFileId',
+      label: $t('hr.contract.attachment'),
+    },
   ];
 }
 
@@ -130,6 +139,12 @@ export function useColumns(): VxeTableGridColumns {
       field: 'renewalRemindDate',
       title: $t('hr.contract.renewalRemindDate'),
       width: 130,
+    },
+    {
+      field: 'attachmentFileId',
+      slots: { default: 'attachment' },
+      title: $t('hr.contract.attachment'),
+      width: 110,
     },
     {
       field: 'remark',

@@ -9,15 +9,24 @@ interface PageResult<T> {
   total: number;
 }
 
+function normalizeMetadata<T extends { id: number | string; uploadedBy?: number | string }>(
+  item: T,
+) {
+  return {
+    ...item,
+    id: String(item.id),
+    uploadedBy:
+      item.uploadedBy === undefined || item.uploadedBy === null
+        ? undefined
+        : String(item.uploadedBy),
+  };
+}
+
 function normalizePage<T extends { id: number | string; uploadedBy?: number | string }>(
   response: PageResult<T>,
 ) {
   return {
-    items: response.list.map((item) => ({
-      ...item,
-      id: String(item.id),
-      uploadedBy: item.uploadedBy ? String(item.uploadedBy) : undefined,
-    })),
+    items: response.list.map((item) => normalizeMetadata(item)),
     total: response.total,
   };
 }
@@ -43,7 +52,7 @@ export namespace SystemFileApi {
     sizeBytes: number;
     status: 'ACTIVE' | 'DELETED' | string;
     storageType: 'LOCAL' | 'MINIO' | string;
-    storedName: string;
+    storedName?: string;
     updatedAt?: string;
     uploadedBy?: string;
     url: string;
@@ -79,13 +88,24 @@ export async function getFileMetadataList(params: SystemFileApi.FileMetadataQuer
   return normalizePage(response);
 }
 
+export async function getFileMetadata(id: number | string) {
+  const response = await requestClient.get<SystemFileApi.FileMetadata>(
+    `/system/files/${id}/metadata`,
+  );
+  return normalizeMetadata(response);
+}
+
 export async function uploadSystemFile(file: File) {
-  return requestClient.upload<SystemFileApi.FileUploadResponse>(
+  const response = await requestClient.upload<SystemFileApi.FileUploadResponse>(
     '/system/files/upload',
     { file },
   );
+  return normalizeMetadata(response);
 }
 
 export async function deleteSystemFile(id: string) {
-  return requestClient.delete<SystemFileApi.FileMetadata>(`/system/files/${id}`);
+  const response = await requestClient.delete<SystemFileApi.FileMetadata>(
+    `/system/files/${id}`,
+  );
+  return normalizeMetadata(response);
 }

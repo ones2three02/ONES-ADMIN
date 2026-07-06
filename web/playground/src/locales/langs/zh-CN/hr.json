@@ -70,7 +70,19 @@
     "terminate": "终止合同",
     "terminateReason": "终止原因",
     "expiringWarn": "到期预警",
-    "expiringContracts": "即将到期合同"
+    "expiringContracts": "即将到期合同",
+    "attachment": "合同附件",
+    "uploadAttachment": "上传附件",
+    "replaceAttachment": "替换附件",
+    "viewAttachment": "查看附件",
+    "removeAttachment": "移除附件",
+    "noAttachment": "暂无合同附件",
+    "attachmentId": "附件ID",
+    "attachmentUploading": "正在上传合同附件...",
+    "attachmentUploadSuccess": "合同附件上传成功",
+    "attachmentUploadError": "合同附件上传失败，请稍后重试",
+    "attachmentLoadError": "合同附件信息获取失败",
+    "attachmentOpenUnavailable": "附件访问地址不可用"
   },
   "rosterImport": {
     "title": "花名册导入",

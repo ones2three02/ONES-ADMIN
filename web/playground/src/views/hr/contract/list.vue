@@ -5,12 +5,17 @@ import type { HrContractApi, HrEmployeeApi } from '#/api';
 import { onMounted, ref, watch } from 'vue';
 
 import { Page, useVbenDrawer } from '@vben/common-ui';
-import { Plus } from '@vben/icons';
+import { IconifyIcon, Plus } from '@vben/icons';
 
-import { Button, Card, InputSearch, TabPane, Tabs } from 'antdv-next';
+import { Button, Card, InputSearch, message, TabPane, Tabs } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
-import { getEmployeeContracts, getEmployeeList, getExpiringContracts } from '#/api';
+import {
+  getEmployeeContracts,
+  getEmployeeList,
+  getExpiringContracts,
+  getFileMetadata,
+} from '#/api';
 import { $t } from '#/locales';
 
 import { useColumns, useExpiringColumns } from './data';
@@ -147,6 +152,27 @@ function onTerminateContract(row: HrContractApi.HrContract) {
   terminateDrawerApi.setData(row).open();
 }
 
+function errorMessageOf(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+async function onViewAttachment(row: HrContractApi.HrContract) {
+  if (!row.attachmentFileId) {
+    message.warning($t('hr.contract.noAttachment'));
+    return;
+  }
+  try {
+    const metadata = await getFileMetadata(row.attachmentFileId);
+    if (!metadata.url) {
+      message.warning($t('hr.contract.attachmentOpenUnavailable'));
+      return;
+    }
+    window.open(metadata.url, '_blank', 'noopener,noreferrer');
+  } catch (error: unknown) {
+    message.error(errorMessageOf(error, $t('hr.contract.attachmentLoadError')));
+  }
+}
+
 onMounted(async () => {
   await Promise.all([
     getHrDictOptions(HR_CONTRACT_TYPE_DICT),
@@ -206,6 +232,21 @@ watch(searchEmployeeValue, () => {
                   <Plus class="size-5" />
                   {{ $t('hr.contract.create') }}
                 </Button>
+              </template>
+              <template #attachment="{ row }">
+                <Button
+                  v-if="row.attachmentFileId"
+                  size="small"
+                  type="link"
+                  v-access:code="['system:file:read']"
+                  @click="onViewAttachment(row)"
+                >
+                  <template #icon>
+                    <IconifyIcon icon="lucide:paperclip" />
+                  </template>
+                  {{ $t('hr.contract.viewAttachment') }}
+                </Button>
+                <span v-else class="text-muted-foreground">-</span>
               </template>
               <template #action="{ row }">
                 <VbenTableAction
