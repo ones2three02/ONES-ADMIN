@@ -15,7 +15,9 @@ public record FileMetadataResponse(
         String businessType,
         String businessId,
         Long uploadedBy,
+        String status,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        LocalDateTime deletedAt
 ) {
 }

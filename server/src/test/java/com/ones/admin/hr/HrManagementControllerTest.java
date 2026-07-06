@@ -362,6 +362,7 @@ class HrManagementControllerTest {
         file.setExtension("pdf");
         file.setSizeBytes(128L);
         file.setStorageType("LOCAL");
+        file.setStatus("ACTIVE");
         file.setUploadedBy(1L);
         fileMapper.insert(file);
         return file.getId();

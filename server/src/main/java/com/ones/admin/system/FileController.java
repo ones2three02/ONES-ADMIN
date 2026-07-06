@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -93,11 +94,23 @@ public class FileController {
         return ApiResult.ok(fileMetadataService.getRequired(id));
     }
 
+    @DeleteMapping("/{id:\\d+}")
+    @SaCheckPermission("system:file:delete")
+    @Operation(summary = "删除文件元数据")
+    @RepeatSubmit
+    @ApiResourceMetadata(sinceVersion = "v0.0.81", riskLevel = ApiRiskLevel.HIGH)
+    public ApiResult<FileMetadataResponse> deleteMetadata(@PathVariable Long id) {
+        return ApiResult.ok(fileMetadataService.delete(id));
+    }
+
     @GetMapping("/{filename:.+}")
     @Operation(summary = "访问文件")
     @ApiAccessPolicy(value = ApiAuthType.LOGIN, reason = "文件访问依赖登录态保护，文件级授权后续随文件元数据表补齐")
     public ResponseEntity<Resource> download(@PathVariable String filename) throws IOException {
         Optional<SystemFileEntity> metadata = fileMetadataService.findByStoredName(filename);
+        if (metadata.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
         FileStorageService.StoredResource storedResource = fileStorageService.load(filename)
                 .orElse(null);
         if (storedResource == null) {
@@ -161,7 +174,8 @@ public class FileController {
             Long sizeBytes,
             String contentType,
             String extension,
-            String storageType
+            String storageType,
+            String status
     ) {
 
         private static FileUploadResponse from(FileMetadataResponse metadata) {
@@ -172,7 +186,8 @@ public class FileController {
                     metadata.sizeBytes(),
                     metadata.contentType(),
                     metadata.extension(),
-                    metadata.storageType()
+                    metadata.storageType(),
+                    metadata.status()
             );
         }
     }

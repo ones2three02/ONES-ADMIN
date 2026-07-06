@@ -56,7 +56,8 @@ public enum SystemErrorCode implements ErrorCode {
     FILE_STORAGE_PATH_INVALID(4104, "文件存储路径不正确"),
     FILE_STORAGE_FAILED(4105, "文件存储失败"),
     FILE_NOT_FOUND(4106, "文件不存在"),
-    FILE_ALREADY_BOUND(4107, "文件已绑定其他业务");
+    FILE_ALREADY_BOUND(4107, "文件已绑定其他业务"),
+    FILE_IN_USE(4108, "文件已被业务引用，不能删除");
 
     private final int code;
     private final String message;

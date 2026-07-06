@@ -22,8 +22,10 @@ public class SystemFileEntity {
     private String businessType;
     private String businessId;
     private Long uploadedBy;
+    private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime deletedAt;
 
     public Long getId() {
         return id;
@@ -121,6 +123,14 @@ public class SystemFileEntity {
         this.uploadedBy = uploadedBy;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -135,5 +145,13 @@ public class SystemFileEntity {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

@@ -25,7 +25,9 @@ import static org.mockito.BDDMockito.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -72,7 +74,8 @@ class FileControllerTest {
                 .andExpect(jsonPath("$.data.sizeBytes").value(5))
                 .andExpect(jsonPath("$.data.contentType").value(MediaType.TEXT_PLAIN_VALUE))
                 .andExpect(jsonPath("$.data.extension").value("txt"))
-                .andExpect(jsonPath("$.data.storageType").value("LOCAL"));
+                .andExpect(jsonPath("$.data.storageType").value("LOCAL"))
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"));
 
         verify(fileStorageService).store(
                 any(MultipartFile.class),
@@ -85,6 +88,7 @@ class FileControllerTest {
         assertThat(metadata.getStoredName()).endsWith(".txt");
         assertThat(metadata.getSizeBytes()).isEqualTo(5L);
         assertThat(metadata.getStorageType()).isEqualTo("LOCAL");
+        assertThat(metadata.getStatus()).isEqualTo("ACTIVE");
         assertThat(metadata.getUploadedBy()).isNotNull();
     }
 
@@ -118,7 +122,88 @@ class FileControllerTest {
                 .andExpect(jsonPath("$.data.id").value(fileId))
                 .andExpect(jsonPath("$.data.originalName").value("contract.pdf"))
                 .andExpect(jsonPath("$.data.extension").value("pdf"))
-                .andExpect(jsonPath("$.data.storageType").value("LOCAL"));
+                .andExpect(jsonPath("$.data.storageType").value("LOCAL"))
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"));
+    }
+
+    @Test
+    void softDeleteUnboundFileAndHideMetadata() throws Exception {
+        given(fileStorageService.store(any(MultipartFile.class), any()))
+                .willAnswer(invocation -> {
+                    String storedName = invocation.getArgument(1);
+                    return new FileStorageService.StoredFile(storedName, "/api/system/files/" + storedName);
+                });
+        String token = login();
+        String uploadResponse = mockMvc.perform(multipart("/api/system/files/upload")
+                        .file(new MockMultipartFile(
+                                "file",
+                                "temporary.txt",
+                                MediaType.TEXT_PLAIN_VALUE,
+                                "temporary".getBytes()
+                        ))
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long fileId = objectMapper.readTree(uploadResponse).at("/data/id").asLong();
+
+        mockMvc.perform(delete("/api/system/files/" + fileId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.id").value(fileId))
+                .andExpect(jsonPath("$.data.status").value("DELETED"))
+                .andExpect(jsonPath("$.data.deletedAt").isNotEmpty());
+
+        mockMvc.perform(get("/api/system/files/" + fileId + "/metadata")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(SystemErrorCode.FILE_NOT_FOUND.code()));
+        SystemFileEntity metadata = fileMapper.selectById(fileId);
+        assertThat(metadata.getStatus()).isEqualTo("DELETED");
+        assertThat(metadata.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    void rejectDownloadWhenFileMetadataDeleted() throws Exception {
+        SystemFileEntity file = new SystemFileEntity();
+        file.setOriginalName("temporary.txt");
+        file.setStoredName("deleted-temporary.txt");
+        file.setUrl("/api/system/files/deleted-temporary.txt");
+        file.setContentType(MediaType.TEXT_PLAIN_VALUE);
+        file.setExtension("txt");
+        file.setSizeBytes(9L);
+        file.setStorageType("LOCAL");
+        file.setStatus("DELETED");
+        fileMapper.insert(file);
+
+        mockMvc.perform(get("/api/system/files/deleted-temporary.txt")
+                        .header("Authorization", "Bearer " + login()))
+                .andExpect(status().isNotFound());
+
+        verify(fileStorageService, never()).load("deleted-temporary.txt");
+    }
+
+    @Test
+    void rejectDeleteWhenFileIsBoundToBusiness() throws Exception {
+        SystemFileEntity file = new SystemFileEntity();
+        file.setOriginalName("contract.pdf");
+        file.setStoredName("bound-contract.pdf");
+        file.setUrl("/api/system/files/bound-contract.pdf");
+        file.setContentType(MediaType.APPLICATION_PDF_VALUE);
+        file.setExtension("pdf");
+        file.setSizeBytes(128L);
+        file.setStorageType("LOCAL");
+        file.setStatus("ACTIVE");
+        file.setBusinessType("HR_EMPLOYEE_CONTRACT");
+        file.setBusinessId("1");
+        fileMapper.insert(file);
+
+        mockMvc.perform(delete("/api/system/files/" + file.getId())
+                        .header("Authorization", "Bearer " + login()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(SystemErrorCode.FILE_IN_USE.code()));
     }
 
     @Test

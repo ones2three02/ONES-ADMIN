@@ -16,6 +16,9 @@ import java.util.Optional;
 @Service
 public class FileMetadataService {
 
+    public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String STATUS_DELETED = "DELETED";
+
     private final FileStorageProperties fileStorageProperties;
     private final SystemFileMapper fileMapper;
 
@@ -43,6 +46,7 @@ public class FileMetadataService {
         file.setStorageType(fileStorageProperties.getStorageType().name());
         file.setBucket(bucketName());
         file.setUploadedBy(currentUserId());
+        file.setStatus(STATUS_ACTIVE);
         fileMapper.insert(file);
         return toResponse(file);
     }
@@ -56,7 +60,7 @@ public class FileMetadataService {
             throw new BusinessException(SystemErrorCode.FILE_NOT_FOUND);
         }
         SystemFileEntity file = fileMapper.selectById(fileId);
-        if (file == null) {
+        if (file == null || !isActive(file)) {
             throw new BusinessException(SystemErrorCode.FILE_NOT_FOUND);
         }
         return file;
@@ -71,9 +75,13 @@ public class FileMetadataService {
         if (storedName == null || storedName.isBlank()) {
             return Optional.empty();
         }
-        return Optional.ofNullable(fileMapper.selectOne(new LambdaQueryWrapper<SystemFileEntity>()
+        SystemFileEntity file = fileMapper.selectOne(new LambdaQueryWrapper<SystemFileEntity>()
                 .eq(SystemFileEntity::getStoredName, storedName)
-                .last("limit 1")));
+                .last("limit 1"));
+        if (file == null || !isActive(file)) {
+            return Optional.empty();
+        }
+        return Optional.of(file);
     }
 
     @Transactional
@@ -89,6 +97,20 @@ public class FileMetadataService {
         file.setBusinessId(trimToNull(businessId));
         file.setUpdatedAt(LocalDateTime.now());
         fileMapper.updateById(file);
+    }
+
+    @Transactional
+    public FileMetadataResponse delete(Long fileId) {
+        SystemFileEntity file = getRequiredEntity(fileId);
+        if (file.getBusinessType() != null || file.getBusinessId() != null) {
+            throw new BusinessException(SystemErrorCode.FILE_IN_USE);
+        }
+        LocalDateTime now = LocalDateTime.now();
+        file.setStatus(STATUS_DELETED);
+        file.setDeletedAt(now);
+        file.setUpdatedAt(now);
+        fileMapper.updateById(file);
+        return toResponse(file);
     }
 
     @Transactional
@@ -120,8 +142,10 @@ public class FileMetadataService {
                 file.getBusinessType(),
                 file.getBusinessId(),
                 file.getUploadedBy(),
+                file.getStatus(),
                 file.getCreatedAt(),
-                file.getUpdatedAt()
+                file.getUpdatedAt(),
+                file.getDeletedAt()
         );
     }
 
@@ -136,6 +160,10 @@ public class FileMetadataService {
             return null;
         }
         return Long.valueOf(String.valueOf(StpUtil.getLoginId()));
+    }
+
+    private boolean isActive(SystemFileEntity file) {
+        return file.getStatus() == null || STATUS_ACTIVE.equals(file.getStatus());
     }
 
     private boolean sameBusiness(SystemFileEntity file, String businessType, String businessId) {
