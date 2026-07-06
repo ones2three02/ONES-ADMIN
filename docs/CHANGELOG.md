@@ -1,5 +1,15 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.92 - 2026-07-07
+
+- HRMS 新增员工资料到期预警接口：`GET /api/hr/employees/documents/expiring`，默认查询 30 天内到期资料，`days` 支持 0 到 365 天。
+- 员工资料响应新增 `employeeNo`、`realName`、`deptName`，让资料预警列表可直接展示员工上下文，避免前端二次查询员工信息。
+- 人力概览新增 `expiringDocumentCount`、`expiredDocumentCount` 和 `documentExpiringBefore`，将 v0.0.91 的资料有效期字段纳入 HR 运营指标。
+- 员工资料预警继续复用 `hr:employee:detail` 权限、员工数据范围和 `sys_file` ACTIVE 状态过滤，避免软删文件和越权员工进入预警结果。
+- 前端人力概览页新增“30天内到期资料”和“已过期资料”指标卡，继续沿用 Vben / Ant Design Vue 的 `Statistic` + `Card` 密度。
+- 本版本不新增数据库迁移，继续复用 `hr_employee_document` 与 `sys_file` 的职责边界。
+- 产品版本递增至 `v0.0.92`。
+
 ## v0.0.91 - 2026-07-07
 
 - HRMS 员工资料附件从单纯文件归属升级为业务资料记录，新增 `hr_employee_document` 表保存员工、文件、资料类型、签发日期、到期日期和备注。

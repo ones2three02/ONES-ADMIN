@@ -159,6 +159,9 @@ export namespace HrEmployeeApi {
     documentId?: string;
     documentType: string;
     employeeId: string;
+    employeeNo?: string;
+    realName?: string;
+    deptName?: string;
     expireDate?: string;
     expired: boolean;
     expiringSoon: boolean;
@@ -271,6 +274,27 @@ export async function getEmployeeOrgContext(id: string | number) {
 export async function getEmployeeDocuments(id: string | number) {
   const res = await requestClient.get<HrEmployeeApi.EmployeeDocument[]>(
     `/hr/employees/${id}/documents`,
+  );
+  return res.map((item) => {
+    const normalized = normalizeFileMetadata(item);
+    return {
+      ...normalized,
+      documentId:
+        item.documentId === undefined || item.documentId === null
+          ? undefined
+          : String(item.documentId),
+      employeeId: String(item.employeeId),
+      fileId: String(item.fileId),
+    };
+  });
+}
+
+export async function getExpiringEmployeeDocuments(days?: number) {
+  const res = await requestClient.get<HrEmployeeApi.EmployeeDocument[]>(
+    '/hr/employees/documents/expiring',
+    {
+      params: { days },
+    },
   );
   return res.map((item) => {
     const normalized = normalizeFileMetadata(item);

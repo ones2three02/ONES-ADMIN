@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.nio.charset.StandardCharsets;
@@ -104,6 +105,16 @@ public class HrEmployeeController {
     @ApiResourceMetadata(sinceVersion = "v0.0.91", riskLevel = ApiRiskLevel.MEDIUM)
     public ApiResult<List<HrEmployeeDocumentResponse>> listEmployeeDocuments(@PathVariable Long id) {
         return ApiResult.ok(employeeDocumentService.listDocuments(id));
+    }
+
+    @GetMapping("/documents/expiring")
+    @SaCheckPermission("hr:employee:detail")
+    @Operation(operationId = "HrEmployeeController_listExpiringEmployeeDocuments", summary = "查询即将到期员工资料")
+    @ApiResourceMetadata(sinceVersion = "v0.0.92", riskLevel = ApiRiskLevel.MEDIUM)
+    public ApiResult<List<HrEmployeeDocumentResponse>> listExpiringEmployeeDocuments(
+            @RequestParam(required = false) Integer days
+    ) {
+        return ApiResult.ok(employeeDocumentService.listExpiringDocuments(days));
     }
 
     @GetMapping("/{id}/lifecycle-events")

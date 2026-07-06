@@ -15,8 +15,11 @@ export namespace HrOverviewApi {
     departmentCount: number;
     activeContractCount: number;
     expiringContractCount: number;
+    expiringDocumentCount: number;
+    expiredDocumentCount: number;
     probationDueCount: number;
     contractExpiringBefore: string;
+    documentExpiringBefore: string;
     probationDueBefore: string;
     employmentStatusStats: MetricItem[];
     departmentStats: MetricItem[];

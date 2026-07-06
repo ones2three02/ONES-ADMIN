@@ -28,6 +28,7 @@ public enum HrErrorCode implements ErrorCode {
     EMPLOYEE_CONTRACT_DATE_INVALID(4433, "合同结束日期不能早于开始日期"),
     EMPLOYEE_CONTRACT_ALREADY_TERMINATED(4434, "员工合同已终止"),
     EMPLOYEE_CONTRACT_EXPIRING_DAYS_INVALID(4435, "合同到期查询天数必须在 0 到 365 之间"),
+    EMPLOYEE_DOCUMENT_EXPIRING_DAYS_INVALID(4437, "员工资料到期查询天数必须在 0 到 365 之间"),
     ROSTER_IMPORT_FILE_EMPTY(4441, "花名册导入文件不能为空"),
     ROSTER_IMPORT_FILE_TYPE_INVALID(4442, "花名册导入仅支持 CSV 文件"),
     ROSTER_IMPORT_FILE_TOO_LARGE(4443, "花名册导入文件不能超过 2MB"),

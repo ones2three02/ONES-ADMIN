@@ -49,6 +49,11 @@ const metrics = computed(() => {
       value: overview.value.expiringContractCount,
     },
     {
+      icon: 'lucide:files',
+      title: '30天内到期资料',
+      value: overview.value.expiringDocumentCount,
+    },
+    {
       icon: 'lucide:calendar-check',
       title: '30天内待转正',
       value: overview.value.probationDueCount,
@@ -130,7 +135,7 @@ onMounted(async () => {
       <Skeleton v-if="loading && !overview" active />
 
       <template v-else-if="overview">
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
           <Card v-for="item in metrics" :key="item.title" variant="borderless">
             <div class="flex items-start justify-between gap-3">
               <Statistic :title="item.title" :value="item.value" />
@@ -204,6 +209,9 @@ onMounted(async () => {
           </Card>
           <Card variant="borderless">
             <Statistic title="有效合同" :value="overview.activeContractCount" />
+          </Card>
+          <Card variant="borderless">
+            <Statistic title="已过期资料" :value="overview.expiredDocumentCount" />
           </Card>
           <Card variant="borderless">
             <Statistic title="已离职员工" :value="overview.resignedEmployeeCount" />

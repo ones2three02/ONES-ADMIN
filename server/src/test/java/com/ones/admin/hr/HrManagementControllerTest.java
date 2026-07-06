@@ -111,26 +111,55 @@ class HrManagementControllerTest {
                 .andExpect(jsonPath("$.data.idCardMasked").value("110****5678"));
 
         long employeeDocumentFileId = createFileMetadata("employee-document-" + suffix + ".pdf");
-        bindEmployeeDocument(token, employeeId, employeeDocumentFileId);
+        LocalDate activeDocumentExpireDate = LocalDate.now().plusDays(60);
+        bindEmployeeDocument(token, employeeId, employeeDocumentFileId, activeDocumentExpireDate);
         assertEmployeeDocumentBound(employeeDocumentFileId, employeeId);
-        assertEmployeeDocumentMetadata(employeeDocumentFileId, employeeId);
+        LocalDate employeeDocumentExpireDate = LocalDate.now().plusDays(20);
+        assertEmployeeDocumentMetadata(employeeDocumentFileId, employeeId, activeDocumentExpireDate);
+        long expiringDocumentFileId = createFileMetadata("employee-document-expiring-" + suffix + ".pdf");
+        bindEmployeeDocument(token, employeeId, expiringDocumentFileId, employeeDocumentExpireDate);
         mockMvc.perform(get("/api/hr/employees/" + employeeId + "/documents")
-                        .header("Authorization", "Bearer " + token))
+                .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(1))
-                .andExpect(jsonPath("$.data[0].id").value(employeeDocumentFileId))
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].id").value(expiringDocumentFileId))
                 .andExpect(jsonPath("$.data[0].documentId", notNullValue()))
                 .andExpect(jsonPath("$.data[0].employeeId").value(employeeId))
-                .andExpect(jsonPath("$.data[0].fileId").value(employeeDocumentFileId))
+                .andExpect(jsonPath("$.data[0].employeeNo").value("E" + suffix))
+                .andExpect(jsonPath("$.data[0].realName").value("张三丰"))
+                .andExpect(jsonPath("$.data[0].deptName").value("ONES 总部"))
+                .andExpect(jsonPath("$.data[0].fileId").value(expiringDocumentFileId))
                 .andExpect(jsonPath("$.data[0].documentType").value("CERTIFICATE"))
                 .andExpect(jsonPath("$.data[0].issueDate").value("2026-07-01"))
-                .andExpect(jsonPath("$.data[0].expireDate").value("2026-07-20"))
+                .andExpect(jsonPath("$.data[0].expireDate").value(employeeDocumentExpireDate.toString()))
                 .andExpect(jsonPath("$.data[0].expired").value(false))
                 .andExpect(jsonPath("$.data[0].expiringSoon").value(true))
                 .andExpect(jsonPath("$.data[0].remark").value("职业资格证书"))
-                .andExpect(jsonPath("$.data[0].originalName").value("employee-document-" + suffix + ".pdf"))
+                .andExpect(jsonPath("$.data[0].originalName").value("employee-document-expiring-" + suffix + ".pdf"))
                 .andExpect(jsonPath("$.data[0].businessType").value("HR_EMPLOYEE_DOCUMENT"))
-                .andExpect(jsonPath("$.data[0].businessId").value(String.valueOf(employeeId)));
+                .andExpect(jsonPath("$.data[0].businessId").value(String.valueOf(employeeId)))
+                .andExpect(jsonPath("$.data[1].id").value(employeeDocumentFileId))
+                .andExpect(jsonPath("$.data[1].fileId").value(employeeDocumentFileId))
+                .andExpect(jsonPath("$.data[1].expireDate").value(activeDocumentExpireDate.toString()))
+                .andExpect(jsonPath("$.data[1].expiringSoon").value(false));
+        mockMvc.perform(get("/api/hr/employees/documents/expiring")
+                        .header("Authorization", "Bearer " + token)
+                        .param("days", "30"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].id").value(expiringDocumentFileId))
+                .andExpect(jsonPath("$.data[0].employeeId").value(employeeId))
+                .andExpect(jsonPath("$.data[0].employeeNo").value("E" + suffix))
+                .andExpect(jsonPath("$.data[0].realName").value("张三丰"))
+                .andExpect(jsonPath("$.data[0].deptName").value("ONES 总部"))
+                .andExpect(jsonPath("$.data[0].documentType").value("CERTIFICATE"))
+                .andExpect(jsonPath("$.data[0].expireDate").value(employeeDocumentExpireDate.toString()))
+                .andExpect(jsonPath("$.data[0].expiringSoon").value(true));
+        mockMvc.perform(get("/api/hr/employees/documents/expiring")
+                        .header("Authorization", "Bearer " + token)
+                        .param("days", "366"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HrErrorCode.EMPLOYEE_DOCUMENT_EXPIRING_DAYS_INVALID.code()));
         removeEmployeeDocument(token, employeeId, employeeDocumentFileId);
         assertEmployeeDocumentDeleted(employeeDocumentFileId);
         assertThat(documentMapper.selectCount(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<HrEmployeeDocumentEntity>()
@@ -138,7 +167,8 @@ class HrManagementControllerTest {
         mockMvc.perform(get("/api/hr/employees/" + employeeId + "/documents")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(0));
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].id").value(expiringDocumentFileId));
 
         transferEmployee(token, employeeId, transferPositionId, transferGradeId, managerId);
         mockMvc.perform(get("/api/hr/employees/" + employeeId)
@@ -315,6 +345,9 @@ class HrManagementControllerTest {
         assertThat(overview.path("departmentCount").asLong()).isGreaterThanOrEqualTo(1L);
         assertThat(overview.path("activeContractCount").asLong()).isGreaterThanOrEqualTo(1L);
         assertThat(overview.path("expiringContractCount").asLong()).isGreaterThanOrEqualTo(1L);
+        assertThat(overview.path("expiringDocumentCount").asLong()).isGreaterThanOrEqualTo(1L);
+        assertThat(overview.path("expiredDocumentCount").asLong()).isGreaterThanOrEqualTo(0L);
+        assertThat(overview.path("documentExpiringBefore").asText()).isEqualTo(LocalDate.now().plusDays(30).toString());
         assertThat(metricValue(overview.path("employmentStatusStats"), "RESIGNED")).isGreaterThanOrEqualTo(1L);
         assertThat(metricValue(overview.path("departmentStats"), "ONES 总部")).isGreaterThanOrEqualTo(1L);
         assertThat(metricValue(overview.path("lifecycleEventStats"), "ONBOARD")).isGreaterThanOrEqualTo(1L);
@@ -458,10 +491,14 @@ class HrManagementControllerTest {
     }
 
     private void bindEmployeeDocument(String token, long employeeId, long fileId) throws Exception {
+        bindEmployeeDocument(token, employeeId, fileId, LocalDate.of(2026, 7, 20));
+    }
+
+    private void bindEmployeeDocument(String token, long employeeId, long fileId, LocalDate expireDate) throws Exception {
         Map<String, Object> request = Map.of(
                 "documentType", "CERTIFICATE",
                 "issueDate", "2026-07-01",
-                "expireDate", "2026-07-20",
+                "expireDate", expireDate.toString(),
                 "remark", "职业资格证书"
         );
         mockMvc.perform(post("/api/hr/employees/" + employeeId + "/documents/" + fileId)
@@ -494,13 +531,17 @@ class HrManagementControllerTest {
     }
 
     private void assertEmployeeDocumentMetadata(long fileId, long employeeId) {
+        assertEmployeeDocumentMetadata(fileId, employeeId, LocalDate.of(2026, 7, 20));
+    }
+
+    private void assertEmployeeDocumentMetadata(long fileId, long employeeId, LocalDate expireDate) {
         HrEmployeeDocumentEntity document = documentMapper.selectOne(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<HrEmployeeDocumentEntity>()
                 .eq(HrEmployeeDocumentEntity::getFileId, fileId));
         assertThat(document).isNotNull();
         assertThat(document.getEmployeeId()).isEqualTo(employeeId);
         assertThat(document.getDocumentType()).isEqualTo("CERTIFICATE");
         assertThat(document.getIssueDate()).isEqualTo(LocalDate.of(2026, 7, 1));
-        assertThat(document.getExpireDate()).isEqualTo(LocalDate.of(2026, 7, 20));
+        assertThat(document.getExpireDate()).isEqualTo(expireDate);
         assertThat(document.getRemark()).isEqualTo("职业资格证书");
         assertThat(document.getCreatedBy()).isEqualTo(1L);
     }

@@ -45,19 +45,22 @@ public class HrOverviewService {
     private final HrEmployeeLifecycleEventMapper lifecycleEventMapper;
     private final SystemDeptMapper deptMapper;
     private final DataScopeService dataScopeService;
+    private final HrEmployeeDocumentService employeeDocumentService;
 
     public HrOverviewService(
             HrEmployeeMapper employeeMapper,
             HrEmployeeContractMapper contractMapper,
             HrEmployeeLifecycleEventMapper lifecycleEventMapper,
             SystemDeptMapper deptMapper,
-            DataScopeService dataScopeService
+            DataScopeService dataScopeService,
+            HrEmployeeDocumentService employeeDocumentService
     ) {
         this.employeeMapper = employeeMapper;
         this.contractMapper = contractMapper;
         this.lifecycleEventMapper = lifecycleEventMapper;
         this.deptMapper = deptMapper;
         this.dataScopeService = dataScopeService;
+        this.employeeDocumentService = employeeDocumentService;
     }
 
     public HrOverviewResponse getOverview() {
@@ -98,7 +101,10 @@ public class HrOverviewService {
                 countVisibleDepartments(dataScope),
                 countContractsByStatus(contracts, Set.of("ACTIVE", "EXPIRING")),
                 countExpiringContracts(contracts, today, upcomingDate),
+                employeeDocumentService.countExpiringDocuments(visibleEmployeeIds, today, upcomingDate),
+                employeeDocumentService.countExpiredDocuments(visibleEmployeeIds, today),
                 countProbationDueEmployees(employees, today, upcomingDate),
+                upcomingDate,
                 upcomingDate,
                 upcomingDate,
                 employmentStatusStats(employees),
