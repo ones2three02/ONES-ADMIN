@@ -3,9 +3,14 @@ package com.ones.admin.system;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ones.admin.auth.dto.LoginRequest;
 import com.ones.admin.common.code.CommonErrorCode;
+import com.ones.admin.system.dto.RoleSaveRequest;
 import com.ones.admin.system.dto.UserCreateRequest;
 import com.ones.admin.system.entity.SystemFileEntity;
+import com.ones.admin.system.entity.SystemPermissionEntity;
+import com.ones.admin.system.entity.SystemRolePermissionEntity;
 import com.ones.admin.system.mapper.SystemFileMapper;
+import com.ones.admin.system.mapper.SystemPermissionMapper;
+import com.ones.admin.system.mapper.SystemRolePermissionMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +54,12 @@ class FileControllerTest {
 
     @Autowired
     private SystemFileMapper fileMapper;
+
+    @Autowired
+    private SystemPermissionMapper permissionMapper;
+
+    @Autowired
+    private SystemRolePermissionMapper rolePermissionMapper;
 
     @Test
     void uploadAllowedFile() throws Exception {
@@ -269,6 +280,107 @@ class FileControllerTest {
     }
 
     @Test
+    void uploaderCanPreviewOwnUnboundFileWithoutGlobalFileReadPermission() throws Exception {
+        given(fileStorageService.store(any(MultipartFile.class), any()))
+                .willAnswer(invocation -> {
+                    String storedName = invocation.getArgument(1);
+                    return new FileStorageService.StoredFile(storedName, "/api/system/files/" + storedName);
+                });
+        String adminToken = login("admin", "admin123");
+        String suffix = String.valueOf(System.nanoTime());
+        String uploaderToken = createFileUploadUser(adminToken, "file_uploader_" + suffix);
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "own-contract.pdf",
+                MediaType.APPLICATION_PDF_VALUE,
+                "preview".getBytes()
+        );
+        String uploadResponse = mockMvc.perform(multipart("/api/system/files/upload")
+                        .file(file)
+                        .header("Authorization", "Bearer " + uploaderToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long fileId = objectMapper.readTree(uploadResponse).at("/data/id").asLong();
+        String storedName = objectMapper.readTree(uploadResponse).at("/data/url").asText()
+                .substring("/api/system/files/".length());
+
+        mockMvc.perform(get("/api/system/files/" + fileId + "/metadata")
+                        .header("Authorization", "Bearer " + uploaderToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.id").value(fileId))
+                .andExpect(jsonPath("$.data.originalName").value("own-contract.pdf"));
+
+        given(fileStorageService.load(storedName))
+                .willReturn(java.util.Optional.of(new FileStorageService.StoredResource(
+                        new ByteArrayResource("preview".getBytes()),
+                        MediaType.APPLICATION_PDF,
+                        storedName
+                )));
+        mockMvc.perform(get("/api/system/files/" + storedName)
+                        .header("Authorization", "Bearer " + uploaderToken))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string("preview"));
+        verify(fileStorageService).load(storedName);
+    }
+
+    @Test
+    void rejectMetadataAndDownloadForOthersUnboundFileWithoutGlobalFileReadPermission() throws Exception {
+        String adminToken = login("admin", "admin123");
+        String suffix = String.valueOf(System.nanoTime());
+        String ownerToken = createFileUploadUser(adminToken, "file_owner_" + suffix);
+        String otherToken = createFileUploadUser(adminToken, "file_other_" + suffix);
+        given(fileStorageService.store(any(MultipartFile.class), any()))
+                .willAnswer(invocation -> {
+                    String storedName = invocation.getArgument(1);
+                    return new FileStorageService.StoredFile(storedName, "/api/system/files/" + storedName);
+                });
+        String uploadResponse = mockMvc.perform(multipart("/api/system/files/upload")
+                        .file(new MockMultipartFile(
+                                "file",
+                                "private-draft.pdf",
+                                MediaType.APPLICATION_PDF_VALUE,
+                                "private".getBytes()
+                        ))
+                        .header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long fileId = objectMapper.readTree(uploadResponse).at("/data/id").asLong();
+        String storedName = objectMapper.readTree(uploadResponse).at("/data/url").asText()
+                .substring("/api/system/files/".length());
+
+        mockMvc.perform(get("/api/system/files/" + fileId + "/metadata")
+                        .header("Authorization", "Bearer " + otherToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+
+        mockMvc.perform(get("/api/system/files/" + storedName)
+                        .header("Authorization", "Bearer " + otherToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+        verify(fileStorageService, never()).load(storedName);
+    }
+
+    @Test
+    void rejectDeleteOwnUnboundFileWhenUploaderHasNoDeletePermission() throws Exception {
+        String adminToken = login("admin", "admin123");
+        String uploaderToken = createFileUploadUser(adminToken, "file_delete_" + System.nanoTime());
+        SystemFileEntity file = newFile("delete-own-" + System.nanoTime() + ".pdf", "pdf", "ACTIVE");
+        file.setUploadedBy(currentUserId(uploaderToken));
+        fileMapper.insert(file);
+
+        mockMvc.perform(delete("/api/system/files/" + file.getId())
+                        .header("Authorization", "Bearer " + uploaderToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+    }
+
+    @Test
     void downloadUnboundFileWhenUserHasFileReadPermission() throws Exception {
         String storedName = "read-allowed-" + System.nanoTime() + ".txt";
         SystemFileEntity file = newFile(storedName, "txt", "ACTIVE");
@@ -378,6 +490,67 @@ class FileControllerTest {
 
     private String login() throws Exception {
         return login("admin", "admin123");
+    }
+
+    private String createFileUploadUser(String adminToken, String username) throws Exception {
+        String roleCode = "FILE_UPLOAD_" + System.nanoTime();
+        String roleResponse = mockMvc.perform(post("/api/system/role")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new RoleSaveRequest(
+                                roleCode,
+                                "文件上传测试角色",
+                                "SELF",
+                                "仅用于验证未绑定文件上传人访问",
+                                1,
+                                List.of()
+                        ))))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long roleId = objectMapper.readTree(roleResponse).at("/data/id").asLong();
+        grantPermission(roleId, "system:file:upload");
+        mockMvc.perform(post("/api/system/users")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new UserCreateRequest(
+                                username,
+                                "文件上传测试用户",
+                                "operator123",
+                                1L,
+                                "仅用于验证文件上传人访问",
+                                true,
+                                List.of(roleCode)
+                        ))))
+                .andExpect(status().isOk());
+        return login(username, "operator123");
+    }
+
+    private long currentUserId(String token) throws Exception {
+        String response = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/auth/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        return objectMapper.readTree(response).at("/data/id").asLong();
+    }
+
+    private void grantPermission(long roleId, String permissionCode) {
+        SystemPermissionEntity permission = permissionMapper.selectOne(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SystemPermissionEntity>()
+                        .eq(SystemPermissionEntity::getCode, permissionCode)
+                        .last("limit 1")
+        );
+        if (permission == null) {
+            throw new IllegalStateException("权限不存在：" + permissionCode);
+        }
+        SystemRolePermissionEntity relation = new SystemRolePermissionEntity();
+        relation.setRoleId(roleId);
+        relation.setPermissionId(permission.getId());
+        rolePermissionMapper.insert(relation);
     }
 
     private SystemFileEntity newFile(String originalName, String extension, String status) {

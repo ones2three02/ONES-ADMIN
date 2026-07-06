@@ -101,11 +101,13 @@ public class FileController {
     }
 
     @GetMapping("/{id:\\d+}/metadata")
-    @SaCheckPermission("system:file:read")
     @Operation(operationId = "FileController_getMetadata", summary = "查询文件元数据")
-    @ApiResourceMetadata(sinceVersion = "v0.0.80", riskLevel = ApiRiskLevel.MEDIUM)
+    @ApiAccessPolicy(value = ApiAuthType.LOGIN, reason = "文件元数据按文件归属授权：管理员可查看全局文件，上传人可查看自己的未绑定临时文件，业务附件由业务策略校验")
+    @ApiResourceMetadata(sinceVersion = "v0.0.85", riskLevel = ApiRiskLevel.MEDIUM)
     public ApiResult<FileMetadataResponse> getMetadata(@PathVariable Long id) {
-        return ApiResult.ok(fileMetadataService.getRequired(id));
+        SystemFileEntity file = fileMetadataService.getRequiredEntity(id);
+        fileAccessService.assertMetadataAllowed(file);
+        return ApiResult.ok(fileMetadataService.toResponse(file));
     }
 
     @DeleteMapping("/{id:\\d+}")
@@ -114,13 +116,15 @@ public class FileController {
     @RepeatSubmit
     @ApiResourceMetadata(sinceVersion = "v0.0.81", riskLevel = ApiRiskLevel.HIGH)
     public ApiResult<FileMetadataResponse> deleteMetadata(@PathVariable Long id) {
-        return ApiResult.ok(fileMetadataService.delete(id));
+        SystemFileEntity file = fileMetadataService.getRequiredEntity(id);
+        fileAccessService.assertDeleteAllowed(file);
+        return ApiResult.ok(fileMetadataService.delete(file));
     }
 
     @GetMapping("/{filename:.+}")
     @Operation(operationId = "FileController_download", summary = "访问文件")
-    @ApiAccessPolicy(value = ApiAuthType.LOGIN, reason = "文件下载按元数据业务归属执行二次授权，未绑定文件要求 system:file:read，HR 合同附件要求合同权限和员工数据范围")
-    @ApiResourceMetadata(sinceVersion = "v0.0.84", riskLevel = ApiRiskLevel.MEDIUM)
+    @ApiAccessPolicy(value = ApiAuthType.LOGIN, reason = "文件下载按元数据归属执行二次授权：管理员可访问全局未绑定文件，上传人可访问自己的未绑定临时文件，HR 合同附件要求合同权限和员工数据范围")
+    @ApiResourceMetadata(sinceVersion = "v0.0.85", riskLevel = ApiRiskLevel.MEDIUM)
     public ResponseEntity<Resource> download(@PathVariable String filename) throws IOException {
         Optional<SystemFileEntity> metadata = fileMetadataService.findByStoredName(filename);
         if (metadata.isEmpty()) {

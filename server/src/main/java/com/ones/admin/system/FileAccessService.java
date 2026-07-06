@@ -18,22 +18,59 @@ public class FileAccessService {
     }
 
     public void assertDownloadAllowed(SystemFileEntity file) {
+        assertAccessAllowed(file);
+    }
+
+    public void assertMetadataAllowed(SystemFileEntity file) {
+        assertAccessAllowed(file);
+    }
+
+    public void assertDeleteAllowed(SystemFileEntity file) {
         if (file == null) {
             throw new BusinessException(SystemErrorCode.FILE_NOT_FOUND);
         }
         if (isUnbound(file)) {
-            assertPermission("system:file:read");
+            assertGlobalFileReadPermissionOrOwner(file);
             return;
         }
-        FileBusinessAccessPolicy policy = businessAccessPolicies.stream()
-                .filter(item -> item.supports(file))
-                .findFirst()
-                .orElse(null);
+        throw new BusinessException(SystemErrorCode.FILE_IN_USE);
+    }
+
+    private void assertAccessAllowed(SystemFileEntity file) {
+        if (file == null) {
+            throw new BusinessException(SystemErrorCode.FILE_NOT_FOUND);
+        }
+        if (isUnbound(file)) {
+            assertGlobalFileReadPermissionOrOwner(file);
+            return;
+        }
+        FileBusinessAccessPolicy policy = resolveBusinessAccessPolicy(file);
         if (policy != null) {
             policy.assertDownloadAllowed(file);
             return;
         }
         assertPermission("system:file:read");
+    }
+
+    private FileBusinessAccessPolicy resolveBusinessAccessPolicy(SystemFileEntity file) {
+        return businessAccessPolicies.stream()
+                .filter(item -> item.supports(file))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private void assertGlobalFileReadPermissionOrOwner(SystemFileEntity file) {
+        if (StpUtil.hasPermission("system:file:read") || isUploadedByCurrentUser(file)) {
+            return;
+        }
+        throw new BusinessException(CommonErrorCode.FORBIDDEN);
+    }
+
+    private boolean isUploadedByCurrentUser(SystemFileEntity file) {
+        if (file.getUploadedBy() == null || !StpUtil.isLogin()) {
+            return false;
+        }
+        return String.valueOf(file.getUploadedBy()).equals(String.valueOf(StpUtil.getLoginId()));
     }
 
     private boolean isUnbound(SystemFileEntity file) {

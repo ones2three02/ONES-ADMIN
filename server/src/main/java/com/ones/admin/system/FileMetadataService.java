@@ -119,6 +119,11 @@ public class FileMetadataService {
     @Transactional
     public FileMetadataResponse delete(Long fileId) {
         SystemFileEntity file = getRequiredEntity(fileId);
+        return delete(file);
+    }
+
+    @Transactional
+    public FileMetadataResponse delete(SystemFileEntity file) {
         if (file.getBusinessType() != null || file.getBusinessId() != null) {
             throw new BusinessException(SystemErrorCode.FILE_IN_USE);
         }
