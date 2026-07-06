@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ones.admin.common.exception.BusinessException;
+import com.ones.admin.common.security.SensitiveDataMaskingUtils;
 import com.ones.admin.common.web.CsvExportUtils;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.hr.dto.HrEmployeeCreateRequest;
@@ -363,10 +364,17 @@ public class HrRosterImportService {
 
     private String writeRawJson(Map<String, String> row) {
         try {
-            return objectMapper.writeValueAsString(row);
+            return objectMapper.writeValueAsString(maskRawRow(row));
         } catch (JsonProcessingException ex) {
-            return String.valueOf(row);
+            return String.valueOf(maskRawRow(row));
         }
+    }
+
+    private Map<String, String> maskRawRow(Map<String, String> row) {
+        Map<String, String> masked = new LinkedHashMap<>(row);
+        masked.computeIfPresent("mobile", (key, value) -> SensitiveDataMaskingUtils.maskMobile(value));
+        masked.computeIfPresent("email", (key, value) -> SensitiveDataMaskingUtils.maskEmail(value));
+        return masked;
     }
 
     private HrRosterImportBatchResponse toBatchResponse(HrRosterImportBatchEntity batch) {

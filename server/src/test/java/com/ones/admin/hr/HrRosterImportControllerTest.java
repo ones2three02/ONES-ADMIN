@@ -55,11 +55,14 @@ class HrRosterImportControllerTest {
 
         String successEmployeeNo = "EI" + suffix;
         String failedEmployeeNo = "EF" + suffix;
+        String failedMobile = "13900139001";
+        String failedEmail = "fail" + suffix + "@ones.local";
         String csv = """
                 employeeNo,realName,deptId,positionId,gradeId,employmentType,employmentStatus,hireDate,probationEndDate,mobile,email,gender,preferredName,remark
                 %s,李四,1,%d,%d,FULL_TIME,PROBATION,2026-07-03,2026-10-03,13900139000,lisi%s@ones.local,MALE,四四,导入成功员工
-                %s,,1,%d,%d,FULL_TIME,PROBATION,2026-07-03,2026-10-03,13900139001,fail%s@ones.local,FEMALE,,缺少姓名
-                """.formatted(successEmployeeNo, positionId, gradeId, suffix, failedEmployeeNo, positionId, gradeId, suffix);
+                %s,,1,%d,%d,FULL_TIME,PROBATION,2026-07-03,2026-10-03,%s,%s,FEMALE,,缺少姓名
+                """.formatted(successEmployeeNo, positionId, gradeId, suffix, failedEmployeeNo, positionId, gradeId,
+                failedMobile, failedEmail);
         MockMultipartFile file = new MockMultipartFile(
                 "file",
                 "employees.csv",
@@ -110,7 +113,7 @@ class HrRosterImportControllerTest {
                 .andExpect(jsonPath("$.data.id").value(batchId))
                 .andExpect(jsonPath("$.data.batchNo").value(batch.path("batchNo").asText()));
 
-        mockMvc.perform(get("/api/hr/roster-import/batches/" + batchId + "/errors")
+        String errorsResponse = mockMvc.perform(get("/api/hr/roster-import/batches/" + batchId + "/errors")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.length()").value(1))
@@ -118,7 +121,16 @@ class HrRosterImportControllerTest {
                 .andExpect(jsonPath("$.data[0].employeeNo").value(failedEmployeeNo))
                 .andExpect(jsonPath("$.data[0].fieldName").value("realName"))
                 .andExpect(jsonPath("$.data[0].errorMessage").value("员工姓名不能为空"))
-                .andExpect(jsonPath("$.data[0].rawJson", containsString(failedEmployeeNo)));
+                .andExpect(jsonPath("$.data[0].rawJson", containsString(failedEmployeeNo)))
+                .andExpect(jsonPath("$.data[0].rawJson", containsString("139****9001")))
+                .andExpect(jsonPath("$.data[0].rawJson", containsString("f****" + suffix.charAt(suffix.length() - 1)
+                        + "@ones.local")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        assertThat(errorsResponse)
+                .doesNotContain(failedMobile)
+                .doesNotContain(failedEmail);
     }
 
     private long createPosition(String token, String code) throws Exception {
