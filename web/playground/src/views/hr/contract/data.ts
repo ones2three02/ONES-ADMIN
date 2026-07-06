@@ -3,6 +3,12 @@ import type { VxeTableGridColumns } from '#/adapter/vxe-table';
 
 import { $t } from '#/locales';
 
+import {
+  formatHrDictLabel,
+  getHrDictOptions,
+  HR_CONTRACT_TYPE_DICT,
+} from '../dict-options';
+
 export function useFormSchema(): VbenFormSchema[] {
   return [
     {
@@ -12,14 +18,11 @@ export function useFormSchema(): VbenFormSchema[] {
       rules: 'required',
     },
     {
-      component: 'Select',
+      component: 'ApiSelect',
       componentProps: {
-        options: [
-          { label: '固定期限劳动合同', value: 'FIXED' },
-          { label: '无固定期限劳动合同', value: 'UNFIXED' },
-          { label: '劳务派遣合同', value: 'DISPATCH' },
-          { label: '实习协议', value: 'INTERN' },
-        ],
+        api: () => getHrDictOptions(HR_CONTRACT_TYPE_DICT),
+        labelField: 'label',
+        valueField: 'value',
       },
       fieldName: 'contractType',
       label: $t('hr.contract.contractType'),
@@ -99,15 +102,7 @@ export function useColumns(): VxeTableGridColumns {
       field: 'contractType',
       title: $t('hr.contract.contractType'),
       width: 150,
-      formatter: ({ cellValue }) => {
-        const types: any = {
-          FIXED: '固定期限劳动合同',
-          UNFIXED: '无固定期限劳动合同',
-          DISPATCH: '劳务派遣合同',
-          INTERN: '实习协议',
-        };
-        return types[cellValue] || cellValue;
-      },
+      formatter: ({ cellValue }) => formatHrDictLabel(HR_CONTRACT_TYPE_DICT, cellValue),
     },
     {
       field: 'status',

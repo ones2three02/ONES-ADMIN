@@ -15,6 +15,11 @@ import { exportEmployees, getDeptList, getEmployeeList } from '#/api';
 import { $t } from '#/locales';
 
 import { useColumns, useGridFormSchema } from './data';
+import {
+  getHrDictOptions,
+  HR_EMPLOYMENT_STATUS_DICT,
+  HR_EMPLOYMENT_TYPE_DICT,
+} from '../dict-options';
 import Form from './modules/form.vue';
 import Lifecycle from './modules/lifecycle.vue';
 import RegularizeForm from './modules/regularize-form.vue';
@@ -170,8 +175,13 @@ function searchDept(value: string) {
   deptList.value = filtered;
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await Promise.all([
+    getHrDictOptions(HR_EMPLOYMENT_TYPE_DICT),
+    getHrDictOptions(HR_EMPLOYMENT_STATUS_DICT),
+  ]);
   loadDeptList();
+  onRefresh();
 });
 
 watch(searchDeptValue, (value) => {

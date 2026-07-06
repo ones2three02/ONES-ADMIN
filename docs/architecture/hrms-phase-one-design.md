@@ -2,7 +2,7 @@
 
 更新时间：2026-07-06
 目标版本：v0.0.50 起
-状态：Phase 1A 已在 v0.0.51 开始落地，Phase 1B 员工生命周期动作已在 v0.0.52 开始落地，Phase 1C 生命周期时间线已在 v0.0.54 落地，Phase 1D 合同核心接口已在 v0.0.55 开始落地，v0.0.56 已补齐合同终止和到期查询，v0.0.58 已开始落地花名册导入，v0.0.65 已补齐员工基础信息编辑闭环，v0.0.67 已补齐花名册导入前端闭环，v0.0.69 已补齐员工花名册导出闭环，v0.0.70 已补齐 HRMS 人力概览，v0.0.73 已预置 HRMS 基础数据字典
+状态：Phase 1A 已在 v0.0.51 开始落地，Phase 1B 员工生命周期动作已在 v0.0.52 开始落地，Phase 1C 生命周期时间线已在 v0.0.54 落地，Phase 1D 合同核心接口已在 v0.0.55 开始落地，v0.0.56 已补齐合同终止和到期查询，v0.0.58 已开始落地花名册导入，v0.0.65 已补齐员工基础信息编辑闭环，v0.0.67 已补齐花名册导入前端闭环，v0.0.69 已补齐员工花名册导出闭环，v0.0.70 已补齐 HRMS 人力概览，v0.0.73 已预置 HRMS 基础数据字典，v0.0.74 已将员工和合同页面接入字典选项
 
 ## 1. 设计目标
 
@@ -250,7 +250,7 @@ flowchart LR
 | `ContractStatus` | `DRAFT` 草稿、`ACTIVE` 生效、`EXPIRING` 即将到期、`TERMINATED` 已终止 |
 | `ImportStatus` | `PARSING` 解析中、`VALIDATION_FAILED` 校验失败、`PARTIAL_SUCCESS` 部分成功、`SUCCESS` 成功、`FAILED` 失败 |
 
-这些枚举一期仍可保留后端常量兜底；v0.0.73 已在系统数据字典预置 `hr_employment_type`、`hr_employment_status`、`hr_contract_type`，后续员工、合同表单应优先从字典选项接口读取，逐步减少前端硬编码。
+这些枚举一期仍可保留后端常量兜底；v0.0.73 已在系统数据字典预置 `hr_employment_type`、`hr_employment_status`、`hr_contract_type`，v0.0.74 已让员工、合同页面优先从字典选项接口读取，后续花名册、概览筛选和更多 HRMS 表单继续减少前端硬编码。
 
 ## 7. 后端包结构
 
@@ -508,7 +508,8 @@ HRMS
 - `v0.0.67` 已修复 Vben 花名册导入页分页契约，补齐批次概览、最近批次状态、CSV 类型与大小校验、错误行查看入口，并从接口治理报告移除已完成的花名册前端待办。
 - `v0.0.69` 已完成员工花名册 CSV 导出接口和 Vben 员工列表导出入口，导出复用当前筛选条件，证件号仅输出脱敏值，并补齐 `hr:employee:export` 权限、菜单按钮和接口治理元数据。
 - `v0.0.70` 已完成 HRMS 人力概览接口和 Vben 概览页，覆盖员工状态、部门分布、合同到期预警、待转正预警和近 30 天生命周期事件，并补齐 `hr:overview:view` 权限、菜单节点和接口治理元数据。
-- `v0.0.73` 已完成系统数据字典基础闭环，并预置 `hr_employment_type`、`hr_employment_status`、`hr_contract_type` 三组 HRMS 字典；后续 HRMS 表单和列表筛选应逐步改为消费 `/api/system/dicts/{dictCode}/options`。
+- `v0.0.73` 已完成系统数据字典基础闭环，并预置 `hr_employment_type`、`hr_employment_status`、`hr_contract_type` 三组 HRMS 字典。
+- `v0.0.74` 已将 HRMS 员工新增、员工列表筛选、员工列表展示、合同新增/编辑和合同列表展示接入 `/api/system/dicts/{dictCode}/options`；合同类型字典值已与后端业务校验统一为 `FIXED_TERM`、`OPEN_ENDED`、`INTERNSHIP`、`SERVICE`。
 - `v0.0.62` 已将写接口操作审计覆盖纳入接口资源清单、CSV、Manifest 和发布门禁，非公开写接口缺少审计覆盖会阻断发布。
 - 员工新增、调岗、转正、离职已写入生命周期事件；调岗会维护任职历史。
 - 合同附件文件元数据、更深入的 HRMS 报表分析和更完整的员工详情页仍按后续阶段推进。

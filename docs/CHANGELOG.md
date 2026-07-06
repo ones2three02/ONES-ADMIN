@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.74 - 2026-07-06
+
+- HRMS 员工新增表单、员工列表筛选和员工列表展示接入系统数据字典，优先消费 `hr_employment_type`、`hr_employment_status` 的登录态 options 接口。
+- HRMS 合同新增/编辑表单和合同列表展示接入 `hr_contract_type` 字典，不再使用前端硬编码合同类型。
+- 修正 HRMS 合同类型默认字典值，与后端合同接口保持一致：`FIXED_TERM`、`OPEN_ENDED`、`INTERNSHIP`、`SERVICE`；历史旧值 `FIXED`、`UNFIXED`、`DISPATCH`、`INTERN` 会在初始化时停用。
+- 字典接口测试补充合同类型 options 契约断言，避免前端字典值和后端业务校验再次偏离。
+- 产品版本递增至 `v0.0.74`。
+
 ## v0.0.73 - 2026-07-06
 
 - 后端新增系统数据字典基础能力，采用 `sys_dict_type` + `sys_dict_item` 两表模型，提供字典类型、字典项 CRUD 和登录态字典选项接口。

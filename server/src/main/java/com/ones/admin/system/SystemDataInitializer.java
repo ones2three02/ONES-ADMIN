@@ -450,10 +450,14 @@ public class SystemDataInitializer implements ApplicationRunner {
         ensureDictItem(employmentStatus, "已离职", "RESIGNED", "error", 40);
 
         SystemDictTypeEntity contractType = ensureDictType("hr_contract_type", "合同类型", "HRMS 员工合同类型", 30);
-        ensureDictItem(contractType, "固定期限劳动合同", "FIXED", "processing", 10);
-        ensureDictItem(contractType, "无固定期限劳动合同", "UNFIXED", "success", 20);
-        ensureDictItem(contractType, "劳务派遣合同", "DISPATCH", "warning", 30);
-        ensureDictItem(contractType, "实习协议", "INTERN", "blue", 40);
+        ensureDictItem(contractType, "固定期限劳动合同", "FIXED_TERM", "processing", 10);
+        ensureDictItem(contractType, "无固定期限劳动合同", "OPEN_ENDED", "success", 20);
+        ensureDictItem(contractType, "实习协议", "INTERNSHIP", "blue", 30);
+        ensureDictItem(contractType, "劳务合同", "SERVICE", "warning", 40);
+        disableDictItem(contractType.getDictCode(), "FIXED");
+        disableDictItem(contractType.getDictCode(), "UNFIXED");
+        disableDictItem(contractType.getDictCode(), "DISPATCH");
+        disableDictItem(contractType.getDictCode(), "INTERN");
     }
 
     private SystemDictTypeEntity ensureDictType(String dictCode, String dictName, String remark, int sortOrder) {
@@ -542,5 +546,18 @@ public class SystemDataInitializer implements ApplicationRunner {
         item.setEnabled(true);
         item.setSortOrder(sortOrder);
         dictItemMapper.insert(item);
+    }
+
+    private void disableDictItem(String dictCode, String itemValue) {
+        SystemDictItemEntity existing = dictItemMapper.selectOne(new LambdaQueryWrapper<SystemDictItemEntity>()
+                .eq(SystemDictItemEntity::getDictCode, dictCode)
+                .eq(SystemDictItemEntity::getItemValue, itemValue)
+                .last("limit 1"));
+        if (existing == null || !Boolean.TRUE.equals(existing.getEnabled())) {
+            return;
+        }
+        existing.setEnabled(false);
+        existing.setUpdatedAt(LocalDateTime.now());
+        dictItemMapper.updateById(existing);
     }
 }

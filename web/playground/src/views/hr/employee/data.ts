@@ -4,6 +4,13 @@ import type { VxeTableGridColumns } from '#/adapter/vxe-table';
 import { getDeptList, getEmployeeList, getJobGradeList, getPositionList } from '#/api';
 import { $t } from '#/locales';
 
+import {
+  formatHrDictLabel,
+  getHrDictOptions,
+  HR_EMPLOYMENT_STATUS_DICT,
+  HR_EMPLOYMENT_TYPE_DICT,
+} from '../dict-options';
+
 async function getEmployeeOptions() {
   const res = await getEmployeeList({ page: 1, pageSize: 200 });
   return res.items;
@@ -122,14 +129,11 @@ export function useFormSchema(): VbenFormSchema[] {
       },
     },
     {
-      component: 'Select',
+      component: 'ApiSelect',
       componentProps: {
-        options: [
-          { label: '全职(正式)', value: 'FULL_TIME' },
-          { label: '兼职', value: 'PART_TIME' },
-          { label: '实习生', value: 'INTERN' },
-          { label: '劳务外包', value: 'OUTSOURCED' },
-        ],
+        api: () => getHrDictOptions(HR_EMPLOYMENT_TYPE_DICT),
+        labelField: 'label',
+        valueField: 'value',
       },
       fieldName: 'employmentType',
       label: $t('hr.employee.employmentType'),
@@ -140,14 +144,11 @@ export function useFormSchema(): VbenFormSchema[] {
       },
     },
     {
-      component: 'Select',
+      component: 'ApiSelect',
       componentProps: {
-        options: [
-          { label: '在职(正式)', value: 'ACTIVE' },
-          { label: '试用期', value: 'PROBATION' },
-          { label: '停职', value: 'SUSPENDED' },
-          { label: '已离职', value: 'RESIGNED' },
-        ],
+        api: () => getHrDictOptions(HR_EMPLOYMENT_STATUS_DICT),
+        labelField: 'label',
+        valueField: 'value',
       },
       fieldName: 'employmentStatus',
       label: $t('hr.employee.employmentStatus'),
@@ -296,14 +297,12 @@ export function useGridFormSchema(): VbenFormSchema[] {
       label: '姓名/工号/手机/邮箱',
     },
     {
-      component: 'Select',
+      component: 'ApiSelect',
       componentProps: {
         allowClear: true,
-        options: [
-          { label: '在职', value: 'ACTIVE' },
-          { label: '试用期', value: 'PROBATION' },
-          { label: '已离职', value: 'RESIGNED' },
-        ],
+        api: () => getHrDictOptions(HR_EMPLOYMENT_STATUS_DICT),
+        labelField: 'label',
+        valueField: 'value',
       },
       fieldName: 'employmentStatus',
       label: $t('hr.employee.employmentStatus'),
@@ -358,29 +357,15 @@ export function useColumns(): VxeTableGridColumns {
       field: 'employmentType',
       title: $t('hr.employee.employmentType'),
       width: 120,
-      formatter: ({ cellValue }) => {
-        const types: any = {
-          FULL_TIME: '全职(正式)',
-          PART_TIME: '兼职',
-          INTERN: '实习生',
-          OUTSOURCED: '劳务外包',
-        };
-        return types[cellValue] || cellValue;
-      },
+      formatter: ({ cellValue }) =>
+        formatHrDictLabel(HR_EMPLOYMENT_TYPE_DICT, cellValue),
     },
     {
       field: 'employmentStatus',
       title: $t('hr.employee.employmentStatus'),
       width: 100,
-      formatter: ({ cellValue }) => {
-        const statuses: any = {
-          ACTIVE: '在职(正式)',
-          PROBATION: '试用期',
-          SUSPENDED: '停职',
-          RESIGNED: '已离职',
-        };
-        return statuses[cellValue] || cellValue;
-      },
+      formatter: ({ cellValue }) =>
+        formatHrDictLabel(HR_EMPLOYMENT_STATUS_DICT, cellValue),
     },
     {
       field: 'hireDate',
