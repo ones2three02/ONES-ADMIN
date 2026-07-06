@@ -2,6 +2,8 @@ package com.ones.admin.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ones.admin.system.entity.SystemDeptEntity;
+import com.ones.admin.system.entity.SystemDictItemEntity;
+import com.ones.admin.system.entity.SystemDictTypeEntity;
 import com.ones.admin.system.entity.SystemMenuEntity;
 import com.ones.admin.system.entity.SystemPermissionEntity;
 import com.ones.admin.system.entity.SystemRoleEntity;
@@ -9,6 +11,8 @@ import com.ones.admin.system.entity.SystemRolePermissionEntity;
 import com.ones.admin.system.entity.SystemUserEntity;
 import com.ones.admin.system.entity.SystemUserRoleEntity;
 import com.ones.admin.system.mapper.SystemDeptMapper;
+import com.ones.admin.system.mapper.SystemDictItemMapper;
+import com.ones.admin.system.mapper.SystemDictTypeMapper;
 import com.ones.admin.system.mapper.SystemMenuMapper;
 import com.ones.admin.system.mapper.SystemPermissionMapper;
 import com.ones.admin.system.mapper.SystemRoleMapper;
@@ -38,6 +42,8 @@ public class SystemDataInitializer implements ApplicationRunner {
     private final SystemUserRoleMapper userRoleMapper;
     private final SystemRolePermissionMapper rolePermissionMapper;
     private final SystemDeptMapper deptMapper;
+    private final SystemDictTypeMapper dictTypeMapper;
+    private final SystemDictItemMapper dictItemMapper;
     private final SystemMenuMapper menuMapper;
 
     public SystemDataInitializer(
@@ -47,6 +53,8 @@ public class SystemDataInitializer implements ApplicationRunner {
             SystemUserRoleMapper userRoleMapper,
             SystemRolePermissionMapper rolePermissionMapper,
             SystemDeptMapper deptMapper,
+            SystemDictTypeMapper dictTypeMapper,
+            SystemDictItemMapper dictItemMapper,
             SystemMenuMapper menuMapper
     ) {
         this.userMapper = userMapper;
@@ -55,6 +63,8 @@ public class SystemDataInitializer implements ApplicationRunner {
         this.userRoleMapper = userRoleMapper;
         this.rolePermissionMapper = rolePermissionMapper;
         this.deptMapper = deptMapper;
+        this.dictTypeMapper = dictTypeMapper;
+        this.dictItemMapper = dictItemMapper;
         this.menuMapper = menuMapper;
     }
 
@@ -86,6 +96,14 @@ public class SystemDataInitializer implements ApplicationRunner {
                 ensurePermission("system:audit:retention", "审计日志保留策略"),
                 ensurePermission("system:api:list", "接口资源查询"),
                 ensurePermission("system:api:publish", "接口资源发布"),
+                ensurePermission("system:dict:type:list", "字典类型查询"),
+                ensurePermission("system:dict:type:create", "字典类型新增"),
+                ensurePermission("system:dict:type:update", "字典类型编辑"),
+                ensurePermission("system:dict:type:delete", "字典类型删除"),
+                ensurePermission("system:dict:item:list", "字典项查询"),
+                ensurePermission("system:dict:item:create", "字典项新增"),
+                ensurePermission("system:dict:item:update", "字典项编辑"),
+                ensurePermission("system:dict:item:delete", "字典项删除"),
                 ensurePermission("system:file:upload", "文件上传"),
                 ensurePermission("hr:overview:view", "人力概览查看"),
                 ensurePermission("hr:employee:list", "员工查询"),
@@ -117,6 +135,7 @@ public class SystemDataInitializer implements ApplicationRunner {
         ensureRolePermission(operatorRole.getId(), permissionIdByCode(permissions, "system:dept:list"));
 
         SystemDeptEntity rootDept = ensureDept(null, "ONES 总部", "默认组织");
+        ensureDefaultDictionaries();
         ensureMenuTree();
 
         SystemUserEntity admin = ensureAdminUser();
@@ -285,16 +304,35 @@ public class SystemDataInitializer implements ApplicationRunner {
         ensureMenu(apiResources.getId(), "SystemApiResourcePublish", "接口资源发布", "/system/api-resources#publish",
                 null, null, "system:api:publish", "lucide:badge-check", "button", 52);
 
+        SystemMenuEntity dict = ensureMenu(system.getId(), "SystemDict", "数据字典", "/system/dict",
+                "/system/dict/list", null, "system:dict:type:list", "lucide:book-open-text", "menu", 55);
+        ensureMenu(dict.getId(), "SystemDictTypeList", "字典类型查询", "/system/dict#type-list",
+                null, null, "system:dict:type:list", "lucide:list-filter", "button", 56);
+        ensureMenu(dict.getId(), "SystemDictTypeCreate", "字典类型新增", "/system/dict#type-create",
+                null, null, "system:dict:type:create", "carbon:add", "button", 57);
+        ensureMenu(dict.getId(), "SystemDictTypeUpdate", "字典类型编辑", "/system/dict#type-update",
+                null, null, "system:dict:type:update", "carbon:edit", "button", 58);
+        ensureMenu(dict.getId(), "SystemDictTypeDelete", "字典类型删除", "/system/dict#type-delete",
+                null, null, "system:dict:type:delete", "carbon:trash-can", "button", 59);
+        ensureMenu(dict.getId(), "SystemDictItemList", "字典项查询", "/system/dict#item-list",
+                null, null, "system:dict:item:list", "lucide:list-tree", "button", 60);
+        ensureMenu(dict.getId(), "SystemDictItemCreate", "字典项新增", "/system/dict#item-create",
+                null, null, "system:dict:item:create", "carbon:add", "button", 61);
+        ensureMenu(dict.getId(), "SystemDictItemUpdate", "字典项编辑", "/system/dict#item-update",
+                null, null, "system:dict:item:update", "carbon:edit", "button", 62);
+        ensureMenu(dict.getId(), "SystemDictItemDelete", "字典项删除", "/system/dict#item-delete",
+                null, null, "system:dict:item:delete", "carbon:trash-can", "button", 63);
+
         SystemMenuEntity audit = ensureMenu(system.getId(), "SystemAudit", "审计日志", "/system/audit",
-                "/system/audit/list", null, "system:audit:login-log", "lucide:shield-check", "menu", 60);
+                "/system/audit/list", null, "system:audit:login-log", "lucide:shield-check", "menu", 70);
         ensureMenu(audit.getId(), "SystemAuditLoginLog", "登录日志查询", "/system/audit#login-log",
-                null, null, "system:audit:login-log", "lucide:log-in", "button", 61);
+                null, null, "system:audit:login-log", "lucide:log-in", "button", 71);
         ensureMenu(audit.getId(), "SystemAuditOperationLog", "操作日志查询", "/system/audit#operation-log",
-                null, null, "system:audit:operation-log", "lucide:scroll-text", "button", 62);
+                null, null, "system:audit:operation-log", "lucide:scroll-text", "button", 72);
         ensureMenu(audit.getId(), "SystemAuditRetention", "审计保留策略", "/system/audit#retention",
-                null, null, "system:audit:retention", "lucide:archive-restore", "button", 63);
+                null, null, "system:audit:retention", "lucide:archive-restore", "button", 73);
         ensureMenu(system.getId(), "SystemFileUpload", "文件上传", "/system#file-upload",
-                null, null, "system:file:upload", "lucide:upload", "button", 64);
+                null, null, "system:file:upload", "lucide:upload", "button", 74);
 
         SystemMenuEntity hrms = ensureMenu(null, "HRMS", "人力资源管理", "/hr",
                 "BasicLayout", null, null, "lucide:users", "catalog", 200);
@@ -396,5 +434,113 @@ public class SystemDataInitializer implements ApplicationRunner {
         menu.setEnabled(true);
         menuMapper.insert(menu);
         return menu;
+    }
+
+    private void ensureDefaultDictionaries() {
+        SystemDictTypeEntity employmentType = ensureDictType("hr_employment_type", "用工类型", "HRMS 员工用工类型", 10);
+        ensureDictItem(employmentType, "全职(正式)", "FULL_TIME", "success", 10);
+        ensureDictItem(employmentType, "兼职", "PART_TIME", "blue", 20);
+        ensureDictItem(employmentType, "实习生", "INTERN", "processing", 30);
+        ensureDictItem(employmentType, "劳务外包", "OUTSOURCED", "warning", 40);
+
+        SystemDictTypeEntity employmentStatus = ensureDictType("hr_employment_status", "员工状态", "HRMS 员工任职状态", 20);
+        ensureDictItem(employmentStatus, "在职(正式)", "ACTIVE", "success", 10);
+        ensureDictItem(employmentStatus, "试用期", "PROBATION", "processing", 20);
+        ensureDictItem(employmentStatus, "停职", "SUSPENDED", "warning", 30);
+        ensureDictItem(employmentStatus, "已离职", "RESIGNED", "error", 40);
+
+        SystemDictTypeEntity contractType = ensureDictType("hr_contract_type", "合同类型", "HRMS 员工合同类型", 30);
+        ensureDictItem(contractType, "固定期限劳动合同", "FIXED", "processing", 10);
+        ensureDictItem(contractType, "无固定期限劳动合同", "UNFIXED", "success", 20);
+        ensureDictItem(contractType, "劳务派遣合同", "DISPATCH", "warning", 30);
+        ensureDictItem(contractType, "实习协议", "INTERN", "blue", 40);
+    }
+
+    private SystemDictTypeEntity ensureDictType(String dictCode, String dictName, String remark, int sortOrder) {
+        SystemDictTypeEntity existing = dictTypeMapper.selectOne(new LambdaQueryWrapper<SystemDictTypeEntity>()
+                .eq(SystemDictTypeEntity::getDictCode, dictCode)
+                .last("limit 1"));
+        if (existing != null) {
+            boolean changed = false;
+            if (!dictName.equals(existing.getDictName())) {
+                existing.setDictName(dictName);
+                changed = true;
+            }
+            if (existing.getRemark() == null || existing.getRemark().isBlank()) {
+                existing.setRemark(remark);
+                changed = true;
+            }
+            if (existing.getSortOrder() == null || existing.getSortOrder() != sortOrder) {
+                existing.setSortOrder(sortOrder);
+                changed = true;
+            }
+            if (!Boolean.TRUE.equals(existing.getEnabled())) {
+                existing.setEnabled(true);
+                changed = true;
+            }
+            if (changed) {
+                existing.setUpdatedAt(LocalDateTime.now());
+                dictTypeMapper.updateById(existing);
+            }
+            return existing;
+        }
+        SystemDictTypeEntity type = new SystemDictTypeEntity();
+        type.setDictCode(dictCode);
+        type.setDictName(dictName);
+        type.setRemark(remark);
+        type.setEnabled(true);
+        type.setSortOrder(sortOrder);
+        dictTypeMapper.insert(type);
+        return type;
+    }
+
+    private void ensureDictItem(
+            SystemDictTypeEntity type,
+            String itemLabel,
+            String itemValue,
+            String color,
+            int sortOrder
+    ) {
+        SystemDictItemEntity existing = dictItemMapper.selectOne(new LambdaQueryWrapper<SystemDictItemEntity>()
+                .eq(SystemDictItemEntity::getDictCode, type.getDictCode())
+                .eq(SystemDictItemEntity::getItemValue, itemValue)
+                .last("limit 1"));
+        if (existing != null) {
+            boolean changed = false;
+            if (!type.getId().equals(existing.getTypeId())) {
+                existing.setTypeId(type.getId());
+                changed = true;
+            }
+            if (!itemLabel.equals(existing.getItemLabel())) {
+                existing.setItemLabel(itemLabel);
+                changed = true;
+            }
+            if (!java.util.Objects.equals(color, existing.getColor())) {
+                existing.setColor(color);
+                changed = true;
+            }
+            if (existing.getSortOrder() == null || existing.getSortOrder() != sortOrder) {
+                existing.setSortOrder(sortOrder);
+                changed = true;
+            }
+            if (!Boolean.TRUE.equals(existing.getEnabled())) {
+                existing.setEnabled(true);
+                changed = true;
+            }
+            if (changed) {
+                existing.setUpdatedAt(LocalDateTime.now());
+                dictItemMapper.updateById(existing);
+            }
+            return;
+        }
+        SystemDictItemEntity item = new SystemDictItemEntity();
+        item.setTypeId(type.getId());
+        item.setDictCode(type.getDictCode());
+        item.setItemLabel(itemLabel);
+        item.setItemValue(itemValue);
+        item.setColor(color);
+        item.setEnabled(true);
+        item.setSortOrder(sortOrder);
+        dictItemMapper.insert(item);
     }
 }

@@ -41,6 +41,14 @@ public enum SystemErrorCode implements ErrorCode {
     DEPT_PARENT_NOT_FOUND(4354, "上级部门不存在"),
     DEPT_PARENT_CANNOT_BE_DESCENDANT(4355, "上级部门不能选择自己或自己的下级"),
 
+    DICT_TYPE_NOT_FOUND(4361, "字典类型不存在"),
+    DICT_TYPE_CODE_EXISTS(4362, "字典编码已存在"),
+    DICT_TYPE_HAS_ITEMS(4363, "字典类型下存在字典项，不能删除"),
+    DICT_TYPE_REQUIRED(4364, "字典类型不能为空"),
+    DICT_TYPE_DISABLED(4365, "字典类型已停用"),
+    DICT_ITEM_NOT_FOUND(4366, "字典项不存在"),
+    DICT_ITEM_VALUE_EXISTS(4367, "同一字典下的字典值已存在"),
+
     FILE_EMPTY(4101, "上传文件不能为空"),
     FILE_EXTENSION_NOT_ALLOWED(4102, "不支持的文件类型"),
     FILE_TOO_LARGE(4103, "上传文件大小超过限制"),

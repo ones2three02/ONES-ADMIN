@@ -29,6 +29,9 @@
   "audit": {
     "title": "Audit Logs"
   },
+  "dict": {
+    "title": "Data Dictionary"
+  },
   "menu": {
     "title": "Menu Management",
     "parent": "Parent Menu",

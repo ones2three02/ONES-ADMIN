@@ -58,6 +58,15 @@ const routes: RouteRecordRaw[] = [
         component: () => import('#/views/system/api-resource/list.vue'),
       },
       {
+        path: '/system/dict',
+        name: 'SystemDict',
+        meta: {
+          icon: 'lucide:book-open-text',
+          title: $t('system.dict.title'),
+        },
+        component: () => import('#/views/system/dict/list.vue'),
+      },
+      {
         path: '/system/audit',
         name: 'SystemAudit',
         meta: {

@@ -30,6 +30,9 @@
   "audit": {
     "title": "审计日志"
   },
+  "dict": {
+    "title": "数据字典"
+  },
   "menu": {
     "list": "菜单列表",
     "activeIcon": "激活图标",

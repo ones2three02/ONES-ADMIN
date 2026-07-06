@@ -69,6 +69,7 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].component").value("BasicLayout"))
                 .andExpect(jsonPath("$..path", hasItem("/system/api-resources")))
+                .andExpect(jsonPath("$..path", hasItem("/system/dict")))
                 .andExpect(jsonPath("$..path", hasItem("/system/audit")));
     }
 }
