@@ -63,7 +63,7 @@ sa-token:
   is-print: false
 
 ones:
-  version: ${ONES_ADMIN_VERSION:v0.0.85}
+  version: ${ONES_ADMIN_VERSION:v0.0.86}
   audit:
     retention:
       login-log-days: ${ONES_AUDIT_LOGIN_LOG_RETENTION_DAYS:180}
@@ -80,6 +80,8 @@ ones:
     upload-root: ${ONES_FILE_UPLOAD_ROOT:uploads}
     public-url-prefix: ${ONES_FILE_PUBLIC_URL_PREFIX:/api/system/files}
     max-size: ${ONES_FILE_MAX_SIZE:20MB}
+    retention:
+      deleted-file-days: ${ONES_FILE_DELETED_RETENTION_DAYS:30}
     minio:
       endpoint: ${ONES_MINIO_ENDPOINT:http://localhost:9000}
       access-key: ${ONES_MINIO_ACCESS_KEY:}

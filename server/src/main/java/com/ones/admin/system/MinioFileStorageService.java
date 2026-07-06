@@ -6,6 +6,7 @@ import io.minio.GetObjectArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import io.minio.errors.ErrorResponseException;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.InputStreamResource;
@@ -64,6 +65,18 @@ public class MinioFileStorageService implements FileStorageService {
             throw new BusinessException(SystemErrorCode.FILE_STORAGE_FAILED, "读取 MinIO 文件失败");
         } catch (Exception exception) {
             throw new BusinessException(SystemErrorCode.FILE_STORAGE_FAILED, "读取 MinIO 文件失败");
+        }
+    }
+
+    @Override
+    public void delete(String storedName) throws IOException {
+        try {
+            minioClient.removeObject(RemoveObjectArgs.builder()
+                    .bucket(bucket())
+                    .object(storedName)
+                    .build());
+        } catch (Exception exception) {
+            throw new BusinessException(SystemErrorCode.FILE_STORAGE_FAILED, "删除 MinIO 文件失败");
         }
     }
 

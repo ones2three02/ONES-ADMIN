@@ -381,6 +381,60 @@ class FileControllerTest {
     }
 
     @Test
+    void summarizeAndPurgeExpiredDeletedFiles() throws Exception {
+        clearFileRows();
+        SystemFileEntity expired = newFile("expired-deleted-" + System.nanoTime() + ".txt", "txt", "DELETED");
+        expired.setSizeBytes(256L);
+        expired.setDeletedAt(java.time.LocalDateTime.now().minusDays(31));
+        fileMapper.insert(expired);
+        SystemFileEntity freshDeleted = newFile("fresh-deleted-" + System.nanoTime() + ".txt", "txt", "DELETED");
+        freshDeleted.setSizeBytes(128L);
+        freshDeleted.setDeletedAt(java.time.LocalDateTime.now().minusDays(2));
+        fileMapper.insert(freshDeleted);
+
+        String token = login();
+        mockMvc.perform(get("/api/system/files/retention")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.deletedFileRetentionDays").value(30))
+                .andExpect(jsonPath("$.data.expiredDeletedFileCount").value(1))
+                .andExpect(jsonPath("$.data.expiredDeletedFileSizeBytes").value(256));
+
+        mockMvc.perform(post("/api/system/files/retention/purge")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.deletedFileRetentionDays").value(30))
+                .andExpect(jsonPath("$.data.purgedFileCount").value(1))
+                .andExpect(jsonPath("$.data.purgedFileSizeBytes").value(256));
+
+        verify(fileStorageService).delete(expired.getStoredName());
+        verify(fileStorageService, never()).delete(freshDeleted.getStoredName());
+        assertThat(fileMapper.selectById(expired.getId()).getStatus()).isEqualTo("PURGED");
+        assertThat(fileMapper.selectById(freshDeleted.getId()).getStatus()).isEqualTo("DELETED");
+    }
+
+    @Test
+    void rejectPurgeWhenUserHasNoFilePurgePermission() throws Exception {
+        String adminToken = login("admin", "admin123");
+        String uploaderToken = createFileUploadUser(adminToken, "file_purge_" + System.nanoTime());
+        SystemFileEntity expired = newFile("purge-forbidden-" + System.nanoTime() + ".txt", "txt", "DELETED");
+        expired.setDeletedAt(java.time.LocalDateTime.now().minusDays(31));
+        expired.setBusinessType("TEST_LOCKED");
+        expired.setBusinessId(String.valueOf(System.nanoTime()));
+        fileMapper.insert(expired);
+
+        mockMvc.perform(post("/api/system/files/retention/purge")
+                        .header("Authorization", "Bearer " + uploaderToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
+
+        verify(fileStorageService, never()).delete(expired.getStoredName());
+        assertThat(fileMapper.selectById(expired.getId()).getStatus()).isEqualTo("DELETED");
+    }
+
+    @Test
     void downloadUnboundFileWhenUserHasFileReadPermission() throws Exception {
         String storedName = "read-allowed-" + System.nanoTime() + ".txt";
         SystemFileEntity file = newFile(storedName, "txt", "ACTIVE");
@@ -551,6 +605,11 @@ class FileControllerTest {
         relation.setRoleId(roleId);
         relation.setPermissionId(permission.getId());
         rolePermissionMapper.insert(relation);
+    }
+
+    private void clearFileRows() {
+        fileMapper.delete(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SystemFileEntity>()
+                .isNotNull(SystemFileEntity::getId));
     }
 
     private SystemFileEntity newFile(String originalName, String extension, String status) {

@@ -8,6 +8,7 @@ import { Tag } from 'antdv-next';
 const statusColorMap: Record<string, string> = {
   ACTIVE: 'success',
   DELETED: 'error',
+  PURGED: 'default',
 };
 
 const storageColorMap: Record<string, string> = {
@@ -70,6 +71,7 @@ export function useGridFormSchema(): VbenFormSchema[] {
         options: [
           { label: '可用', value: 'ACTIVE' },
           { label: '已删除', value: 'DELETED' },
+          { label: '已清理', value: 'PURGED' },
         ],
       },
       fieldName: 'status',

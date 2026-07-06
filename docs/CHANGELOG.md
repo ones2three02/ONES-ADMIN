@@ -1,5 +1,15 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.86 - 2026-07-07
+
+- 系统文件新增清理保留策略接口 `GET /api/system/files/retention`，输出已删除文件保留天数、清理阈值、待清理数量和容量。
+- 系统文件新增过期物理清理接口 `POST /api/system/files/retention/purge`，仅清理超过保留期且未绑定业务的已删除文件，清理后元数据状态进入 `PURGED` 以保留审计线索。
+- 文件存储抽象新增物理删除能力，本地存储和 MinIO 存储均已实现；MinIO 删除使用官方 Java SDK `removeObject(RemoveObjectArgs)`。
+- 新增 `system:file:purge` 独立权限和文件管理页“清理过期”按钮，物理清理不复用软删除权限，便于角色授权和 Jenkins 审计分权。
+- 文件管理页支持 `PURGED` 状态筛选和待清理指标，继续保持 Vben / Ant Design Vue 现有系统页风格。
+- 补充文件保留策略预览、物理清理和无权限拒绝测试。
+- 产品版本递增至 `v0.0.86`。
+
 ## v0.0.85 - 2026-07-07
 
 - 系统文件元数据和下载接口统一接入 `FileAccessService`，文件访问边界从“接口权限”升级为“文件归属 + 业务策略”。

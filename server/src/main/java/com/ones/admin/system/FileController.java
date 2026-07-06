@@ -12,6 +12,8 @@ import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.system.dto.FileMetadataQuery;
 import com.ones.admin.system.dto.FileMetadataResponse;
+import com.ones.admin.system.dto.FileRetentionPurgeResponse;
+import com.ones.admin.system.dto.FileRetentionSummaryResponse;
 import com.ones.admin.system.entity.SystemFileEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -98,6 +100,23 @@ public class FileController {
     @ApiResourceMetadata(sinceVersion = "v0.0.82", riskLevel = ApiRiskLevel.MEDIUM)
     public ApiResult<PageResult<FileMetadataResponse>> listMetadata(@Valid FileMetadataQuery query) {
         return ApiResult.ok(fileMetadataService.queryPage(query));
+    }
+
+    @GetMapping("/retention")
+    @SaCheckPermission("system:file:purge")
+    @Operation(operationId = "FileController_getRetention", summary = "查询文件清理策略")
+    @ApiResourceMetadata(sinceVersion = "v0.0.86", riskLevel = ApiRiskLevel.MEDIUM)
+    public ApiResult<FileRetentionSummaryResponse> getRetention() {
+        return ApiResult.ok(fileMetadataService.summarizeRetention());
+    }
+
+    @PostMapping("/retention/purge")
+    @SaCheckPermission("system:file:purge")
+    @Operation(operationId = "FileController_purgeExpiredDeletedFiles", summary = "清理过期已删除文件")
+    @RepeatSubmit
+    @ApiResourceMetadata(sinceVersion = "v0.0.86", riskLevel = ApiRiskLevel.HIGH)
+    public ApiResult<FileRetentionPurgeResponse> purgeExpiredDeletedFiles() {
+        return ApiResult.ok(fileMetadataService.purgeExpiredDeletedFiles());
     }
 
     @GetMapping("/{id:\\d+}/metadata")

@@ -5,6 +5,8 @@ import com.ones.admin.common.exception.BusinessException;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.system.dto.FileMetadataQuery;
 import com.ones.admin.system.dto.FileMetadataResponse;
+import com.ones.admin.system.dto.FileRetentionPurgeResponse;
+import com.ones.admin.system.dto.FileRetentionSummaryResponse;
 import com.ones.admin.system.entity.SystemFileEntity;
 import com.ones.admin.system.mapper.SystemFileMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -12,7 +14,9 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,13 +26,23 @@ public class FileMetadataService {
 
     public static final String STATUS_ACTIVE = "ACTIVE";
     public static final String STATUS_DELETED = "DELETED";
+    public static final String STATUS_PURGED = "PURGED";
 
     private final FileStorageProperties fileStorageProperties;
+    private final FileRetentionProperties fileRetentionProperties;
     private final SystemFileMapper fileMapper;
+    private final FileStorageService fileStorageService;
 
-    public FileMetadataService(FileStorageProperties fileStorageProperties, SystemFileMapper fileMapper) {
+    public FileMetadataService(
+            FileStorageProperties fileStorageProperties,
+            FileRetentionProperties fileRetentionProperties,
+            SystemFileMapper fileMapper,
+            FileStorageService fileStorageService
+    ) {
         this.fileStorageProperties = fileStorageProperties;
+        this.fileRetentionProperties = fileRetentionProperties;
         this.fileMapper = fileMapper;
+        this.fileStorageService = fileStorageService;
     }
 
     @Transactional
@@ -135,6 +149,41 @@ public class FileMetadataService {
         return toResponse(file);
     }
 
+    public FileRetentionSummaryResponse summarizeRetention() {
+        LocalDateTime purgeBefore = purgeBefore(LocalDateTime.now());
+        List<SystemFileEntity> files = expiredDeletedFiles(purgeBefore);
+        return new FileRetentionSummaryResponse(
+                fileRetentionProperties.getDeletedFileDays(),
+                purgeBefore,
+                files.size(),
+                totalSize(files)
+        );
+    }
+
+    @Transactional
+    public FileRetentionPurgeResponse purgeExpiredDeletedFiles() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime purgeBefore = purgeBefore(now);
+        List<SystemFileEntity> files = expiredDeletedFiles(purgeBefore);
+        long totalSize = totalSize(files);
+        for (SystemFileEntity file : files) {
+            try {
+                fileStorageService.delete(file.getStoredName());
+            } catch (IOException exception) {
+                throw new BusinessException(SystemErrorCode.FILE_STORAGE_FAILED, "清理文件物理对象失败");
+            }
+            file.setStatus(STATUS_PURGED);
+            file.setUpdatedAt(now);
+            fileMapper.updateById(file);
+        }
+        return new FileRetentionPurgeResponse(
+                fileRetentionProperties.getDeletedFileDays(),
+                purgeBefore,
+                files.size(),
+                totalSize
+        );
+    }
+
     @Transactional
     public void clearBusinessIfMatched(Long fileId, String businessType, String businessId) {
         if (fileId == null) {
@@ -203,6 +252,28 @@ public class FileMetadataService {
             wrapper.le(SystemFileEntity::getCreatedAt, query.getEndTime());
         }
         return wrapper;
+    }
+
+    private LocalDateTime purgeBefore(LocalDateTime now) {
+        return now.minusDays(fileRetentionProperties.getDeletedFileDays());
+    }
+
+    private List<SystemFileEntity> expiredDeletedFiles(LocalDateTime purgeBefore) {
+        return fileMapper.selectList(new LambdaQueryWrapper<SystemFileEntity>()
+                .eq(SystemFileEntity::getStatus, STATUS_DELETED)
+                .lt(SystemFileEntity::getDeletedAt, purgeBefore)
+                .isNull(SystemFileEntity::getBusinessType)
+                .isNull(SystemFileEntity::getBusinessId)
+                .orderByAsc(SystemFileEntity::getDeletedAt)
+                .orderByAsc(SystemFileEntity::getId));
+    }
+
+    private long totalSize(List<SystemFileEntity> files) {
+        return files.stream()
+                .map(SystemFileEntity::getSizeBytes)
+                .filter(Objects::nonNull)
+                .mapToLong(Long::longValue)
+                .sum();
     }
 
     private String bucketName() {

@@ -50,7 +50,7 @@ export namespace SystemFileApi {
     id: string;
     originalName: string;
     sizeBytes: number;
-    status: 'ACTIVE' | 'DELETED' | string;
+    status: 'ACTIVE' | 'DELETED' | 'PURGED' | string;
     storageType: 'LOCAL' | 'MINIO' | string;
     storedName?: string;
     updatedAt?: string;
@@ -75,6 +75,20 @@ export namespace SystemFileApi {
 
   export interface FileUploadResponse extends FileMetadata {
     url: string;
+  }
+
+  export interface FileRetentionSummary {
+    deletedFileRetentionDays: number;
+    expiredDeletedFileCount: number;
+    expiredDeletedFileSizeBytes: number;
+    purgeBefore?: string;
+  }
+
+  export interface FileRetentionPurgeResult {
+    deletedFileRetentionDays: number;
+    purgedFileCount: number;
+    purgedFileSizeBytes: number;
+    purgeBefore?: string;
   }
 }
 
@@ -108,4 +122,16 @@ export async function deleteSystemFile(id: string) {
     `/system/files/${id}`,
   );
   return normalizeFileMetadata(response);
+}
+
+export async function getFileRetention() {
+  return requestClient.get<SystemFileApi.FileRetentionSummary>(
+    '/system/files/retention',
+  );
+}
+
+export async function purgeExpiredDeletedFiles() {
+  return requestClient.post<SystemFileApi.FileRetentionPurgeResult>(
+    '/system/files/retention/purge',
+  );
 }

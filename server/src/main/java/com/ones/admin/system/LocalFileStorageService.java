@@ -50,6 +50,16 @@ public class LocalFileStorageService implements FileStorageService {
         return Optional.of(new StoredResource(resource, mediaType, resource.getFilename()));
     }
 
+    @Override
+    public void delete(String storedName) throws IOException {
+        Path uploadRoot = properties.normalizedUploadRoot();
+        Path file = uploadRoot.resolve(storedName).normalize();
+        if (!file.startsWith(uploadRoot)) {
+            throw new BusinessException(SystemErrorCode.FILE_STORAGE_PATH_INVALID);
+        }
+        Files.deleteIfExists(file);
+    }
+
     private String publicUrl(String storedName) {
         String prefix = properties.getPublicUrlPrefix();
         if (prefix.endsWith("/")) {

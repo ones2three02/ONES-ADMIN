@@ -12,7 +12,9 @@ import { Button, Card, message, Modal, Statistic, Upload } from 'antdv-next';
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import {
   deleteSystemFile,
+  getFileRetention,
   getFileMetadataList,
+  purgeExpiredDeletedFiles,
   uploadSystemFile,
 } from '#/api';
 
@@ -21,6 +23,8 @@ import { useColumns, useGridFormSchema } from './data';
 defineOptions({ name: 'SystemFile' });
 
 const rows = ref<SystemFileApi.FileMetadata[]>([]);
+const retention = ref<SystemFileApi.FileRetentionSummary>();
+const purgeLoading = ref(false);
 const uploadLoading = ref(false);
 
 const [Grid, gridApi] = useVbenVxeGrid({
@@ -80,10 +84,24 @@ const metrics = computed(() => [
     title: '已删除',
     value: rows.value.filter((item) => item.status === 'DELETED').length,
   },
+  {
+    icon: 'lucide:archive-x',
+    title: '待清理',
+    value: retention.value?.expiredDeletedFileCount ?? 0,
+  },
 ]);
 
 function onRefresh() {
   gridApi.query();
+  refreshRetention();
+}
+
+async function refreshRetention() {
+  try {
+    retention.value = await getFileRetention();
+  } catch {
+    retention.value = undefined;
+  }
 }
 
 async function handleCustomUpload(options: any) {
@@ -118,6 +136,49 @@ function onDelete(row: SystemFileApi.FileMetadata) {
     },
   });
 }
+
+function formatSize(size?: number) {
+  if (size === undefined || size === null) {
+    return '0 B';
+  }
+  if (size < 1024) {
+    return `${size} B`;
+  }
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`;
+  }
+  return `${(size / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function onPurgeExpiredFiles() {
+  const count = retention.value?.expiredDeletedFileCount ?? 0;
+  Modal.confirm({
+    content:
+      count > 0
+        ? `确认物理清理 ${count} 个过期已删除文件吗？清理后仅保留元数据审计记录。`
+        : '当前没有达到保留期的已删除文件。',
+    okButtonProps: { danger: count > 0 },
+    okText: count > 0 ? '确认清理' : '知道了',
+    title: '清理过期文件',
+    async onOk() {
+      if (count <= 0) {
+        return;
+      }
+      purgeLoading.value = true;
+      try {
+        const result = await purgeExpiredDeletedFiles();
+        message.success(
+          `已清理 ${result.purgedFileCount} 个文件，释放 ${formatSize(result.purgedFileSizeBytes)}`,
+        );
+        onRefresh();
+      } finally {
+        purgeLoading.value = false;
+      }
+    },
+  });
+}
+
+refreshRetention();
 </script>
 
 <template>
@@ -140,6 +201,17 @@ function onDelete(row: SystemFileApi.FileMetadata) {
             </template>
             刷新
           </Button>
+          <Button
+            :loading="purgeLoading"
+            danger
+            v-access:code="['system:file:purge']"
+            @click="onPurgeExpiredFiles"
+          >
+            <template #icon>
+              <IconifyIcon icon="lucide:archive-x" />
+            </template>
+            清理过期
+          </Button>
           <Upload
             :custom-request="handleCustomUpload"
             :show-upload-list="false"
@@ -155,7 +227,7 @@ function onDelete(row: SystemFileApi.FileMetadata) {
         </div>
       </div>
 
-      <div class="grid gap-4 md:grid-cols-4">
+      <div class="grid gap-4 md:grid-cols-5">
         <Card v-for="item in metrics" :key="item.title" variant="borderless">
           <div class="flex items-start justify-between gap-3">
             <Statistic :title="item.title" :value="item.value" />

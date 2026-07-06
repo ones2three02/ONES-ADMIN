@@ -13,6 +13,8 @@ public interface FileStorageService {
 
     Optional<StoredResource> load(String storedName) throws IOException;
 
+    void delete(String storedName) throws IOException;
+
     record StoredFile(String storedName, String url) {
     }
 
