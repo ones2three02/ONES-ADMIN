@@ -1,5 +1,15 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.91 - 2026-07-07
+
+- HRMS 员工资料附件从单纯文件归属升级为业务资料记录，新增 `hr_employee_document` 表保存员工、文件、资料类型、签发日期、到期日期和备注。
+- 资料附件接口响应新增 `documentId`、`documentType`、`issueDate`、`expireDate`、`expired`、`expiringSoon` 和 `remark`，继续保留文件元数据字段，兼容员工档案查看和文件下载授权。
+- 预置 `hr_employee_document_type` 系统字典，包含身份证明、学历证明、资格证书、体检报告和其他资料，避免前端硬编码资料分类。
+- 员工档案“资料附件”页签新增资料信息弹窗和到期状态标签，继续沿用 Vben / Ant Design Vue 的 `Modal`、`Form`、`Select`、`DatePicker`、`Tag` 和 `Card` 组合。
+- 文件下载仍通过 `sys_file.business_type/business_id = HR_EMPLOYEE_DOCUMENT/{employeeId}` 执行业务授权，HR 业务元数据不污染系统文件表。
+- 补充 HRMS 管理接口测试、字典预置测试、接口治理 Manifest 断言和前端类型检查。
+- 产品版本递增至 `v0.0.91`。
+
 ## v0.0.90 - 2026-07-07
 
 - HRMS 新增员工资料附件接口：`GET /api/hr/employees/{id}/documents`、`POST /api/hr/employees/{id}/documents/{fileId}`、`DELETE /api/hr/employees/{id}/documents/{fileId}`。

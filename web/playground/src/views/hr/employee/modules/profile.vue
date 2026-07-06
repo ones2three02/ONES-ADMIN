@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { HrContractApi, HrEmployeeApi, SystemFileApi } from '#/api';
+import type { HrContractApi, HrEmployeeApi } from '#/api';
 
 import { computed, ref } from 'vue';
 
@@ -10,11 +10,17 @@ import { IconifyIcon } from '@vben/icons';
 import {
   Button,
   Card,
+  DatePicker,
   Descriptions,
   DescriptionsItem,
   Empty,
+  Form,
+  FormItem,
+  Input,
   message,
   Modal,
+  Select,
+  SelectOption,
   Skeleton,
   TabPane,
   Tabs,
@@ -41,9 +47,12 @@ import {
   getHrDictOptions,
   HR_CONTRACT_STATUS_DICT,
   HR_CONTRACT_TYPE_DICT,
+  HR_EMPLOYEE_DOCUMENT_TYPE_DICT,
   HR_EMPLOYMENT_STATUS_DICT,
   HR_EMPLOYMENT_TYPE_DICT,
   HR_GENDER_DICT,
+  getHrDictFallbackOptions,
+  getHrDictOption,
 } from '../../dict-options';
 
 const employee = ref<HrEmployeeApi.HrEmployee>();
@@ -51,9 +60,14 @@ const contracts = ref<HrContractApi.HrContract[]>([]);
 const events = ref<HrEmployeeApi.LifecycleEvent[]>([]);
 const jobs = ref<HrEmployeeApi.EmployeeJob[]>([]);
 const orgContext = ref<HrEmployeeApi.EmployeeOrgContext>();
-const documents = ref<SystemFileApi.FileMetadata[]>([]);
+const documents = ref<HrEmployeeApi.EmployeeDocument[]>([]);
 const loading = ref(false);
 const documentUploadLoading = ref(false);
+const pendingDocumentFile = ref<File>();
+const documentMetaOpen = ref(false);
+const documentMeta = ref<HrEmployeeApi.EmployeeDocumentBindRequest>({
+  documentType: 'OTHER',
+});
 const { hasAccessByCodes } = useAccess();
 
 const canViewContracts = computed(() => hasAccessByCodes(['hr:contract:list']));
@@ -65,8 +79,12 @@ const canManageDocuments = computed(() => hasAccessByCodes(['hr:employee:update'
 type UploadRequestOptions = {
   file: Blob | File | string;
   onError?: (error: Error) => void;
-  onSuccess?: (data: SystemFileApi.FileMetadata) => void;
+  onSuccess?: (data: unknown) => void;
 };
+
+const documentTypeOptions = computed(() =>
+  getHrDictFallbackOptions(HR_EMPLOYEE_DOCUMENT_TYPE_DICT),
+);
 
 const [Drawer, drawerApi] = useVbenDrawer({
   async onOpenChange(isOpen) {
@@ -91,6 +109,7 @@ const [Drawer, drawerApi] = useVbenDrawer({
         getHrDictOptions(HR_EMPLOYMENT_STATUS_DICT),
         getHrDictOptions(HR_CONTRACT_TYPE_DICT),
         getHrDictOptions(HR_CONTRACT_STATUS_DICT),
+        getHrDictOptions(HR_EMPLOYEE_DOCUMENT_TYPE_DICT),
       ]);
       const [
         detail,
@@ -176,6 +195,10 @@ function empty(value?: null | number | string) {
 
 function dictLabel(dictCode: string, value?: string) {
   return empty(formatHrDictLabel(dictCode, value));
+}
+
+function dictColor(dictCode: string, value?: string) {
+  return getHrDictOption(dictCode, value)?.color || 'default';
 }
 
 function statusColor(status?: string) {
@@ -276,25 +299,46 @@ async function handleDocumentUpload(options: UploadRequestOptions) {
     onError?.(error);
     return;
   }
+  pendingDocumentFile.value = file;
+  documentMeta.value = {
+    documentType: 'OTHER',
+  };
+  documentMetaOpen.value = true;
+  onSuccess?.({});
+}
+
+async function submitDocumentUpload() {
+  if (!pendingDocumentFile.value || !employee.value?.id) {
+    documentMetaOpen.value = false;
+    return;
+  }
   documentUploadLoading.value = true;
   const hide = message.loading('正在上传资料附件...', 0);
   try {
-    const uploadedFile = await uploadSystemFile(file);
-    const boundFile = await bindEmployeeDocument(employee.value.id, uploadedFile.id);
+    const uploadedFile = await uploadSystemFile(pendingDocumentFile.value);
+    await bindEmployeeDocument(employee.value.id, uploadedFile.id, documentMeta.value);
     await reloadDocuments();
     message.success('资料附件已上传');
-    onSuccess?.(boundFile);
   } catch (error: unknown) {
     const normalizedError = normalizeError(error, '资料附件上传失败');
     message.error(errorMessageOf(normalizedError, '资料附件上传失败'));
-    onError?.(normalizedError);
   } finally {
     hide();
     documentUploadLoading.value = false;
+    documentMetaOpen.value = false;
+    pendingDocumentFile.value = undefined;
   }
 }
 
-function openDocument(file: SystemFileApi.FileMetadata) {
+function cancelDocumentUpload() {
+  documentMetaOpen.value = false;
+  pendingDocumentFile.value = undefined;
+  documentMeta.value = {
+    documentType: 'OTHER',
+  };
+}
+
+function openDocument(file: HrEmployeeApi.EmployeeDocument) {
   if (!file.url) {
     message.warning('资料附件暂不可访问');
     return;
@@ -302,7 +346,27 @@ function openDocument(file: SystemFileApi.FileMetadata) {
   window.open(file.url, '_blank', 'noopener,noreferrer');
 }
 
-function confirmRemoveDocument(file: SystemFileApi.FileMetadata) {
+function documentStatusColor(file: HrEmployeeApi.EmployeeDocument) {
+  if (file.expired) {
+    return 'error';
+  }
+  if (file.expiringSoon) {
+    return 'warning';
+  }
+  return 'success';
+}
+
+function documentStatusText(file: HrEmployeeApi.EmployeeDocument) {
+  if (file.expired) {
+    return '已过期';
+  }
+  if (file.expiringSoon) {
+    return '即将到期';
+  }
+  return file.expireDate ? '有效' : '长期有效';
+}
+
+function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
   if (!employee.value?.id) {
     return;
   }
@@ -436,12 +500,25 @@ function confirmRemoveDocument(file: SystemFileApi.FileMetadata) {
                         {{ file.originalName }}
                       </div>
                       <div class="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-xs">
+                        <Tag :color="dictColor(HR_EMPLOYEE_DOCUMENT_TYPE_DICT, file.documentType)">
+                          {{ dictLabel(HR_EMPLOYEE_DOCUMENT_TYPE_DICT, file.documentType) }}
+                        </Tag>
+                        <Tag :color="documentStatusColor(file)">
+                          {{ documentStatusText(file) }}
+                        </Tag>
                         <Tag v-if="file.extension" color="blue">
                           {{ file.extension.toUpperCase() }}
                         </Tag>
                         <span>{{ formatFileSize(file.sizeBytes) }}</span>
                         <span v-if="file.storageType">{{ file.storageType }}</span>
-                        <span>{{ empty(file.createdAt) }}</span>
+                        <span>签发：{{ empty(file.issueDate) }}</span>
+                        <span>到期：{{ empty(file.expireDate) }}</span>
+                      </div>
+                      <div
+                        v-if="file.remark"
+                        class="text-muted-foreground mt-1 truncate text-xs"
+                      >
+                        {{ file.remark }}
                       </div>
                     </div>
                   </div>
@@ -591,5 +668,50 @@ function confirmRemoveDocument(file: SystemFileApi.FileMetadata) {
         </TabPane>
       </Tabs>
     </div>
+    <Modal
+      v-model:open="documentMetaOpen"
+      :confirm-loading="documentUploadLoading"
+      title="资料附件信息"
+      @cancel="cancelDocumentUpload"
+      @ok="submitDocumentUpload"
+    >
+      <Form layout="vertical">
+        <FormItem label="资料类型">
+          <Select v-model:value="documentMeta.documentType">
+            <SelectOption
+              v-for="option in documentTypeOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </SelectOption>
+          </Select>
+        </FormItem>
+        <div class="grid gap-3 md:grid-cols-2">
+          <FormItem label="签发日期">
+            <DatePicker
+              v-model:value="documentMeta.issueDate"
+              class="w-full"
+              value-format="YYYY-MM-DD"
+            />
+          </FormItem>
+          <FormItem label="到期日期">
+            <DatePicker
+              v-model:value="documentMeta.expireDate"
+              class="w-full"
+              value-format="YYYY-MM-DD"
+            />
+          </FormItem>
+        </div>
+        <FormItem label="备注">
+          <Input.TextArea
+            v-model:value="documentMeta.remark"
+            :maxlength="500"
+            :rows="3"
+            show-count
+          />
+        </FormItem>
+      </Form>
+    </Modal>
   </Drawer>
 </template>

@@ -8,6 +8,8 @@ import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
 import com.ones.admin.hr.dto.HrEmployeeCreateRequest;
+import com.ones.admin.hr.dto.HrEmployeeDocumentBindRequest;
+import com.ones.admin.hr.dto.HrEmployeeDocumentResponse;
 import com.ones.admin.hr.dto.HrEmployeeJobResponse;
 import com.ones.admin.hr.dto.HrEmployeeLifecycleEventResponse;
 import com.ones.admin.hr.dto.HrEmployeeOrgContextResponse;
@@ -17,7 +19,6 @@ import com.ones.admin.hr.dto.HrEmployeeResignRequest;
 import com.ones.admin.hr.dto.HrEmployeeResponse;
 import com.ones.admin.hr.dto.HrEmployeeTransferRequest;
 import com.ones.admin.hr.dto.HrEmployeeUpdateRequest;
-import com.ones.admin.system.dto.FileMetadataResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -100,8 +101,8 @@ public class HrEmployeeController {
     @GetMapping("/{id}/documents")
     @SaCheckPermission("hr:employee:detail")
     @Operation(operationId = "HrEmployeeController_listEmployeeDocuments", summary = "查询员工资料附件")
-    @ApiResourceMetadata(sinceVersion = "v0.0.90", riskLevel = ApiRiskLevel.MEDIUM)
-    public ApiResult<List<FileMetadataResponse>> listEmployeeDocuments(@PathVariable Long id) {
+    @ApiResourceMetadata(sinceVersion = "v0.0.91", riskLevel = ApiRiskLevel.MEDIUM)
+    public ApiResult<List<HrEmployeeDocumentResponse>> listEmployeeDocuments(@PathVariable Long id) {
         return ApiResult.ok(employeeDocumentService.listDocuments(id));
     }
 
@@ -138,12 +139,13 @@ public class HrEmployeeController {
     @SaCheckPermission("hr:employee:update")
     @Operation(operationId = "HrEmployeeController_bindEmployeeDocument", summary = "绑定员工资料附件")
     @RepeatSubmit
-    @ApiResourceMetadata(sinceVersion = "v0.0.90", riskLevel = ApiRiskLevel.HIGH)
-    public ApiResult<FileMetadataResponse> bindEmployeeDocument(
+    @ApiResourceMetadata(sinceVersion = "v0.0.91", riskLevel = ApiRiskLevel.HIGH)
+    public ApiResult<HrEmployeeDocumentResponse> bindEmployeeDocument(
             @PathVariable Long id,
-            @PathVariable Long fileId
+            @PathVariable Long fileId,
+            @Valid @RequestBody(required = false) HrEmployeeDocumentBindRequest request
     ) {
-        return ApiResult.ok(employeeDocumentService.bindDocument(id, fileId));
+        return ApiResult.ok(employeeDocumentService.bindDocument(id, fileId, request));
     }
 
     @DeleteMapping("/{id}/documents/{fileId}")
@@ -151,7 +153,7 @@ public class HrEmployeeController {
     @Operation(operationId = "HrEmployeeController_removeEmployeeDocument", summary = "移除员工资料附件")
     @RepeatSubmit
     @ApiResourceMetadata(sinceVersion = "v0.0.90", riskLevel = ApiRiskLevel.HIGH)
-    public ApiResult<FileMetadataResponse> removeEmployeeDocument(
+    public ApiResult<HrEmployeeDocumentResponse> removeEmployeeDocument(
             @PathVariable Long id,
             @PathVariable Long fileId
     ) {

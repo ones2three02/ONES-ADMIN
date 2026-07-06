@@ -154,6 +154,25 @@ export namespace HrEmployeeApi {
     directReports: OrgEmployeeNode[];
     directReportCount: number;
   }
+
+  export interface EmployeeDocument extends SystemFileApi.FileMetadata {
+    documentId?: string;
+    documentType: string;
+    employeeId: string;
+    expireDate?: string;
+    expired: boolean;
+    expiringSoon: boolean;
+    fileId: string;
+    issueDate?: string;
+    remark?: string;
+  }
+
+  export interface EmployeeDocumentBindRequest {
+    documentType?: string;
+    expireDate?: string;
+    issueDate?: string;
+    remark?: string;
+  }
 }
 
 export async function getEmployeeList(params: HrEmployeeApi.EmployeeQuery) {
@@ -250,30 +269,59 @@ export async function getEmployeeOrgContext(id: string | number) {
 }
 
 export async function getEmployeeDocuments(id: string | number) {
-  const res = await requestClient.get<SystemFileApi.FileMetadata[]>(
+  const res = await requestClient.get<HrEmployeeApi.EmployeeDocument[]>(
     `/hr/employees/${id}/documents`,
   );
-  return res.map((item) => normalizeFileMetadata(item));
+  return res.map((item) => {
+    const normalized = normalizeFileMetadata(item);
+    return {
+      ...normalized,
+      documentId:
+        item.documentId === undefined || item.documentId === null
+          ? undefined
+          : String(item.documentId),
+      employeeId: String(item.employeeId),
+      fileId: String(item.fileId),
+    };
+  });
 }
 
 export async function bindEmployeeDocument(
   employeeId: string | number,
   fileId: string | number,
+  data?: HrEmployeeApi.EmployeeDocumentBindRequest,
 ) {
-  const res = await requestClient.post<SystemFileApi.FileMetadata>(
+  const res = await requestClient.post<HrEmployeeApi.EmployeeDocument>(
     `/hr/employees/${employeeId}/documents/${fileId}`,
+    data ?? {},
   );
-  return normalizeFileMetadata(res);
+  return {
+    ...normalizeFileMetadata(res),
+    documentId:
+      res.documentId === undefined || res.documentId === null
+        ? undefined
+        : String(res.documentId),
+    employeeId: String(res.employeeId),
+    fileId: String(res.fileId),
+  };
 }
 
 export async function removeEmployeeDocument(
   employeeId: string | number,
   fileId: string | number,
 ) {
-  const res = await requestClient.delete<SystemFileApi.FileMetadata>(
+  const res = await requestClient.delete<HrEmployeeApi.EmployeeDocument>(
     `/hr/employees/${employeeId}/documents/${fileId}`,
   );
-  return normalizeFileMetadata(res);
+  return {
+    ...normalizeFileMetadata(res),
+    documentId:
+      res.documentId === undefined || res.documentId === null
+        ? undefined
+        : String(res.documentId),
+    employeeId: String(res.employeeId),
+    fileId: String(res.fileId),
+  };
 }
 
 export async function exportEmployees(params: HrEmployeeApi.EmployeeQuery) {

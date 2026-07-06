@@ -13,6 +13,7 @@ export const HR_CONTRACT_TYPE_DICT = 'hr_contract_type';
 export const HR_EMPLOYMENT_STATUS_DICT = 'hr_employment_status';
 export const HR_EMPLOYMENT_TYPE_DICT = 'hr_employment_type';
 export const HR_GENDER_DICT = 'hr_gender';
+export const HR_EMPLOYEE_DOCUMENT_TYPE_DICT = 'hr_employee_document_type';
 export const HR_ROSTER_IMPORT_STATUS_DICT = 'hr_roster_import_status';
 
 const fallbackEmploymentTypeOptions: SystemDictApi.DictOption[] = [
@@ -66,11 +67,20 @@ const fallbackRosterImportStatusOptions: SystemDictApi.DictOption[] = [
   { color: 'error', label: '导入失败', sortOrder: 50, value: 'FAILED' },
 ];
 
+const fallbackEmployeeDocumentTypeOptions: SystemDictApi.DictOption[] = [
+  { color: 'processing', label: '身份证明', sortOrder: 10, value: 'IDENTITY' },
+  { color: 'blue', label: '学历证明', sortOrder: 20, value: 'EDUCATION' },
+  { color: 'warning', label: '资格证书', sortOrder: 30, value: 'CERTIFICATE' },
+  { color: 'success', label: '体检报告', sortOrder: 40, value: 'MEDICAL' },
+  { color: 'default', label: '其他资料', sortOrder: 50, value: 'OTHER' },
+];
+
 const fallbackMap: Record<string, SystemDictApi.DictOption[]> = {
   [HR_CONTRACT_STATUS_DICT]: fallbackContractStatusOptions,
   [HR_CONTRACT_TYPE_DICT]: fallbackContractTypeOptions,
   [HR_EMPLOYMENT_STATUS_DICT]: fallbackEmploymentStatusOptions,
   [HR_EMPLOYMENT_TYPE_DICT]: fallbackEmploymentTypeOptions,
+  [HR_EMPLOYEE_DOCUMENT_TYPE_DICT]: fallbackEmployeeDocumentTypeOptions,
   [HR_GENDER_DICT]: fallbackGenderOptions,
   [HR_ROSTER_IMPORT_STATUS_DICT]: fallbackRosterImportStatusOptions,
 };

@@ -9,6 +9,8 @@ import com.ones.admin.hr.dto.HrEmployeeResignRequest;
 import com.ones.admin.hr.dto.HrEmployeeTransferRequest;
 import com.ones.admin.hr.dto.HrJobGradeSaveRequest;
 import com.ones.admin.hr.dto.HrPositionSaveRequest;
+import com.ones.admin.hr.entity.HrEmployeeDocumentEntity;
+import com.ones.admin.hr.mapper.HrEmployeeDocumentMapper;
 import com.ones.admin.system.SystemErrorCode;
 import com.ones.admin.system.entity.SystemFileEntity;
 import com.ones.admin.system.mapper.SystemFileMapper;
@@ -46,6 +48,9 @@ class HrManagementControllerTest {
 
     @Autowired
     private SystemFileMapper fileMapper;
+
+    @Autowired
+    private HrEmployeeDocumentMapper documentMapper;
 
     @Test
     void manageHrPhaseOneFoundation() throws Exception {
@@ -108,16 +113,28 @@ class HrManagementControllerTest {
         long employeeDocumentFileId = createFileMetadata("employee-document-" + suffix + ".pdf");
         bindEmployeeDocument(token, employeeId, employeeDocumentFileId);
         assertEmployeeDocumentBound(employeeDocumentFileId, employeeId);
+        assertEmployeeDocumentMetadata(employeeDocumentFileId, employeeId);
         mockMvc.perform(get("/api/hr/employees/" + employeeId + "/documents")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0].id").value(employeeDocumentFileId))
+                .andExpect(jsonPath("$.data[0].documentId", notNullValue()))
+                .andExpect(jsonPath("$.data[0].employeeId").value(employeeId))
+                .andExpect(jsonPath("$.data[0].fileId").value(employeeDocumentFileId))
+                .andExpect(jsonPath("$.data[0].documentType").value("CERTIFICATE"))
+                .andExpect(jsonPath("$.data[0].issueDate").value("2026-07-01"))
+                .andExpect(jsonPath("$.data[0].expireDate").value("2026-07-20"))
+                .andExpect(jsonPath("$.data[0].expired").value(false))
+                .andExpect(jsonPath("$.data[0].expiringSoon").value(true))
+                .andExpect(jsonPath("$.data[0].remark").value("职业资格证书"))
                 .andExpect(jsonPath("$.data[0].originalName").value("employee-document-" + suffix + ".pdf"))
                 .andExpect(jsonPath("$.data[0].businessType").value("HR_EMPLOYEE_DOCUMENT"))
                 .andExpect(jsonPath("$.data[0].businessId").value(String.valueOf(employeeId)));
         removeEmployeeDocument(token, employeeId, employeeDocumentFileId);
         assertEmployeeDocumentDeleted(employeeDocumentFileId);
+        assertThat(documentMapper.selectCount(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<HrEmployeeDocumentEntity>()
+                .eq(HrEmployeeDocumentEntity::getFileId, employeeDocumentFileId))).isZero();
         mockMvc.perform(get("/api/hr/employees/" + employeeId + "/documents")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
@@ -441,10 +458,20 @@ class HrManagementControllerTest {
     }
 
     private void bindEmployeeDocument(String token, long employeeId, long fileId) throws Exception {
+        Map<String, Object> request = Map.of(
+                "documentType", "CERTIFICATE",
+                "issueDate", "2026-07-01",
+                "expireDate", "2026-07-20",
+                "remark", "职业资格证书"
+        );
         mockMvc.perform(post("/api/hr/employees/" + employeeId + "/documents/" + fileId)
-                        .header("Authorization", "Bearer " + token))
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").value(fileId))
+                .andExpect(jsonPath("$.data.fileId").value(fileId))
+                .andExpect(jsonPath("$.data.documentType").value("CERTIFICATE"))
                 .andExpect(jsonPath("$.data.businessType").value("HR_EMPLOYEE_DOCUMENT"))
                 .andExpect(jsonPath("$.data.businessId").value(String.valueOf(employeeId)));
     }
@@ -464,6 +491,18 @@ class HrManagementControllerTest {
         assertThat(file).isNotNull();
         assertThat(file.getBusinessType()).isEqualTo("HR_EMPLOYEE_DOCUMENT");
         assertThat(file.getBusinessId()).isEqualTo(String.valueOf(employeeId));
+    }
+
+    private void assertEmployeeDocumentMetadata(long fileId, long employeeId) {
+        HrEmployeeDocumentEntity document = documentMapper.selectOne(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<HrEmployeeDocumentEntity>()
+                .eq(HrEmployeeDocumentEntity::getFileId, fileId));
+        assertThat(document).isNotNull();
+        assertThat(document.getEmployeeId()).isEqualTo(employeeId);
+        assertThat(document.getDocumentType()).isEqualTo("CERTIFICATE");
+        assertThat(document.getIssueDate()).isEqualTo(LocalDate.of(2026, 7, 1));
+        assertThat(document.getExpireDate()).isEqualTo(LocalDate.of(2026, 7, 20));
+        assertThat(document.getRemark()).isEqualTo("职业资格证书");
+        assertThat(document.getCreatedBy()).isEqualTo(1L);
     }
 
     private void assertEmployeeDocumentDeleted(long fileId) {

@@ -498,6 +498,13 @@ public class SystemDataInitializer implements ApplicationRunner {
         ensureDictItem(rosterImportStatus, "导入成功", "SUCCESS", "success", 40);
         ensureDictItem(rosterImportStatus, "导入失败", "FAILED", "error", 50);
         disableDictItem(rosterImportStatus.getDictCode(), "PENDING");
+
+        SystemDictTypeEntity documentType = ensureDictType("hr_employee_document_type", "员工资料类型", "HRMS 员工档案资料附件类型", 70);
+        ensureDictItem(documentType, "身份证明", "IDENTITY", "processing", 10);
+        ensureDictItem(documentType, "学历证明", "EDUCATION", "blue", 20);
+        ensureDictItem(documentType, "资格证书", "CERTIFICATE", "warning", 30);
+        ensureDictItem(documentType, "体检报告", "MEDICAL", "success", 40);
+        ensureDictItem(documentType, "其他资料", "OTHER", "default", 50);
     }
 
     private SystemDictTypeEntity ensureDictType(String dictCode, String dictName, String remark, int sortOrder) {

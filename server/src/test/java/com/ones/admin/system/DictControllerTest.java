@@ -75,6 +75,15 @@ class DictControllerTest {
                 .andExpect(jsonPath("$.data[*].value", hasItem("FAILED")))
                 .andExpect(jsonPath("$.data[*].value").value(org.hamcrest.Matchers.not(hasItem("PENDING"))));
 
+        mockMvc.perform(get("/api/system/dicts/hr_employee_document_type/options")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].value", hasItem("IDENTITY")))
+                .andExpect(jsonPath("$.data[*].value", hasItem("EDUCATION")))
+                .andExpect(jsonPath("$.data[*].value", hasItem("CERTIFICATE")))
+                .andExpect(jsonPath("$.data[*].value", hasItem("MEDICAL")))
+                .andExpect(jsonPath("$.data[*].value", hasItem("OTHER")));
+
         String createTypeBody = objectMapper.writeValueAsString(new DictTypeSaveRequest(
                 "qa_status",
                 "质检状态",
