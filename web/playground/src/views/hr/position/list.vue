@@ -5,17 +5,19 @@ import type { HrPositionApi } from '#/api';
 import { Page, useVbenDrawer } from '@vben/common-ui';
 import { Plus } from '@vben/icons';
 
-import { Button, message, Modal } from 'antdv-next';
+import { Button, message } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getPositionList, updatePosition } from '#/api';
 import { $t } from '#/locales';
 
 import { errorMessageOf } from '../shared/error';
+import {
+  confirmHrStatusChange,
+  isHrStatusChangeCancelled,
+} from '../shared/status-change';
 import { useColumns } from './data';
 import Form from './modules/form.vue';
-
-const STATUS_CHANGE_CANCELLED = 'HR_STATUS_CHANGE_CANCELLED';
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   connectedComponent: Form,
@@ -66,21 +68,6 @@ function onEdit(row: HrPositionApi.HrPosition) {
   formDrawerApi.setData(row).open();
 }
 
-function confirm(content: string, title: string) {
-  return new Promise((resolve, reject) => {
-    Modal.confirm({
-      content,
-      onCancel() {
-        reject(new Error(STATUS_CHANGE_CANCELLED));
-      },
-      onOk() {
-        resolve(true);
-      },
-      title,
-    });
-  });
-}
-
 async function onStatusChange(
   newStatus: boolean,
   row: HrPositionApi.HrPosition,
@@ -89,7 +76,7 @@ async function onStatusChange(
     ? $t('hr.statusChange.enabledAction')
     : $t('hr.statusChange.disabledAction');
   try {
-    await confirm(
+    await confirmHrStatusChange(
       $t('hr.statusChange.positionConfirm', {
         name: row.positionName,
         status: statusStr,
@@ -106,10 +93,7 @@ async function onStatusChange(
     message.success($t('hr.statusChange.success', { status: statusStr }));
     return true;
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message === STATUS_CHANGE_CANCELLED
-    ) {
+    if (isHrStatusChangeCancelled(error)) {
       return false;
     }
     message.error(errorMessageOf(error, $t('hr.statusChange.error')));
