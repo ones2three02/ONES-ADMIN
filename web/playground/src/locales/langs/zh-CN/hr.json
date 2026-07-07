@@ -206,6 +206,7 @@
     "positionConfirm": "您确定要将岗位 {name} 切换为【{status}】吗？",
     "jobGradeConfirm": "您确定要将职级 {name} 切换为【{status}】吗？",
     "success": "已切换为 {status}",
+    "error": "状态切换失败",
     "cancelled": "已取消"
   },
   "contract": {

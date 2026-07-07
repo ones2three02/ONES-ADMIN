@@ -206,6 +206,7 @@
     "positionConfirm": "Are you sure you want to change position {name} to {status}?",
     "jobGradeConfirm": "Are you sure you want to change job grade {name} to {status}?",
     "success": "Changed to {status}",
+    "error": "Failed to change status",
     "cancelled": "Cancelled"
   },
   "contract": {

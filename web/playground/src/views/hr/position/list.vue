@@ -11,8 +11,11 @@ import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getPositionList, updatePosition } from '#/api';
 import { $t } from '#/locales';
 
+import { errorMessageOf } from '../shared/error';
 import { useColumns } from './data';
 import Form from './modules/form.vue';
+
+const STATUS_CHANGE_CANCELLED = 'HR_STATUS_CHANGE_CANCELLED';
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   connectedComponent: Form,
@@ -68,7 +71,7 @@ function confirm(content: string, title: string) {
     Modal.confirm({
       content,
       onCancel() {
-        reject(new Error($t('hr.statusChange.cancelled')));
+        reject(new Error(STATUS_CHANGE_CANCELLED));
       },
       onOk() {
         resolve(true);
@@ -102,7 +105,14 @@ async function onStatusChange(
     });
     message.success($t('hr.statusChange.success', { status: statusStr }));
     return true;
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === STATUS_CHANGE_CANCELLED
+    ) {
+      return false;
+    }
+    message.error(errorMessageOf(error, $t('hr.statusChange.error')));
     return false;
   }
 }
