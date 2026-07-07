@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.126 - 2026-07-07
+
+- 新增 HRMS Upload 共享工具 Vitest 单元测试，覆盖 `File` 解析、前置拒绝、成功反馈和失败归一化回调。
+- 新增根级 Vitest 配置，明确单元测试 include/exclude 边界，避免 Playwright E2E 被 `pnpm test:unit` 误扫入单测。
+- 修复既有前端单测入口问题：`.vue` 组件单测接入 Vue 插件、资源加载测试不依赖 happy-dom 外部脚本加载、Sortable mock 调整为顶层声明，并同步 ONES 默认偏好快照。
+- 本版本不新增后端接口，不新增数据库迁移，不新增中间件。
+- 产品版本递增至 `v0.0.126`。
+
 ## v0.0.125 - 2026-07-07
 
 - 新增 HRMS Upload 文件解析共享工具 `resolveHrUploadFile` 与前置失败反馈工具 `rejectHrUploadFile`，统一处理 Ant Design Vue Upload 的 `File` 校验与 `onError` 回调。
