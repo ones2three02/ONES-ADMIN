@@ -2,12 +2,23 @@
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 import type { HrContractApi, HrEmployeeApi } from '#/api';
 
+import { useDebounceFn } from '@vueuse/core';
 import { computed, onMounted, ref, watch } from 'vue';
 
 import { Page, useVbenDrawer } from '@vben/common-ui';
 import { IconifyIcon, Plus } from '@vben/icons';
 
-import { Button, Card, InputSearch, message, Statistic, TabPane, Tabs } from 'antdv-next';
+import {
+  Button,
+  Card,
+  Empty,
+  InputSearch,
+  message,
+  Spin,
+  Statistic,
+  TabPane,
+  Tabs,
+} from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import {
@@ -36,6 +47,7 @@ const employees = ref<HrEmployeeApi.HrEmployee[]>([]);
 const searchEmployeeValue = ref('');
 const selectedEmployeeId = ref<string>('');
 const selectedEmployee = ref<HrEmployeeApi.HrEmployee | null>(null);
+const employeeLoading = ref(false);
 const expiringContracts = ref<HrContractApi.HrContract[]>([]);
 const expiringWindowDays = ref(30);
 const expiringExportLoading = ref(false);
@@ -52,6 +64,7 @@ const [TerminateDrawer, terminateDrawerApi] = useVbenDrawer({
 
 const [HistoryGrid, historyGridApi] = useVbenVxeGrid({
   gridOptions: {
+    autoResize: true,
     columns: [
       ...(useColumns() as any[]),
       {
@@ -63,7 +76,7 @@ const [HistoryGrid, historyGridApi] = useVbenVxeGrid({
         slots: { default: 'action' },
       },
     ],
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -92,8 +105,9 @@ const [ExpiringGrid, expiringGridApi] = useVbenVxeGrid({
     submitOnChange: true,
   },
   gridOptions: {
+    autoResize: true,
     columns: useExpiringColumns(),
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -137,7 +151,14 @@ const expiringMetrics = computed(() => [
   },
 ]);
 
+const historyEmptyDescription = computed(() =>
+  selectedEmployee.value
+    ? $t('hr.contract.historyEmptyDescription')
+    : $t('hr.contract.historyEmptySelectDescription'),
+);
+
 async function loadEmployeeList() {
+  employeeLoading.value = true;
   try {
     const res = await getEmployeeList({
       pageNum: 1,
@@ -145,22 +166,33 @@ async function loadEmployeeList() {
       keyword: searchEmployeeValue.value || undefined,
     });
     employees.value = res.items;
-    if (res.items.length > 0 && !selectedEmployeeId.value) {
-      const firstEmployee = res.items[0];
-      if (firstEmployee) {
-        selectEmployee(firstEmployee);
-      }
+    const currentEmployee = res.items.find(
+      (item) => item.id === selectedEmployeeId.value,
+    );
+    const nextEmployee = currentEmployee ?? res.items[0] ?? null;
+    if ((nextEmployee?.id ?? '') !== selectedEmployeeId.value) {
+      selectEmployee(nextEmployee);
+    } else {
+      selectedEmployee.value = nextEmployee;
     }
   } catch (error: unknown) {
     message.error(errorMessageOf(error, $t('hr.contract.employeeLoadError')));
+  } finally {
+    employeeLoading.value = false;
   }
 }
 
-function selectEmployee(emp: HrEmployeeApi.HrEmployee) {
-  selectedEmployeeId.value = emp.id;
+function selectEmployee(emp: HrEmployeeApi.HrEmployee | null) {
+  selectedEmployeeId.value = emp?.id ?? '';
   selectedEmployee.value = emp;
   historyGridApi.query();
 }
+
+function clearEmployeeSearch() {
+  searchEmployeeValue.value = '';
+}
+
+const debouncedLoadEmployeeList = useDebounceFn(loadEmployeeList, 250);
 
 function onRefresh() {
   if (activeTab.value === 'historical') {
@@ -230,7 +262,7 @@ onMounted(async () => {
 });
 
 watch(searchEmployeeValue, () => {
-  loadEmployeeList();
+  debouncedLoadEmployeeList();
 });
 </script>
 <template>
@@ -238,42 +270,57 @@ watch(searchEmployeeValue, () => {
     <FormDrawer @success="onRefresh" />
     <TerminateDrawer @success="onRefresh" />
 
-    <Tabs v-model:activeKey="activeTab" class="size-full">
+    <Tabs v-model:activeKey="activeTab" class="contract-tabs size-full">
       <TabPane key="historical" :tab="$t('hr.contract.list')">
-        <div class="flex size-full">
-          <!-- ... -->
-          <Card class="w-1/4" :title="$t('hr.employee.title')">
+        <div class="flex size-full min-h-0 gap-4">
+          <Card
+            class="contract-employee-card"
+            :title="$t('hr.employee.title')"
+            :body-style="{ display: 'flex', flexDirection: 'column', minHeight: 0 }"
+          >
             <InputSearch
               v-model:value="searchEmployeeValue"
+              allow-clear
               :placeholder="$t('hr.contract.employeeSearchPlaceholder')"
-              class="mb-4"
+              class="contract-employee-search"
             />
-            <div class="overflow-y-auto max-h-[500px]">
-              <div
-                v-for="emp in employees"
-                :key="emp.id"
-                :class="[
-                  'p-3 mb-2 rounded cursor-pointer transition-all border',
-                  selectedEmployeeId === emp.id
-                    ? 'border-primary bg-primary/10 font-bold'
-                    : 'border-transparent hover:bg-gray-100',
-                ]"
-                @click="selectEmployee(emp)"
-              >
-                <div class="flex justify-between items-center">
-                  <span>{{ emp.realName }}</span>
-                  <span class="text-xs text-gray-500">
-                    {{ $t('hr.employee.employeeNo') }}: {{ emp.employeeNo }}
-                  </span>
-                </div>
-                <div class="text-xs text-gray-400 mt-1">
-                  {{ emp.deptName }} | {{ emp.positionName || $t('hr.employee.noPosition') }}
+            <Spin :spinning="employeeLoading" class="contract-employee-spin">
+              <div v-if="employees.length > 0" class="contract-employee-list">
+                <div
+                  v-for="emp in employees"
+                  :key="emp.id"
+                  :class="[
+                    'contract-employee-item',
+                    selectedEmployeeId === emp.id
+                      ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                      : 'border-transparent hover:border-border hover:bg-accent',
+                  ]"
+                  @click="selectEmployee(emp)"
+                >
+                  <div class="flex min-w-0 items-center justify-between gap-3">
+                    <span class="truncate font-medium">{{ emp.realName }}</span>
+                    <span class="shrink-0 text-xs text-muted-foreground">
+                      {{ $t('hr.employee.employeeNo') }}: {{ emp.employeeNo }}
+                    </span>
+                  </div>
+                  <div class="mt-1 truncate text-xs text-muted-foreground">
+                    {{ emp.deptName }} | {{ emp.positionName || $t('hr.employee.noPosition') }}
+                  </div>
                 </div>
               </div>
-            </div>
+              <Empty
+                v-else
+                :description="$t('hr.contract.employeeEmptyDescription')"
+                image="simple"
+              >
+                <Button v-if="searchEmployeeValue" type="link" @click="clearEmployeeSearch">
+                  {{ $t('hr.contract.clearEmployeeSearch') }}
+                </Button>
+              </Empty>
+            </Spin>
           </Card>
 
-          <div class="w-3/4 ml-4">
+          <div class="flex min-w-0 flex-1 flex-col">
             <HistoryGrid
               :table-title="
                 selectedEmployee
@@ -283,6 +330,18 @@ watch(searchEmployeeValue, () => {
                   : $t('hr.contract.contractHistory')
               "
             >
+              <template #empty>
+                <Empty :description="historyEmptyDescription" image="simple">
+                  <Button
+                    v-if="selectedEmployeeId"
+                    type="primary"
+                    @click="onSignContract"
+                  >
+                    <Plus class="size-5" />
+                    {{ $t('hr.contract.create') }}
+                  </Button>
+                </Empty>
+              </template>
               <template #toolbar-tools>
                 <Button type="primary" :disabled="!selectedEmployeeId" @click="onSignContract">
                   <Plus class="size-5" />
@@ -329,7 +388,7 @@ watch(searchEmployeeValue, () => {
         </div>
       </TabPane>
       <TabPane key="expiring" :tab="$t('hr.contract.expiringContracts')">
-        <div class="flex size-full flex-col gap-4">
+        <div class="flex size-full min-h-0 flex-col gap-4">
           <div class="grid gap-4 md:grid-cols-3">
             <Card v-for="item in expiringMetrics" :key="item.title" variant="borderless">
               <div class="flex items-start justify-between gap-3">
@@ -341,8 +400,14 @@ watch(searchEmployeeValue, () => {
             </Card>
           </div>
 
-          <div class="min-h-[420px] flex-1">
+          <div class="min-h-0 flex-1">
             <ExpiringGrid :table-title="$t('hr.contract.expiringContracts')">
+              <template #empty>
+                <Empty
+                  :description="$t('hr.contract.expiringEmptyDescription')"
+                  image="simple"
+                />
+              </template>
               <template #toolbar-tools>
                 <Button :loading="expiringExportLoading" @click="onExportExpiringContracts">
                   <template #icon>
@@ -358,3 +423,71 @@ watch(searchEmployeeValue, () => {
     </Tabs>
   </Page>
 </template>
+
+<style scoped>
+.contract-tabs {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.contract-tabs :deep(.ant-tabs-content-holder),
+.contract-tabs :deep(.ant-tabs-content),
+.contract-tabs :deep(.ant-tabs-tabpane) {
+  min-height: 0;
+  flex: 1;
+}
+
+.contract-tabs :deep(.ant-tabs-content) {
+  height: 100%;
+}
+
+.contract-employee-card {
+  display: flex;
+  width: 300px;
+  min-width: 260px;
+  max-width: 340px;
+  min-height: 0;
+  flex: 0 0 300px;
+  flex-direction: column;
+}
+
+.contract-employee-card :deep(.ant-card-body) {
+  flex: 1;
+  overflow: hidden;
+}
+
+.contract-employee-search {
+  flex: 0 0 auto;
+  margin-bottom: 12px;
+}
+
+.contract-employee-spin,
+.contract-employee-spin :deep(.ant-spin-container) {
+  min-height: 0;
+  flex: 1;
+}
+
+.contract-employee-spin :deep(.ant-spin-container) {
+  display: flex;
+  flex-direction: column;
+}
+
+.contract-employee-list {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+.contract-employee-item {
+  margin-bottom: 8px;
+  cursor: pointer;
+  border-width: 1px;
+  border-radius: 6px;
+  padding: 12px;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+</style>

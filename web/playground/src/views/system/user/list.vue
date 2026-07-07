@@ -4,12 +4,13 @@ import type { Recordable } from '@vben/types';
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 import type { SystemDeptApi, SystemUserApi } from '#/api';
 
-import { onMounted, ref, watch } from 'vue';
+import { useDebounceFn } from '@vueuse/core';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import { Page, Tree, useVbenDrawer } from '@vben/common-ui';
 import { Plus } from '@vben/icons';
 
-import { Button, Card, InputSearch, message, Modal } from 'antdv-next';
+import { Button, Card, Empty, InputSearch, message, Modal, Spin } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import { deleteUser, getDeptList, getUserList, updateUser } from '#/api';
@@ -20,8 +21,10 @@ import Detail from './modules/detail.vue';
 import Form from './modules/form.vue';
 
 const deptList = ref<SystemDeptApi.SystemDept[]>([]);
+const fullDeptList = ref<SystemDeptApi.SystemDept[]>([]);
 const inputSearchValue = ref('');
 const selectedDeptId = ref<string>('');
+const deptLoading = ref(false);
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   connectedComponent: Form,
@@ -35,13 +38,18 @@ const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
 
 const [Grid, gridApi] = useVbenVxeGrid({
   formOptions: {
+    commonConfig: {
+      labelWidth: 96,
+    },
     fieldMappingTime: [['createTime', ['startTime', 'endTime']]],
     schema: useGridFormSchema(),
     submitOnChange: true,
+    wrapperClass: 'grid-cols-1 xl:grid-cols-2',
   },
   gridOptions: {
     columns: useColumns(onStatusChange),
-    height: 'auto',
+    autoResize: true,
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -50,7 +58,7 @@ const [Grid, gridApi] = useVbenVxeGrid({
             page: page.currentPage,
             pageSize: page.pageSize,
             ...formValues,
-            deptId: selectedDeptId.value,
+            deptId: selectedDeptId.value || undefined,
           });
         },
       },
@@ -68,6 +76,17 @@ const [Grid, gridApi] = useVbenVxeGrid({
     },
   } as VxeTableGridOptions<SystemUserApi.SystemUser>,
 });
+
+const selectedDeptName = computed(() => {
+  if (!selectedDeptId.value) return '';
+  return findDeptName(fullDeptList.value, selectedDeptId.value) ?? '';
+});
+
+const userTableTitle = computed(() =>
+  selectedDeptName.value
+    ? $t('system.user.departmentUserList', { name: selectedDeptName.value })
+    : $t('system.user.list'),
+);
 
 /**
  * 将Antd的Modal.confirm封装为promise，方便在异步函数中调用。
@@ -151,59 +170,147 @@ function onCreate() {
 }
 
 async function loadDeptList() {
+  deptLoading.value = true;
   try {
     const res = await getDeptList();
-    deptList.value = res;
+    fullDeptList.value = res;
+    deptList.value = filterDeptTree(res, inputSearchValue.value);
+    if (
+      selectedDeptId.value &&
+      !findDeptName(fullDeptList.value, selectedDeptId.value)
+    ) {
+      selectedDeptId.value = '';
+      onRefresh();
+    }
   } catch (error) {
     console.error('Failed to load department list:', error);
+    message.error($t('system.user.deptLoadError'));
+  } finally {
+    deptLoading.value = false;
   }
 }
 
-function selectDept(v: string) {
-  selectedDeptId.value = v;
+function selectDept(item: { value?: SystemDeptApi.SystemDept }) {
+  selectedDeptId.value = item.value?.id || '';
   gridApi.query();
 }
 
-function searchDept(value: string) {
-  if (!value) {
-    loadDeptList();
+function clearDeptSelection() {
+  if (!selectedDeptId.value) {
     return;
   }
-  const filtered = deptList.value.filter((dept) =>
-    dept.name.toLowerCase().includes(value.toLowerCase()),
-  );
-  deptList.value = filtered;
+  selectedDeptId.value = '';
+  gridApi.query();
 }
+
+function clearDeptSearch() {
+  inputSearchValue.value = '';
+}
+
+function searchDept(value: string) {
+  deptList.value = filterDeptTree(fullDeptList.value, value);
+}
+
+function filterDeptTree(
+  depts: SystemDeptApi.SystemDept[],
+  keyword: string,
+): SystemDeptApi.SystemDept[] {
+  const normalizedKeyword = keyword.trim().toLowerCase();
+  if (!normalizedKeyword) return depts;
+
+  const filtered: SystemDeptApi.SystemDept[] = [];
+  for (const dept of depts) {
+    const children = filterDeptTree(dept.children ?? [], keyword);
+    const matched = dept.name.toLowerCase().includes(normalizedKeyword);
+    if (!matched && children.length === 0) continue;
+    filtered.push({
+      ...dept,
+      children,
+    });
+  }
+  return filtered;
+}
+
+function findDeptName(
+  depts: SystemDeptApi.SystemDept[],
+  deptId: string,
+): string | undefined {
+  for (const dept of depts) {
+    if (dept.id === deptId) return dept.name;
+    const childName = findDeptName(dept.children ?? [], deptId);
+    if (childName) return childName;
+  }
+  return undefined;
+}
+
+const debouncedSearchDept = useDebounceFn(searchDept, 200);
 
 onMounted(() => {
   loadDeptList();
 });
 
 watch(inputSearchValue, (value) => {
-  searchDept(value);
+  debouncedSearchDept(value);
 });
 </script>
 <template>
   <Page auto-content-height>
     <FormDrawer @success="onRefresh" />
     <DetailDrawer @success="onRefresh" />
-    <div class="flex size-full">
-      <Card class="w-1/6">
+    <div class="flex size-full min-h-0 gap-4">
+      <Card
+        class="system-user-dept-card"
+        :title="$t('system.dept.title')"
+        :body-style="{ display: 'flex', flexDirection: 'column', minHeight: 0 }"
+      >
         <InputSearch
           v-model:value="inputSearchValue"
+          allow-clear
           :placeholder="$t('system.user.placeholder')"
+          class="system-user-dept-search"
         />
-        <Tree
-          label-field="name"
-          value-field="id"
-          :tree-data="deptList"
-          :default-expanded-level="2"
-          @select="selectDept"
-        />
+        <Button
+          block
+          :disabled="!selectedDeptId"
+          size="small"
+          type="link"
+          @click="clearDeptSelection"
+        >
+          {{ $t('system.user.allDepartments') }}
+        </Button>
+        <Spin :spinning="deptLoading" class="system-user-dept-spin">
+          <div v-if="deptList.length > 0" class="system-user-dept-tree">
+            <Tree
+              v-model="selectedDeptId"
+              label-field="name"
+              value-field="id"
+              :tree-data="deptList"
+              :default-expanded-level="2"
+              @select="selectDept"
+            />
+          </div>
+          <Empty
+            v-else
+            :description="$t('system.user.deptEmptyDescription')"
+            image="simple"
+          >
+            <Button v-if="inputSearchValue" type="link" @click="clearDeptSearch">
+              {{ $t('system.user.clearDeptSearch') }}
+            </Button>
+          </Empty>
+        </Spin>
       </Card>
 
-      <div class="w-5/6 ml-4">
-        <Grid :table-title="$t('system.user.list')">
+      <div class="flex min-w-0 flex-1 flex-col">
+        <Grid :table-title="userTableTitle">
+          <template #empty>
+            <Empty :description="$t('system.user.emptyDescription')" image="simple">
+              <Button type="primary" @click="onCreate">
+                <Plus class="size-5" />
+                {{ $t('ui.actionTitle.create', [$t('system.user.name')]) }}
+              </Button>
+            </Empty>
+          </template>
           <template #toolbar-tools>
             <Button type="primary" @click="onCreate">
               <Plus class="size-5" />
@@ -244,3 +351,55 @@ watch(inputSearchValue, (value) => {
     </div>
   </Page>
 </template>
+
+<style scoped>
+.system-user-dept-card {
+  display: flex;
+  width: 280px;
+  min-width: 240px;
+  max-width: 320px;
+  min-height: 0;
+  flex: 0 0 280px;
+  flex-direction: column;
+}
+
+.system-user-dept-card :deep(.ant-card-body) {
+  flex: 1;
+  overflow: hidden;
+}
+
+.system-user-dept-search {
+  flex: 0 0 auto;
+  margin-bottom: 12px;
+}
+
+.system-user-dept-spin,
+.system-user-dept-spin :deep(.ant-spin-container) {
+  min-height: 0;
+  flex: 1;
+}
+
+.system-user-dept-spin :deep(.ant-spin-container) {
+  display: flex;
+  flex-direction: column;
+}
+
+.system-user-dept-tree {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+.system-user-dept-tree :deep(.ant-tree-node-content-wrapper) {
+  min-width: 0;
+}
+
+.system-user-dept-tree :deep(.ant-tree-title) {
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+</style>

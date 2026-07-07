@@ -11,7 +11,13 @@
     "remark": "Remark",
     "createTime": "Creation Time",
     "operation": "Operation",
-    "placeholder": "Search Department..."
+    "placeholder": "Search Department...",
+    "allDepartments": "View all departments",
+    "departmentUserList": "{name} User List",
+    "emptyDescription": "No users yet. Create a user or adjust filters.",
+    "deptEmptyDescription": "No matched departments",
+    "clearDeptSearch": "Clear search",
+    "deptLoadError": "Failed to load departments. Please try again later"
   },
   "dept": {
     "name": "Department",
