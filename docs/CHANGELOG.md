@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.131 - 2026-07-07
+
+- 新增 `scripts/ci/verify.sh`，将 Jenkins 与本地验证统一收口到同一套阶段入口。
+- Jenkinsfile 保留阶段可视化，但各阶段改为调用 `verify.sh`，避免前端/后端测试命令在 Jenkinsfile、README 和本地手工命令之间漂移。
+- README 验证命令改为 `bash scripts/ci/verify.sh all`，降低后续维护和新人接入成本。
+- 本版本不新增后端接口，不新增数据库迁移，不新增中间件。
+- 产品版本递增至 `v0.0.131`。
+
 ## v0.0.130 - 2026-07-07
 
 - 新增 `scripts/ci/version-guard.sh`，动态读取根目录 `VERSION` 并校验 README、CHANGELOG、Maven 版本、后端默认版本和接口治理测试断言一致性。

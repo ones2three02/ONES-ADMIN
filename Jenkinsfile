@@ -24,65 +24,31 @@ pipeline {
 
     stage('Preflight') {
       steps {
-        sh '''
-          set -eu
-          bash scripts/ci/run-with-toolchain.sh bash -c '
-            java -version
-            node --version
-            corepack --version
-            git diff --check
-            bash scripts/ci/version-guard.sh
-          '
-        '''
+        sh 'bash scripts/ci/verify.sh preflight'
       }
     }
 
     stage('Frontend Dependencies') {
       steps {
-        sh '''
-          set -eu
-          bash scripts/ci/run-with-toolchain.sh bash -c '
-            cd web
-            corepack pnpm install --frozen-lockfile
-          '
-        '''
+        sh 'bash scripts/ci/verify.sh frontend-dependencies'
       }
     }
 
     stage('Frontend Unit Tests') {
       steps {
-        sh '''
-          set -eu
-          bash scripts/ci/run-with-toolchain.sh bash -c '
-            cd web
-            corepack pnpm -F @vben/playground run test:unit
-            corepack pnpm test:unit
-          '
-        '''
+        sh 'bash scripts/ci/verify.sh frontend-unit'
       }
     }
 
     stage('Frontend Typecheck') {
       steps {
-        sh '''
-          set -eu
-          bash scripts/ci/run-with-toolchain.sh bash -c '
-            cd web
-            corepack pnpm -F @vben/playground run typecheck
-          '
-        '''
+        sh 'bash scripts/ci/verify.sh frontend-typecheck'
       }
     }
 
     stage('Backend Tests') {
       steps {
-        sh '''
-          set -eu
-          bash scripts/ci/run-with-toolchain.sh bash -c '
-            cd server
-            ./mvnw test
-          '
-        '''
+        sh 'bash scripts/ci/verify.sh backend-test'
       }
       post {
         always {
@@ -93,23 +59,13 @@ pipeline {
 
     stage('Frontend Build') {
       steps {
-        sh '''
-          set -eu
-          bash scripts/ci/run-with-toolchain.sh bash -c '
-            cd web
-            corepack pnpm -F @vben/playground run build
-          '
-        '''
+        sh 'bash scripts/ci/verify.sh frontend-build'
       }
     }
 
     stage('Repository Guard') {
       steps {
-        sh '''
-          set -eu
-          bash scripts/ci/version-guard.sh
-          bash scripts/ci/repository-guard.sh
-        '''
+        sh 'bash scripts/ci/verify.sh repository-guard'
       }
     }
   }
