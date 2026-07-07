@@ -205,6 +205,49 @@ function readDatabaseMigrationReportSummary() {
   };
 }
 
+function readEnvironmentConfigReportSummary() {
+  const reportPath = path.join(rootDir, '.ci-artifacts', 'environment-config-report.json');
+  const report = readJsonIfExists(reportPath);
+
+  if (!report) {
+    return {
+      reportPath: path.relative(rootDir, reportPath),
+      exists: false,
+      version: null,
+      governancePassed: false,
+      errorCount: null,
+      warningCount: null,
+      totalItemCount: 0,
+      uniqueEnvCount: 0,
+      readsIgnoredSensitiveSources: null,
+      passed: false,
+    };
+  }
+
+  const versionMatches = report.product?.version === productVersion;
+  const governancePassed = report.governance?.passed === true;
+  const totalItemCount = Number(report.configuration?.totalItemCount ?? 0);
+  const uniqueEnvCount = Number(report.configuration?.uniqueEnvCount ?? 0);
+  const readsIgnoredSensitiveSources = report.scanPolicy?.readsIgnoredSensitiveSources === true;
+
+  return {
+    reportPath: path.relative(rootDir, reportPath),
+    exists: true,
+    version: report.product?.version ?? null,
+    governancePassed,
+    errorCount: report.governance?.errorCount ?? null,
+    warningCount: report.governance?.warningCount ?? null,
+    totalItemCount,
+    uniqueEnvCount,
+    readsIgnoredSensitiveSources,
+    passed: versionMatches
+      && governancePassed
+      && totalItemCount > 0
+      && uniqueEnvCount > 0
+      && !readsIgnoredSensitiveSources,
+  };
+}
+
 function readReleaseEvidenceSummary() {
   const reportPath = path.join(rootDir, '.ci-artifacts', 'release-evidence.json');
   const report = readJsonIfExists(reportPath);
@@ -223,6 +266,20 @@ function readReleaseEvidenceSummary() {
   }
 
   const versionMatches = report.product?.version === productVersion;
+  if (!versionMatches) {
+    return {
+      reportPath: path.relative(rootDir, reportPath),
+      exists: false,
+      version: report.product?.version ?? null,
+      ready: false,
+      status: 'STALE',
+      failedGateCount: null,
+      gateCount: 0,
+      requiredArtifactsPresent: false,
+      passed: false,
+    };
+  }
+
   const ready = report.releaseDecision?.ready === true;
   const failedGateCount = Number(report.releaseDecision?.failedGateCount ?? 1);
   const gateCount = Array.isArray(report.releaseDecision?.gates)
@@ -233,6 +290,7 @@ function readReleaseEvidenceSummary() {
     'API_GOVERNANCE_REPORT',
     'BUILD_METADATA',
     'DATABASE_MIGRATION_REPORT',
+    'ENVIRONMENT_CONFIG_REPORT',
     'VERIFICATION_SUMMARY',
   ]);
   const artifactCodes = new Set(artifacts.map((artifact) => artifact.code));
@@ -256,6 +314,7 @@ const buildMetadata = readJsonIfExists(buildMetadataPath);
 const buildMetadataVersionMatches = buildMetadata?.product?.version === productVersion;
 const backendTests = readBackendTestSummary();
 const frontendBuild = readFrontendBuildSummary();
+const environmentConfigReport = readEnvironmentConfigReportSummary();
 const databaseMigrationReport = readDatabaseMigrationReportSummary();
 const apiGovernanceReport = readApiGovernanceReportSummary();
 const releaseEvidence = readReleaseEvidenceSummary();
@@ -287,6 +346,12 @@ const checks = [
     command: 'read web/playground/dist/index.html',
     exitCode: frontendBuild.passed ? 0 : 1,
     passed: frontendBuild.passed,
+  },
+  {
+    code: 'ENVIRONMENT_CONFIG_REPORT_PRESENT',
+    command: 'read .ci-artifacts/environment-config-report.json',
+    exitCode: environmentConfigReport.passed ? 0 : 1,
+    passed: environmentConfigReport.passed,
   },
   {
     code: 'DATABASE_MIGRATION_REPORT_PRESENT',
@@ -328,6 +393,7 @@ const summary = {
   artifacts: {
     backendTests,
     frontendBuild,
+    environmentConfigReport,
     databaseMigrationReport,
     apiGovernanceReport,
     releaseEvidence,

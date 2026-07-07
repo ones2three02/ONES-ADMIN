@@ -1,5 +1,14 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.137 - 2026-07-07
+
+- 新增 `scripts/ci/environment-config-report.sh`，生成 `.ci-artifacts/environment-config-report.json`，归档后端与前端环境变量清单、生产必填项、占位值、本地默认值和敏感配置项审计结论。
+- `scripts/ci/verify.sh` 新增 `environment-config-report` 阶段，Jenkinsfile 新增 Environment Config Report 阶段。
+- `scripts/ci/verification-summary.sh` 新增环境配置报告门禁，`scripts/ci/release-evidence.sh` 将环境配置治理纳入发布证据包。
+- 环境配置报告只扫描可提交配置模板，不读取 ignored 本地敏感文件，不输出真实密码、Secret 或中间件连接凭据。
+- 本版本不连接真实中间件，不部署，不新增业务接口，不新增数据库迁移，不改前端 UI。
+- 产品版本递增至 `v0.0.137`。
+
 ## v0.0.136 - 2026-07-07
 
 - 新增 `scripts/ci/release-evidence.sh`，生成 `.ci-artifacts/release-evidence.json`，汇总构建元数据、数据库迁移审计报告、接口治理报告和验证摘要，输出机器可读发布证据与发布结论。

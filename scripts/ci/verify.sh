@@ -17,6 +17,8 @@ Stages:
   backend-test           Run backend Maven tests.
   frontend-build         Build the Playground frontend.
   repository-guard       Run version and repository safety guards.
+  environment-config-report
+                         Generate the environment configuration governance report artifact.
   database-migration-report
                          Generate the database migration governance report artifact.
   api-governance-report  Generate the API governance report artifact.
@@ -92,6 +94,13 @@ run_repository_guard() {
   "
 }
 
+run_environment_config_report() {
+  run_with_toolchain bash -c "
+    cd '$ROOT_DIR'
+    bash scripts/ci/environment-config-report.sh
+  "
+}
+
 run_database_migration_report() {
   run_with_toolchain bash -c "
     cd '$ROOT_DIR'
@@ -129,6 +138,7 @@ run_all() {
   run_backend_test
   run_frontend_build
   run_repository_guard
+  run_environment_config_report
   run_database_migration_report
   run_api_governance_report
   run_verification_summary
@@ -159,6 +169,9 @@ case "${1:-}" in
     ;;
   repository-guard)
     run_repository_guard
+    ;;
+  environment-config-report)
+    run_environment_config_report
     ;;
   database-migration-report)
     run_database_migration_report

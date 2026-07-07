@@ -75,6 +75,12 @@ pipeline {
       }
     }
 
+    stage('Environment Config Report') {
+      steps {
+        sh 'bash scripts/ci/verify.sh environment-config-report'
+      }
+    }
+
     stage('Database Migration Report') {
       steps {
         sh 'bash scripts/ci/verify.sh database-migration-report'

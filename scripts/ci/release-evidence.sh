@@ -58,16 +58,19 @@ function gate(code, passed, message, remediation) {
 }
 
 const buildMetadataPath = '.ci-artifacts/build-metadata.json';
+const environmentConfigReportPath = '.ci-artifacts/environment-config-report.json';
 const databaseMigrationReportPath = '.ci-artifacts/database-migration-report.json';
 const apiGovernanceReportPath = '.ci-artifacts/api-governance-report.json';
 const verificationSummaryPath = '.ci-artifacts/verification-summary.json';
 
 const buildMetadata = readJson(buildMetadataPath);
+const environmentConfigReport = readJson(environmentConfigReportPath);
 const databaseMigrationReport = readJson(databaseMigrationReportPath);
 const apiGovernanceReport = readJson(apiGovernanceReportPath);
 const verificationSummary = readJson(verificationSummaryPath);
 
 const buildMetadataVersionMatches = buildMetadata?.product?.version === productVersion;
+const environmentConfigVersionMatches = environmentConfigReport?.product?.version === productVersion;
 const databaseMigrationVersionMatches = databaseMigrationReport?.product?.version === productVersion;
 const apiGovernanceVersionMatches = apiGovernanceReport?.applicationVersion === productVersion;
 const verificationSummaryVersionMatches = verificationSummary?.product?.version === productVersion;
@@ -85,6 +88,12 @@ const databaseMigrationPassed = Boolean(databaseMigrationReport)
   && databaseMigrationReport.migration?.legacySchemaSqlExists === false
   && Array.isArray(databaseMigrationReport.migration?.destructiveViolations)
   && databaseMigrationReport.migration.destructiveViolations.length === 0;
+const environmentConfigPassed = Boolean(environmentConfigReport)
+  && environmentConfigVersionMatches
+  && environmentConfigReport.governance?.passed === true
+  && Number(environmentConfigReport.configuration?.totalItemCount ?? 0) > 0
+  && Number(environmentConfigReport.configuration?.uniqueEnvCount ?? 0) > 0
+  && environmentConfigReport.scanPolicy?.readsIgnoredSensitiveSources === false;
 const apiGovernancePassed = Boolean(apiGovernanceReport)
   && apiGovernanceVersionMatches
   && apiGovernanceReport.governance?.passed === true
@@ -110,6 +119,24 @@ const statuses = [
       shortCommit: buildMetadata?.git?.shortCommit ?? null,
       dirty: buildMetadata?.git?.dirty ?? null,
       toolchain: buildMetadata?.toolchain ?? null,
+    },
+  ),
+  artifactStatus(
+    'ENVIRONMENT_CONFIG_REPORT',
+    environmentConfigReportPath,
+    Boolean(environmentConfigReport),
+    environmentConfigReport?.product?.version,
+    environmentConfigVersionMatches,
+    environmentConfigPassed,
+    {
+      totalItemCount: environmentConfigReport?.configuration?.totalItemCount ?? null,
+      uniqueEnvCount: environmentConfigReport?.configuration?.uniqueEnvCount ?? null,
+      productionRequiredCount: environmentConfigReport?.configuration?.productionRequiredCount ?? null,
+      localDefaultCount: environmentConfigReport?.configuration?.localDefaultCount ?? null,
+      placeholderDefaultCount: environmentConfigReport?.configuration?.placeholderDefaultCount ?? null,
+      governancePassed: environmentConfigReport?.governance?.passed ?? null,
+      errorCount: environmentConfigReport?.governance?.errorCount ?? null,
+      readsIgnoredSensitiveSources: environmentConfigReport?.scanPolicy?.readsIgnoredSensitiveSources ?? null,
     },
   ),
   artifactStatus(
@@ -161,8 +188,8 @@ const releaseGates = [
   gate(
     'ALL_REQUIRED_ARTIFACTS_PRESENT',
     statuses.every((status) => status.exists),
-    '发布证据包必须包含构建元数据、数据库迁移报告、接口治理报告和验证摘要',
-    '先执行 build-metadata、database-migration-report、api-governance-report 和 verification-summary 阶段',
+    '发布证据包必须包含构建元数据、环境配置报告、数据库迁移报告、接口治理报告和验证摘要',
+    '先执行 build-metadata、environment-config-report、database-migration-report、api-governance-report 和 verification-summary 阶段',
   ),
   gate(
     'ALL_ARTIFACT_VERSIONS_MATCH',
@@ -175,6 +202,12 @@ const releaseGates = [
     buildMetadataPassed,
     '构建来源必须能追溯到明确 Git 提交和工具链版本',
     '重新生成 build-metadata，并确认 Git 提交、分支和工具链信息可读',
+  ),
+  gate(
+    'ENVIRONMENT_CONFIG_GOVERNED',
+    environmentConfigPassed,
+    '环境配置治理必须通过',
+    '处理生产必填配置缺失、敏感默认值或环境变量清单异常问题',
   ),
   gate(
     'DATABASE_MIGRATION_GOVERNED',
@@ -214,6 +247,7 @@ const report = {
     quality: {
       backendTests: verificationSummary?.artifacts?.backendTests ?? null,
       frontendBuild: verificationSummary?.artifacts?.frontendBuild ?? null,
+      environmentConfig: verificationSummary?.artifacts?.environmentConfigReport ?? null,
       databaseMigration: verificationSummary?.artifacts?.databaseMigrationReport ?? null,
       apiGovernance: verificationSummary?.artifacts?.apiGovernanceReport ?? null,
     },
