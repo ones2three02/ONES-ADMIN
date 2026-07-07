@@ -252,6 +252,7 @@
     "attachmentUploadSuccess": "Contract attachment uploaded",
     "attachmentUploadError": "Failed to upload contract attachment",
     "attachmentLoadError": "Failed to load contract attachment",
+    "attachmentOpenError": "Failed to open contract attachment",
     "attachmentOpenUnavailable": "Attachment URL is unavailable",
     "exportExpiringCsv": "Export CSV",
     "expiringExporting": "Exporting expiring contracts...",

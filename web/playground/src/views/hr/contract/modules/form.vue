@@ -157,7 +157,7 @@ async function handleCustomUpload(options: UploadRequestOptions) {
   const { file, onError, onSuccess } = options;
   if (!(file instanceof File)) {
     const error = new Error($t('hr.contract.attachmentUploadError'));
-    message.error(error.message);
+    message.error(errorMessageOf(error, $t('hr.contract.attachmentUploadError')));
     onError?.(error);
     return;
   }
@@ -196,7 +196,11 @@ async function previewAttachment() {
     message.warning($t('hr.contract.attachmentOpenUnavailable'));
     return;
   }
-  await openSystemFile(file);
+  try {
+    await openSystemFile(file);
+  } catch (error: unknown) {
+    message.error(errorMessageOf(error, $t('hr.contract.attachmentOpenError')));
+  }
 }
 </script>
 <template>

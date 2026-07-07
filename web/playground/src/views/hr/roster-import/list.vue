@@ -19,7 +19,7 @@ import {
   getHrDictOptions,
   HR_ROSTER_IMPORT_STATUS_DICT,
 } from '../dict-options';
-import { normalizeError } from '../shared/error';
+import { errorMessageOf, normalizeError } from '../shared/error';
 import { downloadHrBlob } from '../shared/file';
 import ErrorsModal from './modules/errors.vue';
 
@@ -111,8 +111,8 @@ async function handleDownloadTemplate() {
     const blob = await downloadRosterTemplate();
     downloadHrBlob('ones-hr-roster-template.csv', blob);
     message.success($t('hr.rosterImport.templateDownloadSuccess'));
-  } catch (error) {
-    message.error($t('hr.rosterImport.templateDownloadError'));
+  } catch (error: unknown) {
+    message.error(errorMessageOf(error, $t('hr.rosterImport.templateDownloadError')));
   } finally {
     hide();
   }
@@ -123,13 +123,13 @@ async function handleCustomUpload(options: UploadRequestOptions) {
   const uploadFile = file as File;
   if (!uploadFile.name.toLowerCase().endsWith('.csv')) {
     const error = new Error($t('hr.rosterImport.csvOnlyError'));
-    message.error(error.message);
+    message.error(errorMessageOf(error, $t('hr.rosterImport.csvOnlyError')));
     onError?.(error);
     return;
   }
   if (uploadFile.size > 2 * 1024 * 1024) {
     const error = new Error($t('hr.rosterImport.csvSizeLimitError'));
-    message.error(error.message);
+    message.error(errorMessageOf(error, $t('hr.rosterImport.csvSizeLimitError')));
     onError?.(error);
     return;
   }
@@ -146,7 +146,7 @@ async function handleCustomUpload(options: UploadRequestOptions) {
     onRefresh();
   } catch (error: unknown) {
     const normalizedError = normalizeError(error, $t('hr.rosterImport.uploadError'));
-    message.error(normalizedError.message || $t('hr.rosterImport.uploadError'));
+    message.error(errorMessageOf(normalizedError, $t('hr.rosterImport.uploadError')));
     onError?.(normalizedError);
   } finally {
     hide();

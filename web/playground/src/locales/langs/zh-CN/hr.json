@@ -252,6 +252,7 @@
     "attachmentUploadSuccess": "合同附件上传成功",
     "attachmentUploadError": "合同附件上传失败，请稍后重试",
     "attachmentLoadError": "合同附件信息获取失败",
+    "attachmentOpenError": "合同附件打开失败",
     "attachmentOpenUnavailable": "附件访问地址不可用",
     "exportExpiringCsv": "导出 CSV",
     "expiringExporting": "正在导出到期合同...",

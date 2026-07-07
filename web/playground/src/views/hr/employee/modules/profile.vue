@@ -56,7 +56,7 @@ import {
   getHrDictFallbackOptions,
   getHrDictOption,
 } from '../../dict-options';
-import { errorMessageOf, normalizeError } from '../../shared/error';
+import { errorMessageOf } from '../../shared/error';
 import { formatFileSize } from '../../shared/file';
 
 const employee = ref<HrEmployeeApi.HrEmployee>();
@@ -281,7 +281,7 @@ async function handleDocumentUpload(options: UploadRequestOptions) {
   const { file, onError, onSuccess } = options;
   if (!(file instanceof File) || !employee.value?.id) {
     const error = new Error($t('hr.employeeProfile.documentUploadError'));
-    message.error(error.message);
+    message.error(errorMessageOf(error, $t('hr.employeeProfile.documentUploadError')));
     onError?.(error);
     return;
   }
@@ -306,13 +306,7 @@ async function submitDocumentUpload() {
     await reloadDocuments();
     message.success($t('hr.employeeProfile.documentUploadSuccess'));
   } catch (error: unknown) {
-    const normalizedError = normalizeError(
-      error,
-      $t('hr.employeeProfile.documentUploadError'),
-    );
-    message.error(
-      errorMessageOf(normalizedError, $t('hr.employeeProfile.documentUploadError')),
-    );
+    message.error(errorMessageOf(error, $t('hr.employeeProfile.documentUploadError')));
   } finally {
     hide();
     documentUploadLoading.value = false;
