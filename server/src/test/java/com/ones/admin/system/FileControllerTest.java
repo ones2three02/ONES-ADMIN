@@ -6,9 +6,11 @@ import com.ones.admin.common.code.CommonErrorCode;
 import com.ones.admin.system.dto.RoleSaveRequest;
 import com.ones.admin.system.dto.UserCreateRequest;
 import com.ones.admin.system.entity.SystemFileEntity;
+import com.ones.admin.system.entity.SystemOperationLogEntity;
 import com.ones.admin.system.entity.SystemPermissionEntity;
 import com.ones.admin.system.entity.SystemRolePermissionEntity;
 import com.ones.admin.system.mapper.SystemFileMapper;
+import com.ones.admin.system.mapper.SystemOperationLogMapper;
 import com.ones.admin.system.mapper.SystemPermissionMapper;
 import com.ones.admin.system.mapper.SystemRolePermissionMapper;
 import org.junit.jupiter.api.Test;
@@ -54,6 +56,9 @@ class FileControllerTest {
 
     @Autowired
     private SystemFileMapper fileMapper;
+
+    @Autowired
+    private SystemOperationLogMapper operationLogMapper;
 
     @Autowired
     private SystemPermissionMapper permissionMapper;
@@ -278,6 +283,15 @@ class FileControllerTest {
                 .andExpect(jsonPath("$.code").value(CommonErrorCode.FORBIDDEN.code()));
 
         verify(fileStorageService, never()).load(storedName);
+        SystemOperationLogEntity log = latestDownloadLog(storedName);
+        assertThat(log).isNotNull();
+        assertThat(log.getMethod()).isEqualTo("GET");
+        assertThat(log.getOperation()).isEqualTo("访问文件");
+        assertThat(log.getPermissionCode()).isEqualTo("system:file:read");
+        assertThat(log.getSuccess()).isFalse();
+        assertThat(log.getResponseCode()).isEqualTo(CommonErrorCode.FORBIDDEN.code());
+        assertThat(log.getErrorMessage()).contains("fileId=" + file.getId());
+        assertThat(log.getErrorMessage()).contains("error=" + CommonErrorCode.FORBIDDEN.message());
     }
 
     @Test
@@ -452,6 +466,16 @@ class FileControllerTest {
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string("hello"));
 
         verify(fileStorageService).load(storedName);
+        SystemOperationLogEntity log = latestDownloadLog(storedName);
+        assertThat(log).isNotNull();
+        assertThat(log.getMethod()).isEqualTo("GET");
+        assertThat(log.getModule()).isEqualTo("系统管理-文件");
+        assertThat(log.getOperation()).isEqualTo("访问文件");
+        assertThat(log.getPermissionCode()).isEqualTo("system:file:read");
+        assertThat(log.getSuccess()).isTrue();
+        assertThat(log.getResponseCode()).isEqualTo(CommonErrorCode.SUCCESS.code());
+        assertThat(log.getErrorMessage()).contains("fileId=" + file.getId());
+        assertThat(log.getErrorMessage()).contains("originalName=" + storedName);
     }
 
     @Test
@@ -609,6 +633,17 @@ class FileControllerTest {
     private void clearFileRows() {
         fileMapper.delete(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SystemFileEntity>()
                 .isNotNull(SystemFileEntity::getId));
+    }
+
+    private SystemOperationLogEntity latestDownloadLog(String storedName) {
+        return operationLogMapper.selectList(
+                        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SystemOperationLogEntity>()
+                                .like(SystemOperationLogEntity::getPath, "/api/system/files/" + storedName)
+                                .orderByDesc(SystemOperationLogEntity::getId)
+                )
+                .stream()
+                .findFirst()
+                .orElse(null);
     }
 
     private SystemFileEntity newFile(String originalName, String extension, String status) {

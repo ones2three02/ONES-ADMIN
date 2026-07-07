@@ -1,6 +1,8 @@
 package com.ones.admin.system;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.stp.StpUtil;
+import com.ones.admin.common.code.CommonErrorCode;
 import com.ones.admin.common.exception.BusinessException;
 import com.ones.admin.common.repeatsubmit.RepeatSubmit;
 import com.ones.admin.common.web.ApiAccessPolicy;
@@ -10,6 +12,8 @@ import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
+import com.ones.admin.system.audit.AuditRequestContext;
+import com.ones.admin.system.audit.OperationAuditService;
 import com.ones.admin.system.dto.FileMetadataQuery;
 import com.ones.admin.system.dto.FileMetadataResponse;
 import com.ones.admin.system.dto.FileRetentionPurgeResponse;
@@ -17,6 +21,7 @@ import com.ones.admin.system.dto.FileRetentionSummaryResponse;
 import com.ones.admin.system.entity.SystemFileEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -52,17 +57,20 @@ public class FileController {
     private final FileStorageService fileStorageService;
     private final FileMetadataService fileMetadataService;
     private final FileAccessService fileAccessService;
+    private final OperationAuditService operationAuditService;
 
     public FileController(
             FileStorageProperties fileStorageProperties,
             FileStorageService fileStorageService,
             FileMetadataService fileMetadataService,
-            FileAccessService fileAccessService
+            FileAccessService fileAccessService,
+            OperationAuditService operationAuditService
     ) {
         this.fileStorageProperties = fileStorageProperties;
         this.fileStorageService = fileStorageService;
         this.fileMetadataService = fileMetadataService;
         this.fileAccessService = fileAccessService;
+        this.operationAuditService = operationAuditService;
     }
 
     @PostMapping("/upload")
@@ -144,24 +152,109 @@ public class FileController {
     @Operation(operationId = "FileController_download", summary = "访问文件")
     @ApiAccessPolicy(value = ApiAuthType.LOGIN, reason = "文件下载按元数据归属执行二次授权：管理员可访问全局未绑定文件，上传人可访问自己的未绑定临时文件，HR 合同附件要求合同权限和员工数据范围")
     @ApiResourceMetadata(sinceVersion = "v0.0.85", riskLevel = ApiRiskLevel.MEDIUM)
-    public ResponseEntity<Resource> download(@PathVariable String filename) throws IOException {
+    public ResponseEntity<Resource> download(@PathVariable String filename, HttpServletRequest request) throws IOException {
+        long startTime = System.currentTimeMillis();
         Optional<SystemFileEntity> metadata = fileMetadataService.findByStoredName(filename);
         if (metadata.isEmpty()) {
+            recordDownloadAudit(request, null, false, CommonErrorCode.NOT_FOUND.code(), "文件元数据不存在", startTime);
             return ResponseEntity.notFound().build();
         }
-        fileAccessService.assertDownloadAllowed(metadata.get());
-        FileStorageService.StoredResource storedResource = fileStorageService.load(filename)
-                .orElse(null);
+        SystemFileEntity file = metadata.get();
+        try {
+            fileAccessService.assertDownloadAllowed(file);
+        } catch (BusinessException exception) {
+            recordDownloadAudit(request, file, false, exception.getCode(), exception.getMessage(), startTime);
+            throw exception;
+        }
+        FileStorageService.StoredResource storedResource;
+        try {
+            storedResource = fileStorageService.load(filename).orElse(null);
+        } catch (IOException exception) {
+            recordDownloadAudit(request, file, false, SystemErrorCode.FILE_STORAGE_FAILED.code(), "文件读取失败", startTime);
+            throw exception;
+        }
         if (storedResource == null) {
+            recordDownloadAudit(request, file, false, SystemErrorCode.FILE_NOT_FOUND.code(), "文件对象不存在", startTime);
             return ResponseEntity.notFound().build();
         }
+        recordDownloadAudit(request, file, true, CommonErrorCode.SUCCESS.code(), null, startTime);
         return ResponseEntity.ok()
                 .contentType(storedResource.mediaType())
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\""
-                        + contentDispositionFilename(metadata
-                        .map(SystemFileEntity::getOriginalName)
-                        .orElse(storedResource.filename())) + "\"")
+                        + contentDispositionFilename(file.getOriginalName()) + "\"")
                 .body(storedResource.resource());
+    }
+
+    private void recordDownloadAudit(
+            HttpServletRequest request,
+            SystemFileEntity file,
+            boolean success,
+            Integer responseCode,
+            String errorMessage,
+            long startTime
+    ) {
+        AuditRequestContext context = AuditRequestContext.from(request);
+        operationAuditService.record(new OperationAuditService.OperationAuditRecord(
+                currentUserId(),
+                request.getMethod(),
+                request.getRequestURI(),
+                "系统管理-文件",
+                "访问文件",
+                downloadPermissionCode(file),
+                success,
+                responseCode,
+                downloadAuditMessage(file, errorMessage),
+                context.traceId(),
+                context.ip(),
+                context.userAgent(),
+                System.currentTimeMillis() - startTime
+        ));
+    }
+
+    private String downloadPermissionCode(SystemFileEntity file) {
+        if (file == null || file.getBusinessType() == null) {
+            return "system:file:read";
+        }
+        if (FileBusinessTypes.HR_EMPLOYEE_CONTRACT.equals(file.getBusinessType())) {
+            return "hr:contract:list";
+        }
+        if (FileBusinessTypes.HR_EMPLOYEE_DOCUMENT.equals(file.getBusinessType())) {
+            return "hr:employee:detail";
+        }
+        return "system:file:read";
+    }
+
+    private String downloadAuditMessage(SystemFileEntity file, String errorMessage) {
+        StringBuilder message = new StringBuilder();
+        if (file != null) {
+            message.append("fileId=").append(file.getId())
+                    .append(", businessType=").append(valueOrDash(file.getBusinessType()))
+                    .append(", businessId=").append(valueOrDash(file.getBusinessId()))
+                    .append(", originalName=").append(valueOrDash(file.getOriginalName()));
+        }
+        if (errorMessage != null && !errorMessage.isBlank()) {
+            if (!message.isEmpty()) {
+                message.append(", ");
+            }
+            message.append("error=").append(errorMessage);
+        }
+        return message.isEmpty() ? null : message.toString();
+    }
+
+    private Long currentUserId() {
+        if (!StpUtil.isLogin()) {
+            return null;
+        }
+        return Long.valueOf(String.valueOf(StpUtil.getLoginId()));
+    }
+
+    private String valueOrDash(String value) {
+        return value == null || value.isBlank() ? "-" : value;
+    }
+
+    private static final class FileBusinessTypes {
+        private static final String HR_EMPLOYEE_CONTRACT = "HR_EMPLOYEE_CONTRACT";
+        private static final String HR_EMPLOYEE_DOCUMENT = "HR_EMPLOYEE_DOCUMENT";
     }
 
     private String safeFilename(String originalFilename) {
