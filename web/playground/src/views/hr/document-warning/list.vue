@@ -6,7 +6,6 @@ import { computed, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
-import { downloadFileFromBlob } from '@vben/utils';
 
 import { Button, Card, message, Statistic } from 'antdv-next';
 
@@ -20,6 +19,7 @@ import {
   HR_EMPLOYEE_DOCUMENT_TYPE_DICT,
 } from '../dict-options';
 import { errorMessageOf } from '../shared/error';
+import { downloadHrBlob } from '../shared/file';
 import { isDueWithinDays } from '../shared/warning';
 import { useColumns, useGridFormSchema } from './data';
 
@@ -101,10 +101,7 @@ async function onExportDocuments() {
   const hide = message.loading($t('hr.documentWarning.exporting'), 0);
   try {
     const blob = await exportExpiringEmployeeDocuments(currentWindowDays.value);
-    downloadFileFromBlob({
-      fileName: 'ones-hr-expiring-documents.csv',
-      source: blob,
-    });
+    downloadHrBlob('ones-hr-expiring-documents.csv', blob);
     message.success($t('hr.documentWarning.exportSuccess'));
   } catch (error) {
     message.error(errorMessageOf(error, $t('hr.documentWarning.exportError')));

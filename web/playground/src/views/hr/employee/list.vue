@@ -6,7 +6,6 @@ import { onMounted, ref, watch } from 'vue';
 
 import { Page, Tree, useVbenDrawer } from '@vben/common-ui';
 import { IconifyIcon, Plus } from '@vben/icons';
-import { downloadFileFromBlob } from '@vben/utils';
 
 import { Button, Card, InputSearch, message } from 'antdv-next';
 
@@ -22,6 +21,7 @@ import {
   HR_GENDER_DICT,
 } from '../dict-options';
 import { errorMessageOf } from '../shared/error';
+import { downloadHrBlob } from '../shared/file';
 import Form from './modules/form.vue';
 import Lifecycle from './modules/lifecycle.vue';
 import Profile from './modules/profile.vue';
@@ -126,10 +126,7 @@ async function onExport() {
       ...latestQuery.value,
       deptId: selectedDeptId.value || undefined,
     });
-    downloadFileFromBlob({
-      fileName: 'ones-hr-employees.csv',
-      source: blob,
-    });
+    downloadHrBlob('ones-hr-employees.csv', blob);
     message.success($t('hr.employeeList.exportSuccess'));
   } catch (error: unknown) {
     message.error(errorMessageOf(error, $t('hr.employeeList.exportError')));

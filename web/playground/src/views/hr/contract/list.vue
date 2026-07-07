@@ -6,7 +6,6 @@ import { computed, onMounted, ref, watch } from 'vue';
 
 import { Page, useVbenDrawer } from '@vben/common-ui';
 import { IconifyIcon, Plus } from '@vben/icons';
-import { downloadFileFromBlob } from '@vben/utils';
 
 import { Button, Card, InputSearch, message, Statistic, TabPane, Tabs } from 'antdv-next';
 
@@ -22,6 +21,7 @@ import { openSystemFile } from '#/api/system/file';
 import { $t } from '#/locales';
 
 import { errorMessageOf } from '../shared/error';
+import { downloadHrBlob } from '../shared/file';
 import { isDueWithinDays } from '../shared/warning';
 import { useColumns, useExpiringColumns, useExpiringGridFormSchema } from './data';
 import {
@@ -209,10 +209,7 @@ async function onExportExpiringContracts() {
   const hide = message.loading($t('hr.contract.expiringExporting'), 0);
   try {
     const blob = await exportExpiringContracts(expiringWindowDays.value);
-    downloadFileFromBlob({
-      fileName: 'ones-hr-expiring-contracts.csv',
-      source: blob,
-    });
+    downloadHrBlob('ones-hr-expiring-contracts.csv', blob);
     message.success($t('hr.contract.expiringExportSuccess'));
   } catch (error: unknown) {
     message.error(errorMessageOf(error, $t('hr.contract.expiringExportError')));
