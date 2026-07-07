@@ -70,6 +70,15 @@
     "create": "新增职级",
     "edit": "编辑职级"
   },
+  "statusChange": {
+    "title": "切换状态",
+    "enabledAction": "启用",
+    "disabledAction": "禁用",
+    "positionConfirm": "您确定要将岗位 {name} 切换为【{status}】吗？",
+    "jobGradeConfirm": "您确定要将职级 {name} 切换为【{status}】吗？",
+    "success": "已切换为 {status}",
+    "cancelled": "已取消"
+  },
   "contract": {
     "title": "合同管理",
     "list": "合同列表",

@@ -70,6 +70,15 @@
     "create": "Create Job Grade",
     "edit": "Edit Job Grade"
   },
+  "statusChange": {
+    "title": "Change Status",
+    "enabledAction": "Enable",
+    "disabledAction": "Disable",
+    "positionConfirm": "Are you sure you want to change position {name} to {status}?",
+    "jobGradeConfirm": "Are you sure you want to change job grade {name} to {status}?",
+    "success": "Changed to {status}",
+    "cancelled": "Cancelled"
+  },
   "contract": {
     "title": "Contracts",
     "list": "Contract List",

@@ -68,7 +68,7 @@ function confirm(content: string, title: string) {
     Modal.confirm({
       content,
       onCancel() {
-        reject(new Error('已取消'));
+        reject(new Error($t('hr.statusChange.cancelled')));
       },
       onOk() {
         resolve(true);
@@ -82,11 +82,16 @@ async function onStatusChange(
   newStatus: boolean,
   row: HrPositionApi.HrPosition,
 ) {
-  const statusStr = newStatus ? '启用' : '禁用';
+  const statusStr = newStatus
+    ? $t('hr.statusChange.enabledAction')
+    : $t('hr.statusChange.disabledAction');
   try {
     await confirm(
-      `您确定要将岗位 ${row.positionName} 切换为 【${statusStr}】 吗？`,
-      '切换状态',
+      $t('hr.statusChange.positionConfirm', {
+        name: row.positionName,
+        status: statusStr,
+      }),
+      $t('hr.statusChange.title'),
     );
     await updatePosition(row.id, {
       positionCode: row.positionCode,
@@ -95,7 +100,7 @@ async function onStatusChange(
       description: row.description,
       enabled: newStatus,
     });
-    message.success(`已切换为 ${statusStr}`);
+    message.success($t('hr.statusChange.success', { status: statusStr }));
     return true;
   } catch {
     return false;
