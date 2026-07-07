@@ -33,6 +33,7 @@ import { $t } from '#/locales';
 import { errorMessageOf } from '../shared/error';
 import { downloadHrBlobWithFeedback, openHrFileWithFeedback } from '../shared/file';
 import { isDueWithinDays } from '../shared/warning';
+import SplitListLayout from '../../shared/split-list-layout.vue';
 import { useColumns, useExpiringColumns, useExpiringGridFormSchema } from './data';
 import {
   getHrDictOptions,
@@ -272,12 +273,13 @@ watch(searchEmployeeValue, () => {
 
     <Tabs v-model:activeKey="activeTab" class="contract-tabs size-full">
       <TabPane key="historical" :tab="$t('hr.contract.list')">
-        <div class="flex size-full min-h-0 gap-4">
-          <Card
-            class="contract-employee-card"
-            :title="$t('hr.employee.title')"
-            :body-style="{ display: 'flex', flexDirection: 'column', minHeight: 0 }"
-          >
+        <SplitListLayout
+          :side-title="$t('hr.employee.title')"
+          :side-width="300"
+          :side-min-width="260"
+          :side-max-width="340"
+        >
+          <template #aside>
             <InputSearch
               v-model:value="searchEmployeeValue"
               allow-clear
@@ -318,74 +320,72 @@ watch(searchEmployeeValue, () => {
                 </Button>
               </Empty>
             </Spin>
-          </Card>
+          </template>
 
-          <div class="flex min-w-0 flex-1 flex-col">
-            <HistoryGrid
-              :table-title="
-                selectedEmployee
-                  ? $t('hr.contract.employeeContractHistory', {
-                      name: selectedEmployee.realName,
-                    })
-                  : $t('hr.contract.contractHistory')
-              "
-            >
-              <template #empty>
-                <Empty :description="historyEmptyDescription" image="simple">
-                  <Button
-                    v-if="selectedEmployeeId"
-                    type="primary"
-                    @click="onSignContract"
-                  >
-                    <Plus class="size-5" />
-                    {{ $t('hr.contract.create') }}
-                  </Button>
-                </Empty>
-              </template>
-              <template #toolbar-tools>
-                <Button type="primary" :disabled="!selectedEmployeeId" @click="onSignContract">
+          <HistoryGrid
+            :table-title="
+              selectedEmployee
+                ? $t('hr.contract.employeeContractHistory', {
+                    name: selectedEmployee.realName,
+                  })
+                : $t('hr.contract.contractHistory')
+            "
+          >
+            <template #empty>
+              <Empty :description="historyEmptyDescription" image="simple">
+                <Button
+                  v-if="selectedEmployeeId"
+                  type="primary"
+                  @click="onSignContract"
+                >
                   <Plus class="size-5" />
                   {{ $t('hr.contract.create') }}
                 </Button>
-              </template>
-              <template #attachment="{ row }">
-                <Button
-                  v-if="row.attachmentFileId"
-                  size="small"
-                  type="link"
-                  v-access:code="['hr:contract:list']"
-                  @click="onViewAttachment(row)"
-                >
-                  <template #icon>
-                    <IconifyIcon icon="lucide:paperclip" />
-                  </template>
-                  {{ $t('hr.contract.viewAttachment') }}
-                </Button>
-                <span v-else class="text-muted-foreground">-</span>
-              </template>
-              <template #action="{ row }">
-                <VbenTableAction
-                  :actions="[
-                    {
-                      text: $t('common.edit'),
-                      icon: 'lucide:edit',
-                      disabled: row.status !== 'ACTIVE',
-                      onClick: () => onEditContract(row),
-                    },
-                    {
-                      text: $t('hr.contract.terminate'),
-                      icon: 'lucide:file-x-2',
-                      danger: true,
-                      disabled: row.status !== 'ACTIVE',
-                      onClick: () => onTerminateContract(row),
-                    },
-                  ]"
-                  align="center"
-                />
-              </template>
-            </HistoryGrid>
-          </div>
-        </div>
+              </Empty>
+            </template>
+            <template #toolbar-tools>
+              <Button type="primary" :disabled="!selectedEmployeeId" @click="onSignContract">
+                <Plus class="size-5" />
+                {{ $t('hr.contract.create') }}
+              </Button>
+            </template>
+            <template #attachment="{ row }">
+              <Button
+                v-if="row.attachmentFileId"
+                size="small"
+                type="link"
+                v-access:code="['hr:contract:list']"
+                @click="onViewAttachment(row)"
+              >
+                <template #icon>
+                  <IconifyIcon icon="lucide:paperclip" />
+                </template>
+                {{ $t('hr.contract.viewAttachment') }}
+              </Button>
+              <span v-else class="text-muted-foreground">-</span>
+            </template>
+            <template #action="{ row }">
+              <VbenTableAction
+                :actions="[
+                  {
+                    text: $t('common.edit'),
+                    icon: 'lucide:edit',
+                    disabled: row.status !== 'ACTIVE',
+                    onClick: () => onEditContract(row),
+                  },
+                  {
+                    text: $t('hr.contract.terminate'),
+                    icon: 'lucide:file-x-2',
+                    danger: true,
+                    disabled: row.status !== 'ACTIVE',
+                    onClick: () => onTerminateContract(row),
+                  },
+                ]"
+                align="center"
+              />
+            </template>
+          </HistoryGrid>
+        </SplitListLayout>
       </TabPane>
       <TabPane key="expiring" :tab="$t('hr.contract.expiringContracts')">
         <div class="flex size-full min-h-0 flex-col gap-4">
@@ -440,21 +440,6 @@ watch(searchEmployeeValue, () => {
 
 .contract-tabs :deep(.ant-tabs-content) {
   height: 100%;
-}
-
-.contract-employee-card {
-  display: flex;
-  width: 300px;
-  min-width: 260px;
-  max-width: 340px;
-  min-height: 0;
-  flex: 0 0 300px;
-  flex-direction: column;
-}
-
-.contract-employee-card :deep(.ant-card-body) {
-  flex: 1;
-  overflow: hidden;
 }
 
 .contract-employee-search {

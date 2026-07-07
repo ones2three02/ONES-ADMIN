@@ -10,12 +10,13 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { Page, Tree, useVbenDrawer } from '@vben/common-ui';
 import { Plus } from '@vben/icons';
 
-import { Button, Card, Empty, InputSearch, message, Modal, Spin } from 'antdv-next';
+import { Button, Empty, InputSearch, message, Modal, Spin } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import { deleteUser, getDeptList, getUserList, updateUser } from '#/api';
 import { $t } from '#/locales';
 
+import SplitListLayout from '../../shared/split-list-layout.vue';
 import { useColumns, useGridFormSchema } from './data';
 import Detail from './modules/detail.vue';
 import Form from './modules/form.vue';
@@ -257,12 +258,8 @@ watch(inputSearchValue, (value) => {
   <Page auto-content-height>
     <FormDrawer @success="onRefresh" />
     <DetailDrawer @success="onRefresh" />
-    <div class="flex size-full min-h-0 gap-4">
-      <Card
-        class="system-user-dept-card"
-        :title="$t('system.dept.title')"
-        :body-style="{ display: 'flex', flexDirection: 'column', minHeight: 0 }"
-      >
+    <SplitListLayout :side-title="$t('system.dept.title')">
+      <template #aside>
         <InputSearch
           v-model:value="inputSearchValue"
           allow-clear
@@ -299,75 +296,58 @@ watch(inputSearchValue, (value) => {
             </Button>
           </Empty>
         </Spin>
-      </Card>
+      </template>
 
-      <div class="flex min-w-0 flex-1 flex-col">
-        <Grid :table-title="userTableTitle">
-          <template #empty>
-            <Empty :description="$t('system.user.emptyDescription')" image="simple">
-              <Button type="primary" @click="onCreate">
-                <Plus class="size-5" />
-                {{ $t('ui.actionTitle.create', [$t('system.user.name')]) }}
-              </Button>
-            </Empty>
-          </template>
-          <template #toolbar-tools>
+      <Grid :table-title="userTableTitle">
+        <template #empty>
+          <Empty :description="$t('system.user.emptyDescription')" image="simple">
             <Button type="primary" @click="onCreate">
               <Plus class="size-5" />
               {{ $t('ui.actionTitle.create', [$t('system.user.name')]) }}
             </Button>
-          </template>
-          <template #action="{ row }">
-            <VbenTableAction
-              :actions="[
-                {
-                  text: $t('common.detail'),
-                  icon: 'lucide:eye',
-                  onClick: () => onDetail(row),
+          </Empty>
+        </template>
+        <template #toolbar-tools>
+          <Button type="primary" @click="onCreate">
+            <Plus class="size-5" />
+            {{ $t('ui.actionTitle.create', [$t('system.user.name')]) }}
+          </Button>
+        </template>
+        <template #action="{ row }">
+          <VbenTableAction
+            :actions="[
+              {
+                text: $t('common.detail'),
+                icon: 'lucide:eye',
+                onClick: () => onDetail(row),
+              },
+              {
+                text: $t('common.edit'),
+                icon: 'lucide:edit',
+                onClick: () => onEdit(row),
+              },
+            ]"
+            :dropdown-actions="[
+              {
+                text: $t('common.delete'),
+                icon: 'lucide:trash-2',
+                danger: true,
+                popConfirm: {
+                  title: $t('ui.actionMessage.deleteConfirm', [row.name]),
+                  confirm: () => onDelete(row),
                 },
-                {
-                  text: $t('common.edit'),
-                  icon: 'lucide:edit',
-                  onClick: () => onEdit(row),
-                },
-              ]"
-              :dropdown-actions="[
-                {
-                  text: $t('common.delete'),
-                  icon: 'lucide:trash-2',
-                  danger: true,
-                  popConfirm: {
-                    title: $t('ui.actionMessage.deleteConfirm', [row.name]),
-                    confirm: () => onDelete(row),
-                  },
-                  auth: ['AC_100100'],
-                },
-              ]"
-              align="center"
-            />
-          </template>
-        </Grid>
-      </div>
-    </div>
+                auth: ['AC_100100'],
+              },
+            ]"
+            align="center"
+          />
+        </template>
+      </Grid>
+    </SplitListLayout>
   </Page>
 </template>
 
 <style scoped>
-.system-user-dept-card {
-  display: flex;
-  width: 280px;
-  min-width: 240px;
-  max-width: 320px;
-  min-height: 0;
-  flex: 0 0 280px;
-  flex-direction: column;
-}
-
-.system-user-dept-card :deep(.ant-card-body) {
-  flex: 1;
-  overflow: hidden;
-}
-
 .system-user-dept-search {
   flex: 0 0 auto;
   margin-bottom: 12px;

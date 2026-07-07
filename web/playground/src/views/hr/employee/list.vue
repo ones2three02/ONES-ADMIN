@@ -7,7 +7,7 @@ import { onMounted, ref, watch } from 'vue';
 import { Page, Tree, useVbenDrawer } from '@vben/common-ui';
 import { IconifyIcon, Plus } from '@vben/icons';
 
-import { Button, Card, Empty, InputSearch, message } from 'antdv-next';
+import { Button, Empty, InputSearch, message } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import { exportEmployees, getDeptList, getEmployeeList } from '#/api';
@@ -22,6 +22,7 @@ import {
 } from '../dict-options';
 import { errorMessageOf } from '../shared/error';
 import { downloadHrBlobWithFeedback } from '../shared/file';
+import SplitListLayout from '../../shared/split-list-layout.vue';
 import Form from './modules/form.vue';
 import Lifecycle from './modules/lifecycle.vue';
 import Profile from './modules/profile.vue';
@@ -219,12 +220,8 @@ watch(searchDeptValue, (value) => {
     <LifecycleDrawer @success="onRefresh" />
     <ProfileDrawer @success="onRefresh" />
 
-    <div class="flex size-full min-h-0 gap-4">
-      <Card
-        class="employee-dept-card"
-        :title="$t('system.dept.title')"
-        :body-style="{ display: 'flex', flexDirection: 'column', minHeight: 0 }"
-      >
+    <SplitListLayout :side-title="$t('system.dept.title')">
+      <template #aside>
         <div class="employee-dept-search">
           <InputSearch
             v-model:value="searchDeptValue"
@@ -250,101 +247,84 @@ watch(searchDeptValue, (value) => {
             @select="selectDept"
           />
         </div>
-      </Card>
+      </template>
 
-      <div class="flex min-w-0 flex-1 flex-col">
-        <Grid :table-title="$t('hr.employee.list')">
-          <template #empty>
-            <Empty
-              :description="$t('hr.employeeList.emptyDescription')"
-              image="simple"
-            >
-              <Button type="primary" @click="onCreate">
-                <Plus class="size-5" />
-                {{ $t('hr.employee.createEmployee') }}
-              </Button>
-            </Empty>
-          </template>
-          <template #toolbar-tools>
-            <Button v-access:code="['hr:employee:export']" class="mr-2" @click="onExport">
-              <IconifyIcon icon="lucide:download" class="size-4" />
-              {{ $t('hr.employeeList.exportRoster') }}
-            </Button>
+      <Grid :table-title="$t('hr.employee.list')">
+        <template #empty>
+          <Empty
+            :description="$t('hr.employeeList.emptyDescription')"
+            image="simple"
+          >
             <Button type="primary" @click="onCreate">
               <Plus class="size-5" />
               {{ $t('hr.employee.createEmployee') }}
             </Button>
-          </template>
-          <template #action="{ row }">
-            <VbenTableAction
-              :actions="[
-                {
-                  text: $t('hr.employeeList.profile'),
-                  icon: 'lucide:user-round-search',
-                  onClick: () => onViewProfile(row),
-                  auth: ['hr:employee:detail'],
-                },
-                {
-                  text: $t('hr.employee.editEmployee'),
-                  icon: 'lucide:user-pen',
-                  onClick: () => onEdit(row),
-                  auth: ['hr:employee:update'],
-                },
-                {
-                  text: $t('hr.employee.lifecycleEvents'),
-                  icon: 'lucide:history',
-                  onClick: () => onViewLifecycle(row),
-                },
-              ]"
-              :dropdown-actions="[
-                {
-                  text: $t('hr.employee.transfer'),
-                  icon: 'lucide:shuffle',
-                  disabled: row.employmentStatus === 'RESIGNED',
-                  onClick: () => onTransfer(row),
-                  auth: ['hr:employee:transfer'],
-                },
-                {
-                  text: $t('hr.employee.regularize'),
-                  icon: 'lucide:badge-check',
-                  disabled: row.employmentStatus !== 'PROBATION',
-                  onClick: () => onRegularize(row),
-                  auth: ['hr:employee:regularize'],
-                },
-                {
-                  text: $t('hr.employee.resign'),
-                  icon: 'lucide:user-minus',
-                  danger: true,
-                  disabled: row.employmentStatus === 'RESIGNED',
-                  onClick: () => onResign(row),
-                  auth: ['hr:employee:resign'],
-                },
-              ]"
-              align="center"
-            />
-          </template>
-        </Grid>
-      </div>
-    </div>
+          </Empty>
+        </template>
+        <template #toolbar-tools>
+          <Button v-access:code="['hr:employee:export']" class="mr-2" @click="onExport">
+            <IconifyIcon icon="lucide:download" class="size-4" />
+            {{ $t('hr.employeeList.exportRoster') }}
+          </Button>
+          <Button type="primary" @click="onCreate">
+            <Plus class="size-5" />
+            {{ $t('hr.employee.createEmployee') }}
+          </Button>
+        </template>
+        <template #action="{ row }">
+          <VbenTableAction
+            :actions="[
+              {
+                text: $t('hr.employeeList.profile'),
+                icon: 'lucide:user-round-search',
+                onClick: () => onViewProfile(row),
+                auth: ['hr:employee:detail'],
+              },
+              {
+                text: $t('hr.employee.editEmployee'),
+                icon: 'lucide:user-pen',
+                onClick: () => onEdit(row),
+                auth: ['hr:employee:update'],
+              },
+              {
+                text: $t('hr.employee.lifecycleEvents'),
+                icon: 'lucide:history',
+                onClick: () => onViewLifecycle(row),
+              },
+            ]"
+            :dropdown-actions="[
+              {
+                text: $t('hr.employee.transfer'),
+                icon: 'lucide:shuffle',
+                disabled: row.employmentStatus === 'RESIGNED',
+                onClick: () => onTransfer(row),
+                auth: ['hr:employee:transfer'],
+              },
+              {
+                text: $t('hr.employee.regularize'),
+                icon: 'lucide:badge-check',
+                disabled: row.employmentStatus !== 'PROBATION',
+                onClick: () => onRegularize(row),
+                auth: ['hr:employee:regularize'],
+              },
+              {
+                text: $t('hr.employee.resign'),
+                icon: 'lucide:user-minus',
+                danger: true,
+                disabled: row.employmentStatus === 'RESIGNED',
+                onClick: () => onResign(row),
+                auth: ['hr:employee:resign'],
+              },
+            ]"
+            align="center"
+          />
+        </template>
+      </Grid>
+    </SplitListLayout>
   </Page>
 </template>
 
 <style scoped>
-.employee-dept-card {
-  display: flex;
-  width: 280px;
-  min-width: 240px;
-  max-width: 320px;
-  min-height: 0;
-  flex: 0 0 280px;
-  flex-direction: column;
-}
-
-.employee-dept-card :deep(.ant-card-body) {
-  flex: 1;
-  overflow: hidden;
-}
-
 .employee-dept-search {
   flex: 0 0 auto;
   margin-bottom: 12px;
