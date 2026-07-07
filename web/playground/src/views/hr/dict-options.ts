@@ -7,6 +7,7 @@ import {
   getDictFallbackOptions,
   registerDictFallbackOptions,
 } from '#/api';
+import { $t } from '#/locales';
 
 export const HR_CONTRACT_STATUS_DICT = 'hr_contract_status';
 export const HR_CONTRACT_TYPE_DICT = 'hr_contract_type';
@@ -16,66 +17,196 @@ export const HR_GENDER_DICT = 'hr_gender';
 export const HR_EMPLOYEE_DOCUMENT_TYPE_DICT = 'hr_employee_document_type';
 export const HR_ROSTER_IMPORT_STATUS_DICT = 'hr_roster_import_status';
 
-const fallbackEmploymentTypeOptions: SystemDictApi.DictOption[] = [
-  { color: 'success', label: '全职(正式)', sortOrder: 10, value: 'FULL_TIME' },
-  { color: 'blue', label: '兼职', sortOrder: 20, value: 'PART_TIME' },
-  { color: 'processing', label: '实习生', sortOrder: 30, value: 'INTERN' },
-  { color: 'warning', label: '劳务外包', sortOrder: 40, value: 'OUTSOURCED' },
-];
-
-const fallbackEmploymentStatusOptions: SystemDictApi.DictOption[] = [
-  { color: 'success', label: '在职(正式)', sortOrder: 10, value: 'ACTIVE' },
-  { color: 'processing', label: '试用期', sortOrder: 20, value: 'PROBATION' },
-  { color: 'warning', label: '停职', sortOrder: 30, value: 'SUSPENDED' },
-  { color: 'error', label: '已离职', sortOrder: 40, value: 'RESIGNED' },
-];
-
-const fallbackContractTypeOptions: SystemDictApi.DictOption[] = [
+const fallbackEmploymentTypeOptions = (): SystemDictApi.DictOption[] => [
+  {
+    color: 'success',
+    label: $t('hr.dictFallback.employmentType.fullTime'),
+    sortOrder: 10,
+    value: 'FULL_TIME',
+  },
+  {
+    color: 'blue',
+    label: $t('hr.dictFallback.employmentType.partTime'),
+    sortOrder: 20,
+    value: 'PART_TIME',
+  },
   {
     color: 'processing',
-    label: '固定期限劳动合同',
+    label: $t('hr.dictFallback.employmentType.intern'),
+    sortOrder: 30,
+    value: 'INTERN',
+  },
+  {
+    color: 'warning',
+    label: $t('hr.dictFallback.employmentType.outsourced'),
+    sortOrder: 40,
+    value: 'OUTSOURCED',
+  },
+];
+
+const fallbackEmploymentStatusOptions = (): SystemDictApi.DictOption[] => [
+  {
+    color: 'success',
+    label: $t('hr.dictFallback.employmentStatus.active'),
+    sortOrder: 10,
+    value: 'ACTIVE',
+  },
+  {
+    color: 'processing',
+    label: $t('hr.dictFallback.employmentStatus.probation'),
+    sortOrder: 20,
+    value: 'PROBATION',
+  },
+  {
+    color: 'warning',
+    label: $t('hr.dictFallback.employmentStatus.suspended'),
+    sortOrder: 30,
+    value: 'SUSPENDED',
+  },
+  {
+    color: 'error',
+    label: $t('hr.dictFallback.employmentStatus.resigned'),
+    sortOrder: 40,
+    value: 'RESIGNED',
+  },
+];
+
+const fallbackContractTypeOptions = (): SystemDictApi.DictOption[] => [
+  {
+    color: 'processing',
+    label: $t('hr.dictFallback.contractType.fixedTerm'),
     sortOrder: 10,
     value: 'FIXED_TERM',
   },
   {
     color: 'success',
-    label: '无固定期限劳动合同',
+    label: $t('hr.dictFallback.contractType.openEnded'),
     sortOrder: 20,
     value: 'OPEN_ENDED',
   },
-  { color: 'blue', label: '实习协议', sortOrder: 30, value: 'INTERNSHIP' },
-  { color: 'warning', label: '劳务合同', sortOrder: 40, value: 'SERVICE' },
+  {
+    color: 'blue',
+    label: $t('hr.dictFallback.contractType.internship'),
+    sortOrder: 30,
+    value: 'INTERNSHIP',
+  },
+  {
+    color: 'warning',
+    label: $t('hr.dictFallback.contractType.service'),
+    sortOrder: 40,
+    value: 'SERVICE',
+  },
 ];
 
-const fallbackGenderOptions: SystemDictApi.DictOption[] = [
-  { color: 'blue', label: '男', sortOrder: 10, value: 'MALE' },
-  { color: 'magenta', label: '女', sortOrder: 20, value: 'FEMALE' },
+const fallbackGenderOptions = (): SystemDictApi.DictOption[] => [
+  {
+    color: 'blue',
+    label: $t('hr.dictFallback.gender.male'),
+    sortOrder: 10,
+    value: 'MALE',
+  },
+  {
+    color: 'magenta',
+    label: $t('hr.dictFallback.gender.female'),
+    sortOrder: 20,
+    value: 'FEMALE',
+  },
 ];
 
-const fallbackContractStatusOptions: SystemDictApi.DictOption[] = [
-  { color: 'default', label: '草稿', sortOrder: 10, value: 'DRAFT' },
-  { color: 'success', label: '履约中', sortOrder: 20, value: 'ACTIVE' },
-  { color: 'warning', label: '即将到期', sortOrder: 30, value: 'EXPIRING' },
-  { color: 'error', label: '已终止', sortOrder: 40, value: 'TERMINATED' },
+const fallbackContractStatusOptions = (): SystemDictApi.DictOption[] => [
+  {
+    color: 'default',
+    label: $t('hr.dictFallback.contractStatus.draft'),
+    sortOrder: 10,
+    value: 'DRAFT',
+  },
+  {
+    color: 'success',
+    label: $t('hr.dictFallback.contractStatus.active'),
+    sortOrder: 20,
+    value: 'ACTIVE',
+  },
+  {
+    color: 'warning',
+    label: $t('hr.dictFallback.contractStatus.expiring'),
+    sortOrder: 30,
+    value: 'EXPIRING',
+  },
+  {
+    color: 'error',
+    label: $t('hr.dictFallback.contractStatus.terminated'),
+    sortOrder: 40,
+    value: 'TERMINATED',
+  },
 ];
 
-const fallbackRosterImportStatusOptions: SystemDictApi.DictOption[] = [
-  { color: 'processing', label: '解析中', sortOrder: 10, value: 'PARSING' },
-  { color: 'error', label: '校验失败', sortOrder: 20, value: 'VALIDATION_FAILED' },
-  { color: 'warning', label: '部分成功', sortOrder: 30, value: 'PARTIAL_SUCCESS' },
-  { color: 'success', label: '导入成功', sortOrder: 40, value: 'SUCCESS' },
-  { color: 'error', label: '导入失败', sortOrder: 50, value: 'FAILED' },
+const fallbackRosterImportStatusOptions = (): SystemDictApi.DictOption[] => [
+  {
+    color: 'processing',
+    label: $t('hr.dictFallback.rosterImportStatus.parsing'),
+    sortOrder: 10,
+    value: 'PARSING',
+  },
+  {
+    color: 'error',
+    label: $t('hr.dictFallback.rosterImportStatus.validationFailed'),
+    sortOrder: 20,
+    value: 'VALIDATION_FAILED',
+  },
+  {
+    color: 'warning',
+    label: $t('hr.dictFallback.rosterImportStatus.partialSuccess'),
+    sortOrder: 30,
+    value: 'PARTIAL_SUCCESS',
+  },
+  {
+    color: 'success',
+    label: $t('hr.dictFallback.rosterImportStatus.success'),
+    sortOrder: 40,
+    value: 'SUCCESS',
+  },
+  {
+    color: 'error',
+    label: $t('hr.dictFallback.rosterImportStatus.failed'),
+    sortOrder: 50,
+    value: 'FAILED',
+  },
 ];
 
-const fallbackEmployeeDocumentTypeOptions: SystemDictApi.DictOption[] = [
-  { color: 'processing', label: '身份证明', sortOrder: 10, value: 'IDENTITY' },
-  { color: 'blue', label: '学历证明', sortOrder: 20, value: 'EDUCATION' },
-  { color: 'warning', label: '资格证书', sortOrder: 30, value: 'CERTIFICATE' },
-  { color: 'success', label: '体检报告', sortOrder: 40, value: 'MEDICAL' },
-  { color: 'default', label: '其他资料', sortOrder: 50, value: 'OTHER' },
+const fallbackEmployeeDocumentTypeOptions = (): SystemDictApi.DictOption[] => [
+  {
+    color: 'processing',
+    label: $t('hr.dictFallback.employeeDocumentType.identity'),
+    sortOrder: 10,
+    value: 'IDENTITY',
+  },
+  {
+    color: 'blue',
+    label: $t('hr.dictFallback.employeeDocumentType.education'),
+    sortOrder: 20,
+    value: 'EDUCATION',
+  },
+  {
+    color: 'warning',
+    label: $t('hr.dictFallback.employeeDocumentType.certificate'),
+    sortOrder: 30,
+    value: 'CERTIFICATE',
+  },
+  {
+    color: 'success',
+    label: $t('hr.dictFallback.employeeDocumentType.medical'),
+    sortOrder: 40,
+    value: 'MEDICAL',
+  },
+  {
+    color: 'default',
+    label: $t('hr.dictFallback.employeeDocumentType.other'),
+    sortOrder: 50,
+    value: 'OTHER',
+  },
 ];
 
-const fallbackMap: Record<string, SystemDictApi.DictOption[]> = {
+const fallbackMap: Record<string, () => SystemDictApi.DictOption[]> = {
   [HR_CONTRACT_STATUS_DICT]: fallbackContractStatusOptions,
   [HR_CONTRACT_TYPE_DICT]: fallbackContractTypeOptions,
   [HR_EMPLOYMENT_STATUS_DICT]: fallbackEmploymentStatusOptions,

@@ -130,6 +130,50 @@
     "detailDisplay": "详情: {detail}",
     "noEvents": "暂无生命周期事件记录"
   },
+  "dictFallback": {
+    "employmentType": {
+      "fullTime": "全职(正式)",
+      "partTime": "兼职",
+      "intern": "实习生",
+      "outsourced": "劳务外包"
+    },
+    "employmentStatus": {
+      "active": "在职(正式)",
+      "probation": "试用期",
+      "suspended": "停职",
+      "resigned": "已离职"
+    },
+    "contractType": {
+      "fixedTerm": "固定期限劳动合同",
+      "openEnded": "无固定期限劳动合同",
+      "internship": "实习协议",
+      "service": "劳务合同"
+    },
+    "gender": {
+      "male": "男",
+      "female": "女"
+    },
+    "contractStatus": {
+      "draft": "草稿",
+      "active": "履约中",
+      "expiring": "即将到期",
+      "terminated": "已终止"
+    },
+    "rosterImportStatus": {
+      "parsing": "解析中",
+      "validationFailed": "校验失败",
+      "partialSuccess": "部分成功",
+      "success": "导入成功",
+      "failed": "导入失败"
+    },
+    "employeeDocumentType": {
+      "identity": "身份证明",
+      "education": "学历证明",
+      "certificate": "资格证书",
+      "medical": "体检报告",
+      "other": "其他资料"
+    }
+  },
   "position": {
     "title": "岗位管理",
     "list": "岗位列表",

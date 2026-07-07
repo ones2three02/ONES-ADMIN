@@ -2,14 +2,19 @@ import type { SystemDictApi } from './dict';
 
 import { getDictOptions } from './dict';
 
-const fallbackOptions = new Map<string, SystemDictApi.DictOption[]>();
+type DictFallbackOptionsSource =
+  | SystemDictApi.DictOption[]
+  | (() => SystemDictApi.DictOption[]);
+
+const fallbackOptions = new Map<string, DictFallbackOptionsSource>();
 const optionsCache = new Map<string, SystemDictApi.DictOption[]>();
 
 export function registerDictFallbackOptions(
   dictCode: string,
-  options: SystemDictApi.DictOption[],
+  options: DictFallbackOptionsSource,
 ) {
   fallbackOptions.set(dictCode, options);
+  optionsCache.delete(dictCode);
 }
 
 export async function getCachedDictOptions(dictCode: string) {
@@ -22,13 +27,20 @@ export async function getCachedDictOptions(dictCode: string) {
     return options;
   } catch {
     const fallback = getDictFallbackOptions(dictCode);
-    optionsCache.set(dictCode, fallback);
+    if (typeof fallbackOptions.get(dictCode) !== 'function') {
+      optionsCache.set(dictCode, fallback);
+    }
     return fallback;
   }
 }
 
 export function getDictFallbackOptions(dictCode: string) {
-  return fallbackOptions.get(dictCode) ?? [];
+  const options = fallbackOptions.get(dictCode);
+  if (!options) {
+    return [];
+  }
+  const resolvedOptions = typeof options === 'function' ? options() : options;
+  return resolvedOptions.map((item) => ({ ...item }));
 }
 
 export function getCachedDictOption(dictCode: string, value?: string) {

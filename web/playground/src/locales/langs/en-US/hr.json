@@ -130,6 +130,50 @@
     "detailDisplay": "Details: {detail}",
     "noEvents": "No lifecycle events"
   },
+  "dictFallback": {
+    "employmentType": {
+      "fullTime": "Full-time",
+      "partTime": "Part-time",
+      "intern": "Intern",
+      "outsourced": "Outsourced"
+    },
+    "employmentStatus": {
+      "active": "Active",
+      "probation": "Probation",
+      "suspended": "Suspended",
+      "resigned": "Resigned"
+    },
+    "contractType": {
+      "fixedTerm": "Fixed-term Labor Contract",
+      "openEnded": "Open-ended Labor Contract",
+      "internship": "Internship Agreement",
+      "service": "Service Contract"
+    },
+    "gender": {
+      "male": "Male",
+      "female": "Female"
+    },
+    "contractStatus": {
+      "draft": "Draft",
+      "active": "Active",
+      "expiring": "Expiring",
+      "terminated": "Terminated"
+    },
+    "rosterImportStatus": {
+      "parsing": "Parsing",
+      "validationFailed": "Validation Failed",
+      "partialSuccess": "Partial Success",
+      "success": "Success",
+      "failed": "Failed"
+    },
+    "employeeDocumentType": {
+      "identity": "Identity Document",
+      "education": "Education Certificate",
+      "certificate": "Qualification Certificate",
+      "medical": "Medical Report",
+      "other": "Other Document"
+    }
+  },
   "position": {
     "title": "Positions",
     "list": "Position List",
