@@ -1,5 +1,14 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.144 - 2026-07-07
+
+- 新增 `docs/architecture/frontend-guided-interaction-governance.md`，沉淀 ONES-ADMIN 前端引导式交互治理规范，统一登录页、后台列表、左右分栏工作台、抽屉表单、批量导入和高风险操作的交互准则。
+- 规范明确“当前对象、当前范围、下一步主动作”的首屏判断模型，要求通过状态条、空态主动作、筛选反馈、loading、成功/失败提示和确认弹窗自然引导用户，不依赖大段说明文字。
+- 将登录页二维码角标、飞书优先 icon 登录、Vben / Ant Design Vue 风格一致、表格稳定高度、`SplitListLayout`、`GuidedWorkbenchBar` 和后续共享组件治理方向纳入可执行验收清单。
+- README 架构文档入口新增前端引导式交互治理规范，后续路线调整为按 HRMS 架构治理路线图和前端交互规范持续推进页面模板、服务边界、字段级权限、数据范围和部署环境矩阵。
+- 本版本不修改运行时页面，不新增后端接口，不新增数据库迁移，不连接真实中间件，不改变 Vben / Ant Design Vue 选型和整体视觉体系。
+- 产品版本递增至 `v0.0.144`。
+
 ## v0.0.143 - 2026-07-07
 
 - 新增 `docs/architecture/hrms-architecture-governance-roadmap.md`，沉淀 ONES-ADMIN 作为企业级 HRMS 平台的长期架构治理路线图。
