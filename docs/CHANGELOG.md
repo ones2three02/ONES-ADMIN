@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.127 - 2026-07-07
+
+- 新增 `@vben/playground` 包级 `test:unit` 脚本，精准运行 `playground/src` 下的 Vitest 单元测试，方便 Jenkins 按包编排 HRMS 前端测试。
+- README 验证命令补充根级单测与 Playground 包级单测入口，明确单元测试和 Playwright E2E 的执行边界。
+- 本版本不新增后端接口，不新增数据库迁移，不新增中间件。
+- 产品版本递增至 `v0.0.127`。
+
 ## v0.0.126 - 2026-07-07
 
 - 新增 HRMS Upload 共享工具 Vitest 单元测试，覆盖 `File` 解析、前置拒绝、成功反馈和失败归一化回调。
