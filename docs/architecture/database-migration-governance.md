@@ -1,6 +1,6 @@
 # ONES-ADMIN 数据库迁移治理规范
 
-更新时间：2026-06-29
+更新时间：2026-07-07
 
 ## 1. 目标
 
@@ -76,3 +76,22 @@ V3__add_system_parameter.sql
 - 迁移版本连续且不重复。
 - 不存在旧的 `schema.sql`。
 - 破坏性 SQL 必须带审批标记。
+
+## 6. CI 归档报告
+
+`v0.0.135` 起，Jenkins 会通过 `bash scripts/ci/verify.sh database-migration-report` 生成：
+
+```text
+.ci-artifacts/database-migration-report.json
+```
+
+报告内容包括：
+
+- 当前产品版本。
+- Flyway 迁移目录和脚本数量。
+- 实际版本号、期望连续版本号和最新迁移版本。
+- 每个迁移脚本的文件名、路径、大小和 SHA-256 指纹。
+- 命名违规、重复版本、跳号版本、旧 `schema.sql` 和未审批破坏性 SQL 状态。
+- 机器可读 `governance.rules`，用于 Jenkins 发布门禁和后续质量趋势分析。
+
+该报告只扫描仓库文件，不连接真实 MySQL，不执行真实迁移，也不记录任何中间件地址、账号或密码。

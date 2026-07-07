@@ -75,6 +75,12 @@ pipeline {
       }
     }
 
+    stage('Database Migration Report') {
+      steps {
+        sh 'bash scripts/ci/verify.sh database-migration-report'
+      }
+    }
+
     stage('API Governance Report') {
       steps {
         sh 'bash scripts/ci/verify.sh api-governance-report'

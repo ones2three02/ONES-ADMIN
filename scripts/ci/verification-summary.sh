@@ -150,11 +150,67 @@ function readApiGovernanceReportSummary() {
   };
 }
 
+function readDatabaseMigrationReportSummary() {
+  const reportPath = path.join(rootDir, '.ci-artifacts', 'database-migration-report.json');
+  const report = readJsonIfExists(reportPath);
+
+  if (!report) {
+    return {
+      reportPath: path.relative(rootDir, reportPath),
+      exists: false,
+      version: null,
+      fileCount: 0,
+      latestVersion: null,
+      contiguous: false,
+      governancePassed: false,
+      errorCount: null,
+      destructiveViolations: [],
+      legacySchemaSqlExists: null,
+      passed: false,
+    };
+  }
+
+  const versionMatches = report.product?.version === productVersion;
+  const governancePassed = report.governance?.passed === true;
+  const fileCount = Number(report.migration?.fileCount ?? 0);
+  const latestVersion = report.migration?.latestVersion ?? null;
+  const contiguous = report.migration?.contiguous === true;
+  const legacySchemaSqlExists = report.migration?.legacySchemaSqlExists === true;
+  const destructiveViolations = Array.isArray(report.migration?.destructiveViolations)
+    ? report.migration.destructiveViolations
+    : [];
+  const allChecksumsValid = Array.isArray(report.migration?.files)
+    && report.migration.files.length === fileCount
+    && report.migration.files.every((migration) => typeof migration.checksum === 'string'
+      && /^[a-f0-9]{64}$/.test(migration.checksum));
+
+  return {
+    reportPath: path.relative(rootDir, reportPath),
+    exists: true,
+    version: report.product?.version ?? null,
+    fileCount,
+    latestVersion,
+    contiguous,
+    governancePassed,
+    errorCount: report.governance?.errorCount ?? null,
+    destructiveViolations,
+    legacySchemaSqlExists,
+    passed: versionMatches
+      && governancePassed
+      && fileCount > 0
+      && contiguous
+      && !legacySchemaSqlExists
+      && destructiveViolations.length === 0
+      && allChecksumsValid,
+  };
+}
+
 const buildMetadataPath = path.join(rootDir, '.ci-artifacts', 'build-metadata.json');
 const buildMetadata = readJsonIfExists(buildMetadataPath);
 const buildMetadataVersionMatches = buildMetadata?.product?.version === productVersion;
 const backendTests = readBackendTestSummary();
 const frontendBuild = readFrontendBuildSummary();
+const databaseMigrationReport = readDatabaseMigrationReportSummary();
 const apiGovernanceReport = readApiGovernanceReportSummary();
 
 const checks = [
@@ -186,6 +242,12 @@ const checks = [
     passed: frontendBuild.passed,
   },
   {
+    code: 'DATABASE_MIGRATION_REPORT_PRESENT',
+    command: 'read .ci-artifacts/database-migration-report.json',
+    exitCode: databaseMigrationReport.passed ? 0 : 1,
+    passed: databaseMigrationReport.passed,
+  },
+  {
     code: 'API_GOVERNANCE_REPORT_PRESENT',
     command: 'read .ci-artifacts/api-governance-report.json',
     exitCode: apiGovernanceReport.passed ? 0 : 1,
@@ -213,6 +275,7 @@ const summary = {
   artifacts: {
     backendTests,
     frontendBuild,
+    databaseMigrationReport,
     apiGovernanceReport,
   },
   overall: {

@@ -31,7 +31,7 @@ ONES-ADMIN 使用 `main + develop + 短生命周期分支` 的企业级分支模
 
 ## Jenkins 推荐流水线
 
-当前仓库已在 v0.0.129 新增根目录 `Jenkinsfile`，在 v0.0.130 补齐 `scripts/ci/version-guard.sh` 版本一致性门禁，在 v0.0.131 新增 `scripts/ci/verify.sh` 统一本地与 Jenkins 的阶段入口，在 v0.0.132 新增 `scripts/ci/build-metadata.sh` 输出构建元数据，在 v0.0.133 新增 `scripts/ci/verification-summary.sh` 输出机器可读验证摘要，并在 v0.0.134 新增接口治理报告归档阶段。这个流水线是第一阶段验证门禁，只负责安装前端锁定依赖、测试、类型检查、构建、版本一致性检查、版本残留扫描、敏感信息扫描、构建元数据归档、接口治理报告归档和验证摘要归档；仓库扫描规则沉淀在 `scripts/ci/repository-guard.sh`。当前流水线不包含任何部署动作，也不写入数据库、Redis、RabbitMQ、MinIO 等中间件连接信息。
+当前仓库已在 v0.0.129 新增根目录 `Jenkinsfile`，在 v0.0.130 补齐 `scripts/ci/version-guard.sh` 版本一致性门禁，在 v0.0.131 新增 `scripts/ci/verify.sh` 统一本地与 Jenkins 的阶段入口，在 v0.0.132 新增 `scripts/ci/build-metadata.sh` 输出构建元数据，在 v0.0.133 新增 `scripts/ci/verification-summary.sh` 输出机器可读验证摘要，在 v0.0.134 新增接口治理报告归档阶段，并在 v0.0.135 新增数据库迁移审计报告归档阶段。这个流水线是第一阶段验证门禁，只负责安装前端锁定依赖、测试、类型检查、构建、版本一致性检查、版本残留扫描、敏感信息扫描、构建元数据归档、数据库迁移审计报告归档、接口治理报告归档和验证摘要归档；仓库扫描规则沉淀在 `scripts/ci/repository-guard.sh`。当前流水线不包含任何部署动作，也不写入数据库、Redis、RabbitMQ、MinIO 等中间件连接信息。
 
 ### feature/* 或 Pull Request
 
@@ -48,8 +48,9 @@ ONES-ADMIN 使用 `main + develop + 短生命周期分支` 的企业级分支模
 - 执行前端锁定依赖安装、Playground 包级单测、根级单测、类型检查、后端测试和前端构建。
 - 执行版本一致性检查、版本残留扫描和敏感信息扫描，避免版本号漂移、旧版本号或本地中间件凭据进入仓库。
 - 生成 `.ci-artifacts/build-metadata.json` 并作为 Jenkins 构建产物归档，用于追踪产品版本、Git 提交、分支和工具链版本；该文件不记录中间件地址、账号密码、Git 远端 URL 或 Jenkins 内部 URL。
+- 生成 `.ci-artifacts/database-migration-report.json` 并作为 Jenkins 构建产物归档，用于留存 Flyway 迁移版本连续性、命名规范、旧 `schema.sql` 禁用、破坏性 SQL 审批和迁移脚本指纹状态；该阶段只扫描仓库文件，不连接真实数据库。
 - 生成 `.ci-artifacts/api-governance-report.json` 并作为 Jenkins 构建产物归档，用于留存接口治理聚合报告、质量分、发布准备度、Manifest 指纹和治理动作项。
-- 生成 `.ci-artifacts/verification-summary.json` 并作为 Jenkins 构建产物归档，用于汇总轻量门禁、后端测试报告数量、测试结果统计和前端构建产物状态。
+- 生成 `.ci-artifacts/verification-summary.json` 并作为 Jenkins 构建产物归档，用于汇总轻量门禁、数据库迁移治理、接口治理、后端测试报告数量、测试结果统计和前端构建产物状态。
 - 本地可直接执行 `bash scripts/ci/verify.sh all` 复现 Jenkins 当前门禁。
 - 当前阶段不自动部署开发环境；后续接入部署前，需要先确认服务器地址、凭据管理、制品路径、回滚策略和人工审批边界。
 - 后续接入部署后，优先调用接口治理聚合报告、最新快照门禁干跑和 Manifest 发布快照接口，将当前接口契约固化为下一次发布的对比基线。

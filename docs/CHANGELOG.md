@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.135 - 2026-07-07
+
+- 新增 `scripts/ci/database-migration-report.sh`，生成 `.ci-artifacts/database-migration-report.json`，归档 Flyway 迁移目录、脚本版本、命名规范、SHA-256 指纹、旧 `schema.sql` 禁用状态和破坏性 SQL 审批状态。
+- `scripts/ci/verify.sh` 新增 `database-migration-report` 阶段，Jenkinsfile 新增 Database Migration Report 阶段。
+- `scripts/ci/verification-summary.sh` 新增数据库迁移报告校验，要求报告版本匹配当前产品版本、迁移治理通过、版本连续、无旧 `schema.sql`、无未审批破坏性 SQL 且迁移脚本指纹有效。
+- 本版本不连接真实数据库，不执行真实迁移，不新增业务接口，不新增数据库迁移，不新增中间件。
+- 产品版本递增至 `v0.0.135`。
+
 ## v0.0.134 - 2026-07-07
 
 - 新增 `ApiGovernanceReportArtifactTest`，在后端测试上下文中生成 `.ci-artifacts/api-governance-report.json`，归档真实接口治理聚合报告。
