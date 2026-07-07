@@ -40,9 +40,13 @@ export async function openHrFileWithFeedback(
   metadata: Parameters<typeof openSystemFile>[0] | undefined,
   options: {
     errorMessage: string;
+    loadingMessage?: string;
     unavailableMessage: string;
   },
 ) {
+  const hide = options.loadingMessage
+    ? message.loading(options.loadingMessage, 0)
+    : undefined;
   try {
     const opened = await openHrFile(metadata);
     if (!opened) {
@@ -52,5 +56,7 @@ export async function openHrFileWithFeedback(
   } catch (error) {
     message.error(errorMessageOf(error, options.errorMessage));
     return false;
+  } finally {
+    hide?.();
   }
 }

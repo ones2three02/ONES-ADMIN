@@ -193,6 +193,7 @@ async function previewAttachment() {
     ));
   await openHrFileWithFeedback(file, {
     errorMessage: $t('hr.contract.attachmentOpenError'),
+    loadingMessage: $t('hr.contract.attachmentOpening'),
     unavailableMessage: $t('hr.contract.attachmentOpenUnavailable'),
   });
 }

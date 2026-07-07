@@ -195,6 +195,7 @@ async function onViewAttachment(row: HrContractApi.HrContract) {
     const metadata = await getContractAttachmentMetadata(row.id);
     await openHrFileWithFeedback(metadata, {
       errorMessage: $t('hr.contract.attachmentOpenError'),
+      loadingMessage: $t('hr.contract.attachmentOpening'),
       unavailableMessage: $t('hr.contract.attachmentOpenUnavailable'),
     });
   } catch (error: unknown) {

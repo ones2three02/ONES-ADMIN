@@ -86,6 +86,7 @@ function onRefresh() {
 async function onViewDocument(row: HrEmployeeApi.EmployeeDocument) {
   await openHrFileWithFeedback(row, {
     errorMessage: $t('hr.documentWarning.fileOpenError'),
+    loadingMessage: $t('hr.documentWarning.fileOpening'),
     unavailableMessage: $t('hr.documentWarning.fileOpenUnavailable'),
   });
 }

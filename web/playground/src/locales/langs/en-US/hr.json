@@ -77,6 +77,7 @@
     "documentUploading": "Uploading employee document...",
     "documentUploadSuccess": "Document uploaded",
     "documentUploadError": "Failed to upload document",
+    "documentOpening": "Opening employee document...",
     "documentUnavailable": "Document is currently unavailable",
     "documentOpenError": "Failed to open document",
     "documentExpired": "Expired",
@@ -252,6 +253,7 @@
     "attachmentUploadSuccess": "Contract attachment uploaded",
     "attachmentUploadError": "Failed to upload contract attachment",
     "attachmentLoadError": "Failed to load contract attachment",
+    "attachmentOpening": "Opening contract attachment...",
     "attachmentOpenError": "Failed to open contract attachment",
     "attachmentOpenUnavailable": "Attachment URL is unavailable",
     "exportExpiringCsv": "Export CSV",
@@ -285,6 +287,7 @@
     "exporting": "Exporting document alerts...",
     "exportSuccess": "Exported successfully",
     "exportError": "Export failed, please try again later",
+    "fileOpening": "Opening file...",
     "fileOpenError": "Failed to open file",
     "fileOpenUnavailable": "File URL is unavailable"
   },

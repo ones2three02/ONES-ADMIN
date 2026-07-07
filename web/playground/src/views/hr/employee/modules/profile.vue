@@ -325,6 +325,7 @@ function cancelDocumentUpload() {
 async function openDocument(file: HrEmployeeApi.EmployeeDocument) {
   await openHrFileWithFeedback(file, {
     errorMessage: $t('hr.employeeProfile.documentOpenError'),
+    loadingMessage: $t('hr.employeeProfile.documentOpening'),
     unavailableMessage: $t('hr.employeeProfile.documentUnavailable'),
   });
 }
