@@ -154,31 +154,63 @@ export function useColumns(): VxeTableGridColumns {
   ];
 }
 
+export function useExpiringGridFormSchema(): VbenFormSchema[] {
+  return [
+    {
+      component: 'Select',
+      componentProps: {
+        allowClear: false,
+        options: [
+          { label: $t('hr.contract.days7'), value: 7 },
+          { label: $t('hr.contract.days30'), value: 30 },
+          { label: $t('hr.contract.days60'), value: 60 },
+          { label: $t('hr.contract.days90'), value: 90 },
+        ],
+      },
+      defaultValue: 30,
+      fieldName: 'days',
+      label: $t('hr.contract.warningWindow'),
+    },
+  ];
+}
+
 export function useExpiringColumns(): VxeTableGridColumns {
   return [
     {
       field: 'employeeNo',
-      title: '工号',
-      width: 100,
+      title: $t('hr.employee.employeeNo'),
+      width: 120,
     },
     {
-      field: 'employeeName',
-      title: '姓名',
+      field: 'realName',
+      title: $t('hr.employee.realName'),
       width: 120,
     },
     {
       field: 'contractNo',
-      title: '合同编号',
+      title: $t('hr.contract.contractNo'),
       width: 150,
     },
     {
+      field: 'contractType',
+      title: $t('hr.contract.contractType'),
+      width: 150,
+      formatter: ({ cellValue }) => formatHrDictLabel(HR_CONTRACT_TYPE_DICT, cellValue),
+    },
+    {
+      field: 'status',
+      title: $t('hr.contract.status'),
+      width: 120,
+      formatter: ({ cellValue }) => formatHrDictLabel(HR_CONTRACT_STATUS_DICT, cellValue),
+    },
+    {
       field: 'endDate',
-      title: '到期日期',
+      title: $t('hr.contract.endDate'),
       width: 120,
     },
     {
       field: 'renewalRemindDate',
-      title: '预警提醒日期',
+      title: $t('hr.contract.renewalRemindDate'),
       width: 130,
     },
   ];

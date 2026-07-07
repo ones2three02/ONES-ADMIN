@@ -21,7 +21,7 @@ import {
 import { openSystemFile } from '#/api/system/file';
 import { $t } from '#/locales';
 
-import { useColumns, useExpiringColumns } from './data';
+import { useColumns, useExpiringColumns, useExpiringGridFormSchema } from './data';
 import {
   getHrDictOptions,
   HR_CONTRACT_STATUS_DICT,
@@ -35,7 +35,7 @@ const employees = ref<HrEmployeeApi.HrEmployee[]>([]);
 const searchEmployeeValue = ref('');
 const selectedEmployeeId = ref<string>('');
 const selectedEmployee = ref<HrEmployeeApi.HrEmployee | null>(null);
-const expiringWindowDays = 30;
+const expiringWindowDays = ref(30);
 const expiringExportLoading = ref(false);
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
@@ -87,14 +87,20 @@ const [HistoryGrid, historyGridApi] = useVbenVxeGrid({
 
 // 即将到期合同表格 Grid
 const [ExpiringGrid, expiringGridApi] = useVbenVxeGrid({
+  formOptions: {
+    schema: useExpiringGridFormSchema(),
+    submitOnChange: true,
+  },
   gridOptions: {
     columns: useExpiringColumns(),
     height: 'auto',
     keepSource: true,
     proxyConfig: {
       ajax: {
-        query: async () => {
-          return await getExpiringContracts(30); // 预警30天内到期的合同
+        query: async (_, formValues) => {
+          const days = Number(formValues?.days ?? 30);
+          expiringWindowDays.value = days;
+          return await getExpiringContracts(days);
         },
       },
     },
@@ -105,7 +111,7 @@ const [ExpiringGrid, expiringGridApi] = useVbenVxeGrid({
       custom: true,
       export: false,
       refresh: true,
-      search: false,
+      search: true,
       zoom: true,
     },
   } as VxeTableGridOptions<HrContractApi.HrContract>,
@@ -182,7 +188,7 @@ async function onExportExpiringContracts() {
   expiringExportLoading.value = true;
   const hide = message.loading($t('hr.contract.expiringExporting'), 0);
   try {
-    const blob = await exportExpiringContracts(expiringWindowDays);
+    const blob = await exportExpiringContracts(expiringWindowDays.value);
     downloadFileFromBlob({
       fileName: 'ones-hr-expiring-contracts.csv',
       source: blob,
