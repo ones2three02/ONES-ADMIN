@@ -1,6 +1,10 @@
 import type { VbenFormSchema } from '#/adapter/form';
 import type { VxeTableGridColumns } from '#/adapter/vxe-table';
 
+import { h } from 'vue';
+
+import { Tag } from 'antdv-next';
+
 import { $t } from '#/locales';
 
 import {
@@ -9,6 +13,44 @@ import {
   HR_CONTRACT_STATUS_DICT,
   HR_CONTRACT_TYPE_DICT,
 } from '../dict-options';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function startOfToday() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+export function daysUntil(endDate?: string) {
+  if (!endDate) {
+    return undefined;
+  }
+  const target = new Date(`${endDate}T00:00:00`);
+  if (Number.isNaN(target.getTime())) {
+    return undefined;
+  }
+  return Math.round((target.getTime() - startOfToday().getTime()) / DAY_MS);
+}
+
+function contractRiskTag(endDate?: string) {
+  const remainDays = daysUntil(endDate);
+  if (remainDays === undefined) {
+    return h(Tag, { color: 'processing' }, () => $t('hr.contract.expiringSoon'));
+  }
+  if (remainDays <= 0) {
+    return h(Tag, { color: 'error' }, () =>
+      remainDays === 0 ? $t('hr.contract.dueToday') : $t('hr.contract.expired'),
+    );
+  }
+  if (remainDays <= 7) {
+    return h(Tag, { color: 'warning' }, () =>
+      $t('hr.contract.remainingDays', { days: remainDays }),
+    );
+  }
+  return h(Tag, { color: 'processing' }, () =>
+    $t('hr.contract.remainingDays', { days: remainDays }),
+  );
+}
 
 export function useFormSchema(): VbenFormSchema[] {
   return [
@@ -211,6 +253,14 @@ export function useExpiringColumns(): VxeTableGridColumns {
     {
       field: 'renewalRemindDate',
       title: $t('hr.contract.renewalRemindDate'),
+      width: 130,
+    },
+    {
+      field: 'riskStatus',
+      slots: {
+        default: ({ row }) => contractRiskTag(row.endDate),
+      },
+      title: $t('hr.contract.riskStatus'),
       width: 130,
     },
   ];

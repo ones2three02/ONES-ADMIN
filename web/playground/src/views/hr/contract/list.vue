@@ -2,13 +2,13 @@
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 import type { HrContractApi, HrEmployeeApi } from '#/api';
 
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import { Page, useVbenDrawer } from '@vben/common-ui';
 import { IconifyIcon, Plus } from '@vben/icons';
 import { downloadFileFromBlob } from '@vben/utils';
 
-import { Button, Card, InputSearch, message, TabPane, Tabs } from 'antdv-next';
+import { Button, Card, InputSearch, message, Statistic, TabPane, Tabs } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import {
@@ -21,7 +21,7 @@ import {
 import { openSystemFile } from '#/api/system/file';
 import { $t } from '#/locales';
 
-import { useColumns, useExpiringColumns, useExpiringGridFormSchema } from './data';
+import { daysUntil, useColumns, useExpiringColumns, useExpiringGridFormSchema } from './data';
 import {
   getHrDictOptions,
   HR_CONTRACT_STATUS_DICT,
@@ -35,6 +35,7 @@ const employees = ref<HrEmployeeApi.HrEmployee[]>([]);
 const searchEmployeeValue = ref('');
 const selectedEmployeeId = ref<string>('');
 const selectedEmployee = ref<HrEmployeeApi.HrEmployee | null>(null);
+const expiringContracts = ref<HrContractApi.HrContract[]>([]);
 const expiringWindowDays = ref(30);
 const expiringExportLoading = ref(false);
 
@@ -100,7 +101,9 @@ const [ExpiringGrid, expiringGridApi] = useVbenVxeGrid({
         query: async (_, formValues) => {
           const days = Number(formValues?.days ?? 30);
           expiringWindowDays.value = days;
-          return await getExpiringContracts(days);
+          const result = await getExpiringContracts(days);
+          expiringContracts.value = result;
+          return result;
         },
       },
     },
@@ -116,6 +119,27 @@ const [ExpiringGrid, expiringGridApi] = useVbenVxeGrid({
     },
   } as VxeTableGridOptions<HrContractApi.HrContract>,
 });
+
+const expiringMetrics = computed(() => [
+  {
+    icon: 'lucide:file-warning',
+    title: $t('hr.contract.metricTotal'),
+    value: expiringContracts.value.length,
+  },
+  {
+    icon: 'lucide:badge-alert',
+    title: $t('hr.contract.metricSevenDays'),
+    value: expiringContracts.value.filter((item) => {
+      const remainDays = daysUntil(item.endDate);
+      return remainDays !== undefined && remainDays >= 0 && remainDays <= 7;
+    }).length,
+  },
+  {
+    icon: 'lucide:calendar-clock',
+    title: $t('hr.contract.metricWindow'),
+    value: expiringWindowDays.value,
+  },
+]);
 
 async function loadEmployeeList() {
   try {
@@ -302,16 +326,31 @@ watch(searchEmployeeValue, () => {
         </div>
       </TabPane>
       <TabPane key="expiring" :tab="$t('hr.contract.expiringContracts')">
-        <ExpiringGrid :table-title="$t('hr.contract.expiringContracts')">
-          <template #toolbar-tools>
-            <Button :loading="expiringExportLoading" @click="onExportExpiringContracts">
-              <template #icon>
-                <IconifyIcon icon="lucide:download" />
+        <div class="flex size-full flex-col gap-4">
+          <div class="grid gap-4 md:grid-cols-3">
+            <Card v-for="item in expiringMetrics" :key="item.title" variant="borderless">
+              <div class="flex items-start justify-between gap-3">
+                <Statistic :title="item.title" :value="item.value" />
+                <div class="rounded bg-muted p-2 text-primary">
+                  <IconifyIcon :icon="item.icon" class="size-5" />
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <div class="min-h-[420px] flex-1">
+            <ExpiringGrid :table-title="$t('hr.contract.expiringContracts')">
+              <template #toolbar-tools>
+                <Button :loading="expiringExportLoading" @click="onExportExpiringContracts">
+                  <template #icon>
+                    <IconifyIcon icon="lucide:download" />
+                  </template>
+                  {{ $t('hr.contract.exportExpiringCsv') }}
+                </Button>
               </template>
-              {{ $t('hr.contract.exportExpiringCsv') }}
-            </Button>
-          </template>
-        </ExpiringGrid>
+            </ExpiringGrid>
+          </div>
+        </div>
       </TabPane>
     </Tabs>
   </Page>
