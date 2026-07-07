@@ -50,7 +50,6 @@ const [TerminateDrawer, terminateDrawerApi] = useVbenDrawer({
   destroyOnClose: true,
 });
 
-// 合同历史表格 Grid
 const [HistoryGrid, historyGridApi] = useVbenVxeGrid({
   gridOptions: {
     columns: [
@@ -87,7 +86,6 @@ const [HistoryGrid, historyGridApi] = useVbenVxeGrid({
   } as VxeTableGridOptions<HrContractApi.HrContract>,
 });
 
-// 即将到期合同表格 Grid
 const [ExpiringGrid, expiringGridApi] = useVbenVxeGrid({
   formOptions: {
     schema: useExpiringGridFormSchema(),
@@ -249,7 +247,7 @@ watch(searchEmployeeValue, () => {
           <Card class="w-1/4" :title="$t('hr.employee.title')">
             <InputSearch
               v-model:value="searchEmployeeValue"
-              placeholder="搜索姓名..."
+              :placeholder="$t('hr.contract.employeeSearchPlaceholder')"
               class="mb-4"
             />
             <div class="overflow-y-auto max-h-[500px]">
@@ -266,18 +264,27 @@ watch(searchEmployeeValue, () => {
               >
                 <div class="flex justify-between items-center">
                   <span>{{ emp.realName }}</span>
-                  <span class="text-xs text-gray-500">工号: {{ emp.employeeNo }}</span>
+                  <span class="text-xs text-gray-500">
+                    {{ $t('hr.employee.employeeNo') }}: {{ emp.employeeNo }}
+                  </span>
                 </div>
                 <div class="text-xs text-gray-400 mt-1">
-                  {{ emp.deptName }} | {{ emp.positionName || '无岗位' }}
+                  {{ emp.deptName }} | {{ emp.positionName || $t('hr.employee.noPosition') }}
                 </div>
               </div>
             </div>
           </Card>
 
-          <!-- 右侧选定员工的合同历史 -->
           <div class="w-3/4 ml-4">
-            <HistoryGrid :table-title="selectedEmployee ? `【${selectedEmployee.realName}】的合同历史` : '合同历史'">
+            <HistoryGrid
+              :table-title="
+                selectedEmployee
+                  ? $t('hr.contract.employeeContractHistory', {
+                      name: selectedEmployee.realName,
+                    })
+                  : $t('hr.contract.contractHistory')
+              "
+            >
               <template #toolbar-tools>
                 <Button type="primary" :disabled="!selectedEmployeeId" @click="onSignContract">
                   <Plus class="size-5" />

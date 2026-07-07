@@ -25,7 +25,7 @@ public class OpenApiConfig {
 
     private final String applicationVersion;
 
-    public OpenApiConfig(@Value("${ones.version:v0.0.103}") String applicationVersion) {
+    public OpenApiConfig(@Value("${ones.version:v0.0.104}") String applicationVersion) {
         this.applicationVersion = applicationVersion;
     }
 

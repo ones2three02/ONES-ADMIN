@@ -106,7 +106,7 @@ export function useTerminateSchema(): VbenFormSchema[] {
         valueFormat: 'YYYY-MM-DD',
       },
       fieldName: 'actualTerminateDate',
-      label: '终止日期',
+      label: $t('hr.contract.actualTerminateDate'),
       rules: 'required',
     },
     {
