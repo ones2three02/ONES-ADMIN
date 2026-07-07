@@ -207,7 +207,7 @@ export function useTransferSchema(): VbenFormSchema[] {
         childrenField: 'children',
       },
       fieldName: 'deptId',
-      label: '调入部门',
+      label: $t('hr.employeeLifecycle.transferDept'),
       rules: 'required',
     },
     {
@@ -218,7 +218,7 @@ export function useTransferSchema(): VbenFormSchema[] {
         valueField: 'id',
       },
       fieldName: 'positionId',
-      label: '新岗位',
+      label: $t('hr.employeeLifecycle.newPosition'),
     },
     {
       component: 'ApiSelect',
@@ -228,7 +228,7 @@ export function useTransferSchema(): VbenFormSchema[] {
         valueField: 'id',
       },
       fieldName: 'gradeId',
-      label: '新职级',
+      label: $t('hr.employeeLifecycle.newGrade'),
     },
     {
       component: 'ApiSelect',
@@ -238,7 +238,7 @@ export function useTransferSchema(): VbenFormSchema[] {
         valueField: 'id',
       },
       fieldName: 'managerEmployeeId',
-      label: '新主管',
+      label: $t('hr.employeeLifecycle.newManager'),
     },
     {
       component: 'DatePicker',
@@ -246,13 +246,13 @@ export function useTransferSchema(): VbenFormSchema[] {
         valueFormat: 'YYYY-MM-DD',
       },
       fieldName: 'effectiveDate',
-      label: '生效日期',
+      label: $t('hr.employeeLifecycle.effectiveDate'),
       rules: 'required',
     },
     {
       component: 'Textarea',
       fieldName: 'changeReason',
-      label: '变动原因',
+      label: $t('hr.employeeLifecycle.changeReason'),
       rules: 'required',
     },
   ];
@@ -266,13 +266,13 @@ export function useRegularizeSchema(): VbenFormSchema[] {
         valueFormat: 'YYYY-MM-DD',
       },
       fieldName: 'regularizeDate',
-      label: '实际转正日期',
+      label: $t('hr.employeeLifecycle.regularizeDate'),
       rules: 'required',
     },
     {
       component: 'Textarea',
       fieldName: 'remark',
-      label: '转正备注',
+      label: $t('hr.employeeLifecycle.regularizeRemark'),
     },
   ];
 }
@@ -285,13 +285,13 @@ export function useResignSchema(): VbenFormSchema[] {
         valueFormat: 'YYYY-MM-DD',
       },
       fieldName: 'leaveDate',
-      label: '离职日期',
+      label: $t('hr.employee.leaveDate'),
       rules: 'required',
     },
     {
       component: 'Textarea',
       fieldName: 'resignationReason',
-      label: '离职原因',
+      label: $t('hr.employeeLifecycle.resignationReason'),
       rules: 'required',
     },
   ];
@@ -302,7 +302,7 @@ export function useGridFormSchema(): VbenFormSchema[] {
     {
       component: 'Input',
       fieldName: 'keyword',
-      label: '姓名/工号/手机/邮箱',
+      label: $t('hr.employeeList.keyword'),
     },
     {
       component: 'ApiSelect',

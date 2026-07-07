@@ -119,7 +119,7 @@ function onCreate() {
 }
 
 async function onExport() {
-  const hide = message.loading('正在导出员工花名册...', 0);
+  const hide = message.loading($t('hr.employeeList.exporting'), 0);
   try {
     const blob = await exportEmployees({
       ...latestQuery.value,
@@ -129,9 +129,9 @@ async function onExport() {
       fileName: 'ones-hr-employees.csv',
       source: blob,
     });
-    message.success('导出成功');
+    message.success($t('hr.employeeList.exportSuccess'));
   } catch (error: any) {
-    message.error(error?.message || '导出失败，请稍后重试');
+    message.error(error?.message || $t('hr.employeeList.exportError'));
   } finally {
     hide();
   }
@@ -210,11 +210,10 @@ watch(searchDeptValue, (value) => {
     <ProfileDrawer @success="onRefresh" />
 
     <div class="flex size-full">
-      <!-- 左侧部门树 -->
       <Card class="w-1/5" :title="$t('system.dept.title')">
         <InputSearch
           v-model:value="searchDeptValue"
-          placeholder="搜索部门..."
+          :placeholder="$t('hr.employeeList.deptSearchPlaceholder')"
           class="mb-4"
         />
         <Tree
@@ -226,13 +225,12 @@ watch(searchDeptValue, (value) => {
         />
       </Card>
 
-      <!-- 右侧员工列表 -->
       <div class="w-4/5 ml-4">
         <Grid :table-title="$t('hr.employee.list')">
           <template #toolbar-tools>
             <Button v-access:code="['hr:employee:export']" class="mr-2" @click="onExport">
               <IconifyIcon icon="lucide:download" class="size-4" />
-              导出花名册
+              {{ $t('hr.employeeList.exportRoster') }}
             </Button>
             <Button type="primary" @click="onCreate">
               <Plus class="size-5" />
@@ -243,7 +241,7 @@ watch(searchDeptValue, (value) => {
             <VbenTableAction
               :actions="[
                 {
-                  text: '档案',
+                  text: $t('hr.employeeList.profile'),
                   icon: 'lucide:user-round-search',
                   onClick: () => onViewProfile(row),
                   auth: ['hr:employee:detail'],

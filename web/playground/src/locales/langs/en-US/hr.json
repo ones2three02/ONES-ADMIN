@@ -102,6 +102,34 @@
     "noLifecyclePermission": "No permission to view lifecycle events",
     "lifecycleOperator": "{date} · Operator: {operator}"
   },
+  "employeeList": {
+    "keyword": "Name / Employee No / Mobile / Email",
+    "deptSearchPlaceholder": "Search departments...",
+    "exportRoster": "Export Roster",
+    "exporting": "Exporting employee roster...",
+    "exportSuccess": "Export succeeded",
+    "exportError": "Export failed. Please try again later",
+    "profile": "Profile"
+  },
+  "employeeLifecycle": {
+    "transferTitle": "Transfer Employee [{name}]",
+    "regularizeTitle": "Regularize Employee [{name}]",
+    "resignTitle": "Process Resignation [{name}]",
+    "lifecycleTitle": "{name}'s Career Lifecycle",
+    "transferDept": "Transfer Department",
+    "newPosition": "New Position",
+    "newGrade": "New Job Grade",
+    "newManager": "New Manager",
+    "effectiveDate": "Effective Date",
+    "changeReason": "Change Reason",
+    "regularizeDate": "Regularization Date",
+    "regularizeRemark": "Regularization Remark",
+    "resignationReason": "Resignation Reason",
+    "eventDateDisplay": "Change Date: {date}",
+    "operatorDisplay": "Operator: {operator}",
+    "detailDisplay": "Details: {detail}",
+    "noEvents": "No lifecycle events"
+  },
   "position": {
     "title": "Positions",
     "list": "Position List",

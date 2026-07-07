@@ -7,6 +7,7 @@ import { useVbenDrawer } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
 import { regularizeEmployee } from '#/api';
+import { $t } from '#/locales';
 
 import { useRegularizeSchema } from '../data';
 
@@ -53,7 +54,9 @@ const [Drawer, drawerApi] = useVbenDrawer({
 });
 
 const getDrawerTitle = computed(() => {
-  return `员工转正【${employeeName.value}】`;
+  return $t('hr.employeeLifecycle.regularizeTitle', {
+    name: employeeName.value,
+  });
 });
 </script>
 <template>

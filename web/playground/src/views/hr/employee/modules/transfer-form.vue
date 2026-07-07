@@ -7,6 +7,7 @@ import { useVbenDrawer } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
 import { transferEmployee } from '#/api';
+import { $t } from '#/locales';
 
 import { useTransferSchema } from '../data';
 
@@ -61,7 +62,9 @@ const [Drawer, drawerApi] = useVbenDrawer({
 });
 
 const getDrawerTitle = computed(() => {
-  return `员工调岗【${employeeName.value}】`;
+  return $t('hr.employeeLifecycle.transferTitle', {
+    name: employeeName.value,
+  });
 });
 </script>
 <template>

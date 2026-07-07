@@ -7,6 +7,7 @@ import { useVbenDrawer } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
 import { resignEmployee } from '#/api';
+import { $t } from '#/locales';
 
 import { useResignSchema } from '../data';
 
@@ -53,7 +54,9 @@ const [Drawer, drawerApi] = useVbenDrawer({
 });
 
 const getDrawerTitle = computed(() => {
-  return `员工离职办理【${employeeName.value}】`;
+  return $t('hr.employeeLifecycle.resignTitle', {
+    name: employeeName.value,
+  });
 });
 </script>
 <template>

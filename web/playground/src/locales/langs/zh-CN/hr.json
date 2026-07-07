@@ -102,6 +102,34 @@
     "noLifecyclePermission": "暂无生命周期查看权限",
     "lifecycleOperator": "{date} · 操作人：{operator}"
   },
+  "employeeList": {
+    "keyword": "姓名/工号/手机/邮箱",
+    "deptSearchPlaceholder": "搜索部门...",
+    "exportRoster": "导出花名册",
+    "exporting": "正在导出员工花名册...",
+    "exportSuccess": "导出成功",
+    "exportError": "导出失败，请稍后重试",
+    "profile": "档案"
+  },
+  "employeeLifecycle": {
+    "transferTitle": "员工调岗【{name}】",
+    "regularizeTitle": "员工转正【{name}】",
+    "resignTitle": "员工离职办理【{name}】",
+    "lifecycleTitle": "【{name}】的职业生命周期",
+    "transferDept": "调入部门",
+    "newPosition": "新岗位",
+    "newGrade": "新职级",
+    "newManager": "新主管",
+    "effectiveDate": "生效日期",
+    "changeReason": "变动原因",
+    "regularizeDate": "实际转正日期",
+    "regularizeRemark": "转正备注",
+    "resignationReason": "离职原因",
+    "eventDateDisplay": "变动日期: {date}",
+    "operatorDisplay": "操作人: {operator}",
+    "detailDisplay": "详情: {detail}",
+    "noEvents": "暂无生命周期事件记录"
+  },
   "position": {
     "title": "岗位管理",
     "list": "岗位列表",

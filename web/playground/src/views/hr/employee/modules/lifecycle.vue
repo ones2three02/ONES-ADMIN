@@ -8,6 +8,7 @@ import { useVbenDrawer } from '@vben/common-ui';
 import { Spin, Timeline, TimelineItem } from 'antdv-next';
 
 import { getEmployeeLifecycleEvents } from '#/api';
+import { $t } from '#/locales';
 
 const employeeName = ref('');
 const events = ref<HrEmployeeApi.LifecycleEvent[]>([]);
@@ -56,7 +57,10 @@ function getTimelineItemColor(type: string) {
 }
 </script>
 <template>
-  <Drawer :title="`【${employeeName}】的职业生命周期`" :footer="false">
+  <Drawer
+    :title="$t('hr.employeeLifecycle.lifecycleTitle', { name: employeeName })"
+    :footer="false"
+  >
     <Spin :spinning="loading">
       <div class="p-6">
         <Timeline v-if="events.length > 0">
@@ -67,16 +71,32 @@ function getTimelineItemColor(type: string) {
           >
             <div class="flex flex-col gap-1">
               <span class="font-bold text-gray-800">{{ evt.summary }}</span>
-              <span class="text-xs text-gray-500">变动日期: {{ evt.eventDate }}</span>
-              <span v-if="evt.createdByName" class="text-xs text-gray-400">操作人: {{ evt.createdByName }}</span>
+              <span class="text-xs text-gray-500">
+                {{
+                  $t('hr.employeeLifecycle.eventDateDisplay', {
+                    date: evt.eventDate,
+                  })
+                }}
+              </span>
+              <span v-if="evt.createdByName" class="text-xs text-gray-400">
+                {{
+                  $t('hr.employeeLifecycle.operatorDisplay', {
+                    operator: evt.createdByName,
+                  })
+                }}
+              </span>
               <span v-if="evt.detailJson && evt.detailJson !== '{}'" class="text-xs text-gray-400 bg-gray-50 p-2 rounded mt-1 border">
-                详情: {{ evt.detailJson }}
+                {{
+                  $t('hr.employeeLifecycle.detailDisplay', {
+                    detail: evt.detailJson,
+                  })
+                }}
               </span>
             </div>
           </TimelineItem>
         </Timeline>
         <div v-else class="text-gray-400 text-center py-10">
-          暂无生命周期事件记录
+          {{ $t('hr.employeeLifecycle.noEvents') }}
         </div>
       </div>
     </Spin>
