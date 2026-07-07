@@ -117,6 +117,16 @@ public class HrEmployeeController {
         return ApiResult.ok(employeeDocumentService.listExpiringDocuments(days));
     }
 
+    @GetMapping("/documents/expiring/export")
+    @SaCheckPermission("hr:employee:detail")
+    @Operation(operationId = "HrEmployeeController_exportExpiringEmployeeDocuments", summary = "导出即将到期员工资料")
+    @ApiResourceMetadata(sinceVersion = "v0.0.98", riskLevel = ApiRiskLevel.MEDIUM)
+    public ResponseEntity<String> exportExpiringEmployeeDocuments(
+            @RequestParam(required = false) Integer days
+    ) {
+        return csvResponse("ones-hr-expiring-documents.csv", employeeDocumentService.exportExpiringDocuments(days));
+    }
+
     @GetMapping("/{id}/lifecycle-events")
     @SaCheckPermission("hr:employee:lifecycle")
     @Operation(operationId = "HrEmployeeController_listEmployeeLifecycleEvents", summary = "查询员工生命周期事件")

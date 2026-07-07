@@ -6,11 +6,12 @@ import { computed, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
+import { downloadFileFromBlob } from '@vben/utils';
 
 import { Button, Card, message, Statistic } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
-import { getExpiringEmployeeDocuments } from '#/api';
+import { exportExpiringEmployeeDocuments, getExpiringEmployeeDocuments } from '#/api';
 import { openSystemFile } from '#/api/system/file';
 import { $t } from '#/locales';
 
@@ -24,6 +25,7 @@ defineOptions({ name: 'HrDocumentWarning' });
 
 const rows = ref<HrEmployeeApi.EmployeeDocument[]>([]);
 const currentWindowDays = ref(30);
+const exportLoading = ref(false);
 
 const [Grid, gridApi] = useVbenVxeGrid({
   formOptions: {
@@ -99,6 +101,24 @@ async function onViewDocument(row: HrEmployeeApi.EmployeeDocument) {
   }
 }
 
+async function onExportDocuments() {
+  exportLoading.value = true;
+  const hide = message.loading($t('hr.documentWarning.exporting'), 0);
+  try {
+    const blob = await exportExpiringEmployeeDocuments(currentWindowDays.value);
+    downloadFileFromBlob({
+      fileName: 'ones-hr-expiring-documents.csv',
+      source: blob,
+    });
+    message.success($t('hr.documentWarning.exportSuccess'));
+  } catch (error) {
+    message.error(errorMessageOf(error, $t('hr.documentWarning.exportError')));
+  } finally {
+    exportLoading.value = false;
+    hide();
+  }
+}
+
 getHrDictOptions(HR_EMPLOYEE_DOCUMENT_TYPE_DICT);
 </script>
 
@@ -115,12 +135,20 @@ getHrDictOptions(HR_EMPLOYEE_DOCUMENT_TYPE_DICT);
             {{ $t('hr.documentWarning.description') }}
           </div>
         </div>
-        <Button @click="onRefresh">
-          <template #icon>
-            <IconifyIcon icon="lucide:refresh-cw" />
-          </template>
-          {{ $t('common.refresh') }}
-        </Button>
+        <div class="flex flex-wrap justify-end gap-2">
+          <Button @click="onRefresh">
+            <template #icon>
+              <IconifyIcon icon="lucide:refresh-cw" />
+            </template>
+            {{ $t('common.refresh') }}
+          </Button>
+          <Button :loading="exportLoading" @click="onExportDocuments">
+            <template #icon>
+              <IconifyIcon icon="lucide:download" />
+            </template>
+            {{ $t('hr.documentWarning.exportCsv') }}
+          </Button>
+        </div>
       </div>
 
       <div class="grid gap-4 md:grid-cols-3">

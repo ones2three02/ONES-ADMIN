@@ -310,6 +310,13 @@ export async function getExpiringEmployeeDocuments(days?: number) {
   });
 }
 
+export async function exportExpiringEmployeeDocuments(days?: number) {
+  return await requestClient.get<Blob>('/hr/employees/documents/expiring/export', {
+    params: { days },
+    responseType: 'blob',
+  });
+}
+
 export async function bindEmployeeDocument(
   employeeId: string | number,
   fileId: string | number,

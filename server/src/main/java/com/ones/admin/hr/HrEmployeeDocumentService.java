@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.ones.admin.common.exception.BusinessException;
+import com.ones.admin.common.web.CsvExportUtils;
 import com.ones.admin.hr.dto.HrEmployeeDocumentBindRequest;
 import com.ones.admin.hr.dto.HrEmployeeDocumentResponse;
 import com.ones.admin.hr.entity.HrEmployeeDocumentEntity;
@@ -39,6 +40,8 @@ public class HrEmployeeDocumentService {
 
     private static final String DEFAULT_DOCUMENT_TYPE = "OTHER";
     private static final int EXPIRING_SOON_DAYS = 30;
+    private static final String EXPIRING_DOCUMENT_CSV_HEADER = "employeeNo,realName,deptName,documentType,"
+            + "originalName,issueDate,expireDate,expired,expiringSoon,remark,fileId,documentId";
 
     private final HrEmployeeMapper employeeMapper;
     private final HrEmployeeDocumentMapper documentMapper;
@@ -120,6 +123,26 @@ public class HrEmployeeDocumentService {
                 })
                 .map(document -> toResponse(document, employees.get(document.getEmployeeId())))
                 .toList();
+    }
+
+    public String exportExpiringDocuments(Integer days) {
+        StringBuilder csv = new StringBuilder(EXPIRING_DOCUMENT_CSV_HEADER).append('\n');
+        listExpiringDocuments(days)
+                .forEach(document -> csv.append(CsvExportUtils.row(
+                        document.employeeNo(),
+                        document.realName(),
+                        document.deptName(),
+                        document.documentType(),
+                        document.originalName(),
+                        document.issueDate(),
+                        document.expireDate(),
+                        document.expired(),
+                        document.expiringSoon(),
+                        document.remark(),
+                        document.fileId(),
+                        document.documentId()
+                )).append('\n'));
+        return csv.toString();
     }
 
     @Transactional

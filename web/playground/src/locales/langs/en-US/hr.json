@@ -106,6 +106,10 @@
     "expiringSoon": "Expiring Soon",
     "remainingDays": "{days} days left",
     "viewFile": "View File",
+    "exportCsv": "Export CSV",
+    "exporting": "Exporting document alerts...",
+    "exportSuccess": "Exported successfully",
+    "exportError": "Export failed, please try again later",
     "fileOpenError": "Failed to open file",
     "fileOpenUnavailable": "File URL is unavailable"
   },
