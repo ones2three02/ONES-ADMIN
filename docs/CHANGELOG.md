@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.133 - 2026-07-07
+
+- 新增 `scripts/ci/verification-summary.sh`，生成 `.ci-artifacts/verification-summary.json`，汇总版本门禁、仓库扫描、diff 检查、后端测试报告和前端构建产物状态。
+- `scripts/ci/verify.sh` 新增 `verification-summary` 阶段，`all` 阶段会在测试、类型检查和构建后生成机器可读验证摘要。
+- Jenkinsfile 新增 Verification Summary 阶段，继续通过 `.ci-artifacts/**` 归档验证摘要和构建元数据，为后续质量趋势、发布审计和排障留档。
+- 本版本不新增后端接口，不新增数据库迁移，不新增中间件。
+- 产品版本递增至 `v0.0.133`。
+
 ## v0.0.132 - 2026-07-07
 
 - 新增 `scripts/ci/build-metadata.sh`，生成 `.ci-artifacts/build-metadata.json`，记录产品版本、后端快照版本、Git 提交、分支、构建时间和工具链版本。

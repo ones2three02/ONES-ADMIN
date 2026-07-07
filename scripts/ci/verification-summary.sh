@@ -1,0 +1,191 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+OUTPUT_FILE="${1:-$ROOT_DIR/.ci-artifacts/verification-summary.json}"
+
+mkdir -p "$(dirname "$OUTPUT_FILE")"
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "Required command not found: node" >&2
+  exit 1
+fi
+
+export ROOT_DIR
+export OUTPUT_FILE
+
+node <<'NODE'
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+
+const rootDir = process.env.ROOT_DIR;
+const outputFile = process.env.OUTPUT_FILE;
+const productVersion = fs.readFileSync(path.join(rootDir, 'VERSION'), 'utf8').trim();
+const generatedAtUtc = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+
+function runCheck(code, command, args) {
+  const result = spawnSync(command, args, {
+    cwd: rootDir,
+    encoding: 'utf8',
+  });
+
+  return {
+    code,
+    command: [command, ...args].join(' '),
+    exitCode: result.status ?? 1,
+    passed: result.status === 0,
+  };
+}
+
+function readJsonIfExists(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+}
+
+function walkFiles(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    return [];
+  }
+
+  return fs.readdirSync(dirPath, { withFileTypes: true }).flatMap((entry) => {
+    const absolutePath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      return walkFiles(absolutePath);
+    }
+    if (entry.isFile()) {
+      return [absolutePath];
+    }
+    return [];
+  });
+}
+
+function readBackendTestSummary() {
+  const reportDir = path.join(rootDir, 'server', 'target', 'surefire-reports');
+  const files = fs.existsSync(reportDir)
+    ? fs.readdirSync(reportDir)
+        .filter((fileName) => fileName.endsWith('.xml'))
+        .map((fileName) => path.join(reportDir, fileName))
+    : [];
+
+  const totals = {
+    reportFileCount: files.length,
+    tests: 0,
+    failures: 0,
+    errors: 0,
+    skipped: 0,
+  };
+
+  for (const file of files) {
+    const xml = fs.readFileSync(file, 'utf8');
+    const suite = xml.match(/<testsuite\b[^>]*>/);
+    if (!suite) {
+      continue;
+    }
+
+    for (const key of ['tests', 'failures', 'errors', 'skipped']) {
+      const match = suite[0].match(new RegExp(`${key}="(\\d+)"`));
+      if (match) {
+        totals[key] += Number(match[1]);
+      }
+    }
+  }
+
+  return {
+    ...totals,
+    passed: totals.reportFileCount > 0 && totals.failures === 0 && totals.errors === 0,
+  };
+}
+
+function readFrontendBuildSummary() {
+  const distDir = path.join(rootDir, 'web', 'playground', 'dist');
+  const files = walkFiles(distDir);
+  const totalBytes = files.reduce((sum, file) => sum + fs.statSync(file).size, 0);
+
+  return {
+    distDir: path.relative(rootDir, distDir),
+    exists: fs.existsSync(distDir),
+    indexHtmlExists: fs.existsSync(path.join(distDir, 'index.html')),
+    fileCount: files.length,
+    totalBytes,
+    passed: fs.existsSync(path.join(distDir, 'index.html')) && files.length > 0,
+  };
+}
+
+const buildMetadataPath = path.join(rootDir, '.ci-artifacts', 'build-metadata.json');
+const buildMetadata = readJsonIfExists(buildMetadataPath);
+const buildMetadataVersionMatches = buildMetadata?.product?.version === productVersion;
+const backendTests = readBackendTestSummary();
+const frontendBuild = readFrontendBuildSummary();
+
+const checks = [
+  {
+    code: 'BUILD_METADATA_PRESENT',
+    command: 'read .ci-artifacts/build-metadata.json',
+    exitCode: buildMetadata ? 0 : 1,
+    passed: Boolean(buildMetadata),
+  },
+  {
+    code: 'BUILD_METADATA_VERSION_MATCH',
+    command: 'compare VERSION and .ci-artifacts/build-metadata.json',
+    exitCode: buildMetadataVersionMatches ? 0 : 1,
+    passed: buildMetadataVersionMatches,
+  },
+  runCheck('GIT_DIFF_CHECK', 'git', ['diff', '--check']),
+  runCheck('VERSION_GUARD', 'bash', ['scripts/ci/version-guard.sh']),
+  runCheck('REPOSITORY_GUARD', 'bash', ['scripts/ci/repository-guard.sh']),
+  {
+    code: 'BACKEND_TEST_REPORTS_PRESENT',
+    command: 'read server/target/surefire-reports/*.xml',
+    exitCode: backendTests.passed ? 0 : 1,
+    passed: backendTests.passed,
+  },
+  {
+    code: 'FRONTEND_BUILD_ARTIFACT_PRESENT',
+    command: 'read web/playground/dist/index.html',
+    exitCode: frontendBuild.passed ? 0 : 1,
+    passed: frontendBuild.passed,
+  },
+];
+
+const summary = {
+  product: {
+    name: 'ONES-ADMIN',
+    version: productVersion,
+  },
+  generatedAtUtc,
+  buildMetadata: buildMetadata
+    ? {
+        version: buildMetadata.product?.version ?? null,
+        backendSnapshotVersion: buildMetadata.product?.backendSnapshotVersion ?? null,
+        branch: buildMetadata.git?.branch ?? null,
+        commit: buildMetadata.git?.commit ?? null,
+        shortCommit: buildMetadata.git?.shortCommit ?? null,
+        dirty: buildMetadata.git?.dirty ?? null,
+      }
+    : null,
+  gates: checks,
+  artifacts: {
+    backendTests,
+    frontendBuild,
+  },
+  overall: {
+    passed: checks.every((check) => check.passed),
+    failedGateCount: checks.filter((check) => !check.passed).length,
+  },
+};
+
+fs.writeFileSync(outputFile, `${JSON.stringify(summary, null, 2)}\n`);
+
+if (!summary.overall.passed) {
+  console.error(`Verification summary failed: ${summary.overall.failedGateCount} gate(s) failed.`);
+  process.exit(1);
+}
+
+console.log(`Verification summary written to ${outputFile}`);
+NODE
+
+node -e "JSON.parse(require('node:fs').readFileSync(process.argv[1], 'utf8'))" "$OUTPUT_FILE"

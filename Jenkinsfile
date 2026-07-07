@@ -74,6 +74,12 @@ pipeline {
         sh 'bash scripts/ci/verify.sh repository-guard'
       }
     }
+
+    stage('Verification Summary') {
+      steps {
+        sh 'bash scripts/ci/verify.sh verification-summary'
+      }
+    }
   }
 
   post {

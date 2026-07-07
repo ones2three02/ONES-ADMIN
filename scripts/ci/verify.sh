@@ -17,6 +17,7 @@ Stages:
   backend-test           Run backend Maven tests.
   frontend-build         Build the Playground frontend.
   repository-guard       Run version and repository safety guards.
+  verification-summary   Generate a machine-readable verification summary.
   all                    Run the full CI verification sequence.
 EOF
 }
@@ -87,6 +88,13 @@ run_repository_guard() {
   "
 }
 
+run_verification_summary() {
+  run_with_toolchain bash -c "
+    cd '$ROOT_DIR'
+    bash scripts/ci/verification-summary.sh
+  "
+}
+
 run_all() {
   run_preflight
   run_build_metadata
@@ -96,6 +104,7 @@ run_all() {
   run_backend_test
   run_frontend_build
   run_repository_guard
+  run_verification_summary
 }
 
 case "${1:-}" in
@@ -122,6 +131,9 @@ case "${1:-}" in
     ;;
   repository-guard)
     run_repository_guard
+    ;;
+  verification-summary)
+    run_verification_summary
     ;;
   all)
     run_all
