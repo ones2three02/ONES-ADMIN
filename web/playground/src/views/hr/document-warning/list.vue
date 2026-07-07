@@ -15,11 +15,12 @@ import { exportExpiringEmployeeDocuments, getExpiringEmployeeDocuments } from '#
 import { openSystemFile } from '#/api/system/file';
 import { $t } from '#/locales';
 
-import { daysUntil, useColumns, useGridFormSchema } from './data';
 import {
   getHrDictOptions,
   HR_EMPLOYEE_DOCUMENT_TYPE_DICT,
 } from '../dict-options';
+import { isDueWithinDays } from '../shared/warning';
+import { useColumns, useGridFormSchema } from './data';
 
 defineOptions({ name: 'HrDocumentWarning' });
 
@@ -69,10 +70,7 @@ const metrics = computed(() => [
   {
     icon: 'lucide:badge-alert',
     title: $t('hr.documentWarning.metricSevenDays'),
-    value: rows.value.filter((item) => {
-      const remainDays = daysUntil(item.expireDate);
-      return remainDays !== undefined && remainDays >= 0 && remainDays <= 7;
-    }).length,
+    value: rows.value.filter((item) => isDueWithinDays(item.expireDate, 7)).length,
   },
   {
     icon: 'lucide:calendar-clock',

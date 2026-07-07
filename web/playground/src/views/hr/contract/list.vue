@@ -21,7 +21,8 @@ import {
 import { openSystemFile } from '#/api/system/file';
 import { $t } from '#/locales';
 
-import { daysUntil, useColumns, useExpiringColumns, useExpiringGridFormSchema } from './data';
+import { isDueWithinDays } from '../shared/warning';
+import { useColumns, useExpiringColumns, useExpiringGridFormSchema } from './data';
 import {
   getHrDictOptions,
   HR_CONTRACT_STATUS_DICT,
@@ -129,10 +130,7 @@ const expiringMetrics = computed(() => [
   {
     icon: 'lucide:badge-alert',
     title: $t('hr.contract.metricSevenDays'),
-    value: expiringContracts.value.filter((item) => {
-      const remainDays = daysUntil(item.endDate);
-      return remainDays !== undefined && remainDays >= 0 && remainDays <= 7;
-    }).length,
+    value: expiringContracts.value.filter((item) => isDueWithinDays(item.endDate, 7)).length,
   },
   {
     icon: 'lucide:calendar-clock',

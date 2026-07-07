@@ -1,10 +1,6 @@
 import type { VbenFormSchema } from '#/adapter/form';
 import type { VxeTableGridColumns } from '#/adapter/vxe-table';
 
-import { h } from 'vue';
-
-import { Tag } from 'antdv-next';
-
 import { $t } from '#/locales';
 
 import {
@@ -13,43 +9,22 @@ import {
   HR_CONTRACT_STATUS_DICT,
   HR_CONTRACT_TYPE_DICT,
 } from '../dict-options';
+import {
+  daysUntil,
+  renderDueRiskTag,
+  useWarningWindowSchema,
+} from '../shared/warning';
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-function startOfToday() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-}
-
-export function daysUntil(endDate?: string) {
-  if (!endDate) {
-    return undefined;
-  }
-  const target = new Date(`${endDate}T00:00:00`);
-  if (Number.isNaN(target.getTime())) {
-    return undefined;
-  }
-  return Math.round((target.getTime() - startOfToday().getTime()) / DAY_MS);
-}
+export { daysUntil };
 
 function contractRiskTag(endDate?: string) {
-  const remainDays = daysUntil(endDate);
-  if (remainDays === undefined) {
-    return h(Tag, { color: 'processing' }, () => $t('hr.contract.expiringSoon'));
-  }
-  if (remainDays <= 0) {
-    return h(Tag, { color: 'error' }, () =>
-      remainDays === 0 ? $t('hr.contract.dueToday') : $t('hr.contract.expired'),
-    );
-  }
-  if (remainDays <= 7) {
-    return h(Tag, { color: 'warning' }, () =>
-      $t('hr.contract.remainingDays', { days: remainDays }),
-    );
-  }
-  return h(Tag, { color: 'processing' }, () =>
-    $t('hr.contract.remainingDays', { days: remainDays }),
-  );
+  return renderDueRiskTag({
+    date: endDate,
+    dueTodayText: $t('hr.contract.dueToday'),
+    expiredText: $t('hr.contract.expired'),
+    expiringSoonText: $t('hr.contract.expiringSoon'),
+    remainingText: (days) => $t('hr.contract.remainingDays', { days }),
+  });
 }
 
 export function useFormSchema(): VbenFormSchema[] {
@@ -197,23 +172,15 @@ export function useColumns(): VxeTableGridColumns {
 }
 
 export function useExpiringGridFormSchema(): VbenFormSchema[] {
-  return [
-    {
-      component: 'Select',
-      componentProps: {
-        allowClear: false,
-        options: [
-          { label: $t('hr.contract.days7'), value: 7 },
-          { label: $t('hr.contract.days30'), value: 30 },
-          { label: $t('hr.contract.days60'), value: 60 },
-          { label: $t('hr.contract.days90'), value: 90 },
-        ],
-      },
-      defaultValue: 30,
-      fieldName: 'days',
-      label: $t('hr.contract.warningWindow'),
+  return useWarningWindowSchema({
+    dayLabels: {
+      7: $t('hr.contract.days7'),
+      30: $t('hr.contract.days30'),
+      60: $t('hr.contract.days60'),
+      90: $t('hr.contract.days90'),
     },
-  ];
+    label: $t('hr.contract.warningWindow'),
+  });
 }
 
 export function useExpiringColumns(): VxeTableGridColumns {
