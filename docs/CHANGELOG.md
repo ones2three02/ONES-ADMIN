@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.128 - 2026-07-07
+
+- 将 `@vben/playground` 包级 `test:unit` 脚本从单文件路径升级为 `playground/src` 目录入口，后续新增 HRMS/Vben 页面源码单测无需逐个追加脚本。
+- 保持 Playwright E2E 与 Vitest 单测分离，继续复用根级 Vitest include/exclude 边界。
+- 本版本不新增后端接口，不新增数据库迁移，不新增中间件。
+- 产品版本递增至 `v0.0.128`。
+
 ## v0.0.127 - 2026-07-07
 
 - 新增 `@vben/playground` 包级 `test:unit` 脚本，精准运行 `playground/src` 下的 Vitest 单元测试，方便 Jenkins 按包编排 HRMS 前端测试。
