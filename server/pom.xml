@@ -13,7 +13,7 @@
 
     <groupId>com.ones</groupId>
     <artifactId>ones-admin-server</artifactId>
-    <version>0.0.106-SNAPSHOT</version>
+    <version>0.0.107-SNAPSHOT</version>
     <name>ones-admin-server</name>
     <description>ONES-ADMIN backend built with Spring Boot and Sa-Token</description>
 

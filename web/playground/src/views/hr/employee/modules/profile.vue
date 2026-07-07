@@ -42,6 +42,7 @@ import {
   removeEmployeeDocument,
   uploadSystemFile,
 } from '#/api';
+import { $t } from '#/locales';
 
 import {
   formatHrDictLabel,
@@ -143,8 +144,8 @@ const [Drawer, drawerApi] = useVbenDrawer({
 
 const title = computed(() =>
   employee.value
-    ? `员工档案 - ${employee.value.realName}`
-    : '员工档案',
+    ? $t('hr.employeeProfile.employeeTitle', { name: employee.value.realName })
+    : $t('hr.employeeProfile.title'),
 );
 
 const activeContract = computed(() =>
@@ -159,32 +160,32 @@ const summaryItems = computed(() => {
   return [
     {
       icon: 'lucide:user-round',
-      label: '员工编号',
+      label: $t('hr.employeeProfile.summaryEmployeeNo'),
       value: current.employeeNo,
     },
     {
       icon: 'lucide:building-2',
-      label: '当前部门',
+      label: $t('hr.employeeProfile.summaryCurrentDept'),
       value: current.deptName || '-',
     },
     {
       icon: 'lucide:briefcase-business',
-      label: '岗位',
+      label: $t('hr.employeeProfile.summaryPosition'),
       value: current.positionName || '-',
     },
     {
       icon: 'lucide:file-check-2',
-      label: '有效合同',
+      label: $t('hr.employeeProfile.summaryActiveContract'),
       value: activeContract.value?.contractNo || '-',
     },
     {
       icon: 'lucide:git-branch',
-      label: '直属下级',
+      label: $t('hr.employeeProfile.summaryDirectReports'),
       value: `${orgContext.value?.directReportCount ?? 0}`,
     },
     {
       icon: 'lucide:paperclip',
-      label: '资料附件',
+      label: $t('hr.employeeProfile.summaryDocuments'),
       value: `${documents.value.length}`,
     },
   ];
@@ -242,7 +243,10 @@ function lifecycleColor(type: string) {
 }
 
 function jobRange(job: HrEmployeeApi.EmployeeJob) {
-  return `${empty(job.effectiveDate)} 至 ${empty(job.endDate)}`;
+  return $t('hr.employeeProfile.dateRange', {
+    end: empty(job.endDate),
+    start: empty(job.effectiveDate),
+  });
 }
 
 function orgNodeTitle(node?: HrEmployeeApi.OrgEmployeeNode) {
@@ -295,7 +299,7 @@ async function reloadDocuments() {
 async function handleDocumentUpload(options: UploadRequestOptions) {
   const { file, onError, onSuccess } = options;
   if (!(file instanceof File) || !employee.value?.id) {
-    const error = new Error('资料附件上传失败');
+    const error = new Error($t('hr.employeeProfile.documentUploadError'));
     message.error(error.message);
     onError?.(error);
     return;
@@ -314,15 +318,20 @@ async function submitDocumentUpload() {
     return;
   }
   documentUploadLoading.value = true;
-  const hide = message.loading('正在上传资料附件...', 0);
+  const hide = message.loading($t('hr.employeeProfile.documentUploading'), 0);
   try {
     const uploadedFile = await uploadSystemFile(pendingDocumentFile.value);
     await bindEmployeeDocument(employee.value.id, uploadedFile.id, documentMeta.value);
     await reloadDocuments();
-    message.success('资料附件已上传');
+    message.success($t('hr.employeeProfile.documentUploadSuccess'));
   } catch (error: unknown) {
-    const normalizedError = normalizeError(error, '资料附件上传失败');
-    message.error(errorMessageOf(normalizedError, '资料附件上传失败'));
+    const normalizedError = normalizeError(
+      error,
+      $t('hr.employeeProfile.documentUploadError'),
+    );
+    message.error(
+      errorMessageOf(normalizedError, $t('hr.employeeProfile.documentUploadError')),
+    );
   } finally {
     hide();
     documentUploadLoading.value = false;
@@ -341,13 +350,15 @@ function cancelDocumentUpload() {
 
 async function openDocument(file: HrEmployeeApi.EmployeeDocument) {
   if (!file.storedName) {
-    message.warning('资料附件暂不可访问');
+    message.warning($t('hr.employeeProfile.documentUnavailable'));
     return;
   }
   try {
     await openSystemFile(file);
   } catch (error: unknown) {
-    message.error(errorMessageOf(error, '资料附件打开失败'));
+    message.error(
+      errorMessageOf(error, $t('hr.employeeProfile.documentOpenError')),
+    );
   }
 }
 
@@ -363,12 +374,14 @@ function documentStatusColor(file: HrEmployeeApi.EmployeeDocument) {
 
 function documentStatusText(file: HrEmployeeApi.EmployeeDocument) {
   if (file.expired) {
-    return '已过期';
+    return $t('hr.employeeProfile.documentExpired');
   }
   if (file.expiringSoon) {
-    return '即将到期';
+    return $t('hr.employeeProfile.documentExpiringSoon');
   }
-  return file.expireDate ? '有效' : '长期有效';
+  return file.expireDate
+    ? $t('hr.employeeProfile.documentValid')
+    : $t('hr.employeeProfile.documentLongTermValid');
 }
 
 function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
@@ -376,13 +389,15 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
     return;
   }
   Modal.confirm({
-    content: `确认移除资料附件「${file.originalName}」吗？`,
+    content: $t('hr.employeeProfile.documentRemoveConfirm', {
+      name: file.originalName,
+    }),
     okButtonProps: { danger: true },
-    okText: '确认移除',
-    title: '移除资料附件',
+    okText: $t('hr.employeeProfile.documentRemoveOk'),
+    title: $t('hr.employeeProfile.documentRemoveTitle'),
     async onOk() {
       await removeEmployeeDocument(employee.value!.id, file.id);
-      message.success('资料附件已移除');
+      message.success($t('hr.employeeProfile.documentRemoveSuccess'));
       await reloadDocuments();
     },
   });
@@ -408,40 +423,40 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
       </div>
 
       <Tabs>
-        <TabPane key="basic" tab="基础信息">
+        <TabPane key="basic" :tab="$t('hr.employeeProfile.tabBasic')">
           <Card variant="borderless">
             <Descriptions bordered :column="2" size="small">
-              <DescriptionsItem label="姓名">{{ employee.realName }}</DescriptionsItem>
-              <DescriptionsItem label="常用名">{{ empty(employee.preferredName) }}</DescriptionsItem>
-              <DescriptionsItem label="性别">
+              <DescriptionsItem :label="$t('hr.employee.realName')">{{ employee.realName }}</DescriptionsItem>
+              <DescriptionsItem :label="$t('hr.employee.preferredName')">{{ empty(employee.preferredName) }}</DescriptionsItem>
+              <DescriptionsItem :label="$t('hr.employee.gender')">
                 {{ dictLabel(HR_GENDER_DICT, employee.gender) }}
               </DescriptionsItem>
-              <DescriptionsItem label="用工类型">
+              <DescriptionsItem :label="$t('hr.employee.employmentType')">
                 {{ dictLabel(HR_EMPLOYMENT_TYPE_DICT, employee.employmentType) }}
               </DescriptionsItem>
-              <DescriptionsItem label="状态">
+              <DescriptionsItem :label="$t('hr.employee.employmentStatus')">
                 <Tag :color="statusColor(employee.employmentStatus)">
                   {{ dictLabel(HR_EMPLOYMENT_STATUS_DICT, employee.employmentStatus) }}
                 </Tag>
               </DescriptionsItem>
-              <DescriptionsItem label="入职日期">{{ empty(employee.hireDate) }}</DescriptionsItem>
-              <DescriptionsItem label="试用期结束">{{ empty(employee.probationEndDate) }}</DescriptionsItem>
-              <DescriptionsItem label="离职日期">{{ empty(employee.leaveDate) }}</DescriptionsItem>
-              <DescriptionsItem label="手机号">{{ empty(employee.mobile) }}</DescriptionsItem>
-              <DescriptionsItem label="邮箱">{{ empty(employee.email) }}</DescriptionsItem>
-              <DescriptionsItem label="证件号">{{ empty(employee.idCardMasked) }}</DescriptionsItem>
-              <DescriptionsItem label="直属上级">{{ empty(employee.managerName) }}</DescriptionsItem>
-              <DescriptionsItem label="备注" :span="2">
+              <DescriptionsItem :label="$t('hr.employee.hireDate')">{{ empty(employee.hireDate) }}</DescriptionsItem>
+              <DescriptionsItem :label="$t('hr.employee.probationEndDate')">{{ empty(employee.probationEndDate) }}</DescriptionsItem>
+              <DescriptionsItem :label="$t('hr.employee.leaveDate')">{{ empty(employee.leaveDate) }}</DescriptionsItem>
+              <DescriptionsItem :label="$t('hr.employee.mobile')">{{ empty(employee.mobile) }}</DescriptionsItem>
+              <DescriptionsItem :label="$t('hr.employee.email')">{{ empty(employee.email) }}</DescriptionsItem>
+              <DescriptionsItem :label="$t('hr.employee.idCard')">{{ empty(employee.idCardMasked) }}</DescriptionsItem>
+              <DescriptionsItem :label="$t('hr.employee.managerName')">{{ empty(employee.managerName) }}</DescriptionsItem>
+              <DescriptionsItem :label="$t('hr.employee.remark')" :span="2">
                 {{ empty(employee.remark) }}
               </DescriptionsItem>
             </Descriptions>
           </Card>
         </TabPane>
 
-        <TabPane key="contracts" tab="合同">
+        <TabPane key="contracts" :tab="$t('hr.employeeProfile.tabContracts')">
           <Empty
             v-if="!canViewContracts"
-            description="暂无合同查看权限"
+            :description="$t('hr.employeeProfile.noContractPermission')"
             :image="Empty.PRESENTED_IMAGE_SIMPLE"
           />
           <div v-else-if="contracts.length" class="flex flex-col gap-3">
@@ -456,11 +471,21 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
                   </div>
                   <div class="text-muted-foreground mt-2 text-sm">
                     {{ dictLabel(HR_CONTRACT_TYPE_DICT, item.contractType) }}
-                    · {{ item.startDate }} 至 {{ empty(item.endDate) }}
+                    ·
+                    {{
+                      $t('hr.employeeProfile.dateRange', {
+                        end: empty(item.endDate),
+                        start: item.startDate,
+                      })
+                    }}
                   </div>
                 </div>
                 <div class="text-muted-foreground text-sm">
-                  续签提醒：{{ empty(item.renewalRemindDate) }}
+                  {{
+                    $t('hr.employeeProfile.renewalReminder', {
+                      date: empty(item.renewalRemindDate),
+                    })
+                  }}
                 </div>
               </div>
             </Card>
@@ -468,11 +493,11 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
           <Empty v-else :image="Empty.PRESENTED_IMAGE_SIMPLE" />
         </TabPane>
 
-        <TabPane key="documents" tab="资料附件">
+        <TabPane key="documents" :tab="$t('hr.employeeProfile.tabDocuments')">
           <div class="flex flex-col gap-3">
             <div class="flex items-center justify-between gap-3">
               <div class="text-muted-foreground text-sm">
-                共 {{ documents.length }} 个附件
+                {{ $t('hr.employeeProfile.documentCount', { count: documents.length }) }}
               </div>
               <Upload
                 :custom-request="handleDocumentUpload"
@@ -488,7 +513,7 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
                   <template #icon>
                     <IconifyIcon icon="lucide:upload" />
                   </template>
-                  上传资料
+                  {{ $t('hr.employeeProfile.uploadDocument') }}
                 </Button>
               </Upload>
             </div>
@@ -516,8 +541,20 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
                         </Tag>
                         <span>{{ formatFileSize(file.sizeBytes) }}</span>
                         <span v-if="file.storageType">{{ file.storageType }}</span>
-                        <span>签发：{{ empty(file.issueDate) }}</span>
-                        <span>到期：{{ empty(file.expireDate) }}</span>
+                        <span>
+                          {{
+                            $t('hr.employeeProfile.issueDateDisplay', {
+                              date: empty(file.issueDate),
+                            })
+                          }}
+                        </span>
+                        <span>
+                          {{
+                            $t('hr.employeeProfile.expireDateDisplay', {
+                              date: empty(file.expireDate),
+                            })
+                          }}
+                        </span>
                       </div>
                       <div
                         v-if="file.remark"
@@ -529,7 +566,7 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
                   </div>
                   <div class="flex shrink-0 items-center gap-1">
                     <Button size="small" type="link" @click="openDocument(file)">
-                      查看
+                      {{ $t('hr.employeeProfile.viewDocument') }}
                     </Button>
                     <Button
                       v-if="canManageDocuments"
@@ -538,17 +575,21 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
                       type="link"
                       @click="confirmRemoveDocument(file)"
                     >
-                      移除
+                      {{ $t('hr.employeeProfile.removeDocument') }}
                     </Button>
                   </div>
                 </div>
               </Card>
             </div>
-            <Empty v-else description="暂无资料附件" :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+            <Empty
+              v-else
+              :description="$t('hr.employeeProfile.noDocuments')"
+              :image="Empty.PRESENTED_IMAGE_SIMPLE"
+            />
           </div>
         </TabPane>
 
-        <TabPane key="jobs" tab="任职记录">
+        <TabPane key="jobs" :tab="$t('hr.employeeProfile.tabJobs')">
           <Timeline v-if="jobs.length" class="mt-2">
             <TimelineItem
               v-for="job in jobs"
@@ -561,7 +602,11 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
                     <div class="flex flex-wrap items-center gap-2">
                       <span class="font-medium">{{ empty(job.positionName) }}</span>
                       <Tag :color="job.endDate ? 'default' : 'success'">
-                        {{ job.endDate ? '历史任职' : '当前任职' }}
+                        {{
+                          job.endDate
+                            ? $t('hr.employeeProfile.historicalJob')
+                            : $t('hr.employeeProfile.currentJob')
+                        }}
                       </Tag>
                     </div>
                     <span class="text-muted-foreground text-xs">
@@ -569,19 +614,19 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
                     </span>
                   </div>
                   <Descriptions bordered :column="2" size="small">
-                    <DescriptionsItem label="部门">
+                    <DescriptionsItem :label="$t('hr.employee.deptName')">
                       {{ empty(job.deptName) }}
                     </DescriptionsItem>
-                    <DescriptionsItem label="职级">
+                    <DescriptionsItem :label="$t('hr.employee.gradeName')">
                       {{ empty(job.gradeName) }}
                     </DescriptionsItem>
-                    <DescriptionsItem label="直属上级">
+                    <DescriptionsItem :label="$t('hr.employee.managerName')">
                       {{ empty(job.managerName) }}
                     </DescriptionsItem>
-                    <DescriptionsItem label="用工类型">
+                    <DescriptionsItem :label="$t('hr.employee.employmentType')">
                       {{ dictLabel(HR_EMPLOYMENT_TYPE_DICT, job.employmentType) }}
                     </DescriptionsItem>
-                    <DescriptionsItem label="变动原因" :span="2">
+                    <DescriptionsItem :label="$t('hr.employeeProfile.changeReason')" :span="2">
                       {{ empty(job.changeReason) }}
                     </DescriptionsItem>
                   </Descriptions>
@@ -592,11 +637,11 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
           <Empty v-else :image="Empty.PRESENTED_IMAGE_SIMPLE" />
         </TabPane>
 
-        <TabPane key="organization" tab="组织关系">
+        <TabPane key="organization" :tab="$t('hr.employeeProfile.tabOrganization')">
           <div v-if="orgContext" class="flex flex-col gap-3">
             <Card variant="borderless">
               <Descriptions bordered :column="2" size="small">
-                <DescriptionsItem label="组织路径" :span="2">
+                <DescriptionsItem :label="$t('hr.employeeProfile.orgPath')" :span="2">
                   <div class="flex flex-wrap gap-2">
                     <Tag
                       v-for="dept in orgContext.deptPath"
@@ -608,16 +653,16 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
                     <span v-if="!orgContext.deptPath.length">-</span>
                   </div>
                 </DescriptionsItem>
-                <DescriptionsItem label="当前员工">
+                <DescriptionsItem :label="$t('hr.employeeProfile.currentEmployee')">
                   {{ orgNodeTitle(orgContext.current) }}
                 </DescriptionsItem>
-                <DescriptionsItem label="当前岗位">
+                <DescriptionsItem :label="$t('hr.employeeProfile.currentPosition')">
                   {{ orgNodeMeta(orgContext.current) }}
                 </DescriptionsItem>
-                <DescriptionsItem label="直属上级">
+                <DescriptionsItem :label="$t('hr.employee.managerName')">
                   {{ orgNodeTitle(orgContext.manager) }}
                 </DescriptionsItem>
-                <DescriptionsItem label="上级岗位">
+                <DescriptionsItem :label="$t('hr.employeeProfile.managerPosition')">
                   {{ orgNodeMeta(orgContext.manager) }}
                 </DescriptionsItem>
               </Descriptions>
@@ -644,15 +689,19 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
                 </div>
               </Card>
             </div>
-            <Empty v-else description="暂无可见直属下级" :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+            <Empty
+              v-else
+              :description="$t('hr.employeeProfile.noDirectReports')"
+              :image="Empty.PRESENTED_IMAGE_SIMPLE"
+            />
           </div>
           <Empty v-else :image="Empty.PRESENTED_IMAGE_SIMPLE" />
         </TabPane>
 
-        <TabPane key="lifecycle" tab="生命周期">
+        <TabPane key="lifecycle" :tab="$t('hr.employeeProfile.tabLifecycle')">
           <Empty
             v-if="!canViewLifecycle"
-            description="暂无生命周期查看权限"
+            :description="$t('hr.employeeProfile.noLifecyclePermission')"
             :image="Empty.PRESENTED_IMAGE_SIMPLE"
           />
           <Timeline v-else-if="events.length" class="mt-2">
@@ -664,7 +713,12 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
               <div class="flex flex-col gap-1">
                 <span class="font-medium">{{ event.summary }}</span>
                 <span class="text-muted-foreground text-xs">
-                  {{ event.eventDate }} · 操作人：{{ empty(event.createdByName) }}
+                  {{
+                    $t('hr.employeeProfile.lifecycleOperator', {
+                      date: event.eventDate,
+                      operator: empty(event.createdByName),
+                    })
+                  }}
                 </span>
               </div>
             </TimelineItem>
@@ -676,12 +730,12 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
     <Modal
       v-model:open="documentMetaOpen"
       :confirm-loading="documentUploadLoading"
-      title="资料附件信息"
+      :title="$t('hr.employeeProfile.documentMetaTitle')"
       @cancel="cancelDocumentUpload"
       @ok="submitDocumentUpload"
     >
       <Form layout="vertical">
-        <FormItem label="资料类型">
+        <FormItem :label="$t('hr.employeeProfile.documentType')">
           <Select v-model:value="documentMeta.documentType">
             <SelectOption
               v-for="option in documentTypeOptions"
@@ -693,14 +747,14 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
           </Select>
         </FormItem>
         <div class="grid gap-3 md:grid-cols-2">
-          <FormItem label="签发日期">
+          <FormItem :label="$t('hr.employeeProfile.issueDate')">
             <DatePicker
               v-model:value="documentMeta.issueDate"
               class="w-full"
               value-format="YYYY-MM-DD"
             />
           </FormItem>
-          <FormItem label="到期日期">
+          <FormItem :label="$t('hr.employeeProfile.expireDate')">
             <DatePicker
               v-model:value="documentMeta.expireDate"
               class="w-full"
@@ -708,7 +762,7 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
             />
           </FormItem>
         </div>
-        <FormItem label="备注">
+        <FormItem :label="$t('hr.employee.remark')">
           <Input.TextArea
             v-model:value="documentMeta.remark"
             :maxlength="500"
