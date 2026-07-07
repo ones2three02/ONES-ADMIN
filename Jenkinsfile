@@ -92,6 +92,12 @@ pipeline {
         sh 'bash scripts/ci/verify.sh verification-summary'
       }
     }
+
+    stage('Release Evidence') {
+      steps {
+        sh 'bash scripts/ci/verify.sh release-evidence'
+      }
+    }
   }
 
   post {

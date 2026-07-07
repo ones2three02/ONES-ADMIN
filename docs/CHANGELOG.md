@@ -1,5 +1,14 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.136 - 2026-07-07
+
+- 新增 `scripts/ci/release-evidence.sh`，生成 `.ci-artifacts/release-evidence.json`，汇总构建元数据、数据库迁移审计报告、接口治理报告和验证摘要，输出机器可读发布证据与发布结论。
+- `scripts/ci/verify.sh` 新增 `release-evidence` 阶段，Jenkinsfile 新增 Release Evidence 阶段。
+- `scripts/ci/verification-summary.sh` 支持读取发布证据包，存在时校验版本、发布准备状态、失败门禁数和必需证据清单。
+- 发布证据包不执行部署，不连接真实中间件，不记录数据库、Redis、RabbitMQ、MinIO 地址或账号密码。
+- 本版本不新增业务接口，不新增数据库迁移，不改前端 UI，不新增中间件。
+- 产品版本递增至 `v0.0.136`。
+
 ## v0.0.135 - 2026-07-07
 
 - 新增 `scripts/ci/database-migration-report.sh`，生成 `.ci-artifacts/database-migration-report.json`，归档 Flyway 迁移目录、脚本版本、命名规范、SHA-256 指纹、旧 `schema.sql` 禁用状态和破坏性 SQL 审批状态。

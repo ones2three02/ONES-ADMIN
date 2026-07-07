@@ -205,6 +205,52 @@ function readDatabaseMigrationReportSummary() {
   };
 }
 
+function readReleaseEvidenceSummary() {
+  const reportPath = path.join(rootDir, '.ci-artifacts', 'release-evidence.json');
+  const report = readJsonIfExists(reportPath);
+
+  if (!report) {
+    return {
+      reportPath: path.relative(rootDir, reportPath),
+      exists: false,
+      version: null,
+      ready: false,
+      status: null,
+      failedGateCount: null,
+      gateCount: 0,
+      passed: false,
+    };
+  }
+
+  const versionMatches = report.product?.version === productVersion;
+  const ready = report.releaseDecision?.ready === true;
+  const failedGateCount = Number(report.releaseDecision?.failedGateCount ?? 1);
+  const gateCount = Array.isArray(report.releaseDecision?.gates)
+    ? report.releaseDecision.gates.length
+    : 0;
+  const artifacts = Array.isArray(report.evidence?.artifacts) ? report.evidence.artifacts : [];
+  const requiredArtifacts = new Set([
+    'API_GOVERNANCE_REPORT',
+    'BUILD_METADATA',
+    'DATABASE_MIGRATION_REPORT',
+    'VERIFICATION_SUMMARY',
+  ]);
+  const artifactCodes = new Set(artifacts.map((artifact) => artifact.code));
+  const requiredArtifactsPresent = [...requiredArtifacts].every((code) => artifactCodes.has(code));
+
+  return {
+    reportPath: path.relative(rootDir, reportPath),
+    exists: true,
+    version: report.product?.version ?? null,
+    ready,
+    status: report.releaseDecision?.status ?? null,
+    failedGateCount,
+    gateCount,
+    requiredArtifactsPresent,
+    passed: versionMatches && ready && failedGateCount === 0 && gateCount > 0 && requiredArtifactsPresent,
+  };
+}
+
 const buildMetadataPath = path.join(rootDir, '.ci-artifacts', 'build-metadata.json');
 const buildMetadata = readJsonIfExists(buildMetadataPath);
 const buildMetadataVersionMatches = buildMetadata?.product?.version === productVersion;
@@ -212,6 +258,7 @@ const backendTests = readBackendTestSummary();
 const frontendBuild = readFrontendBuildSummary();
 const databaseMigrationReport = readDatabaseMigrationReportSummary();
 const apiGovernanceReport = readApiGovernanceReportSummary();
+const releaseEvidence = readReleaseEvidenceSummary();
 
 const checks = [
   {
@@ -253,6 +300,12 @@ const checks = [
     exitCode: apiGovernanceReport.passed ? 0 : 1,
     passed: apiGovernanceReport.passed,
   },
+  {
+    code: 'RELEASE_EVIDENCE_PRESENT',
+    command: 'read .ci-artifacts/release-evidence.json',
+    exitCode: releaseEvidence.exists ? (releaseEvidence.passed ? 0 : 1) : 0,
+    passed: !releaseEvidence.exists || releaseEvidence.passed,
+  },
 ];
 
 const summary = {
@@ -277,6 +330,7 @@ const summary = {
     frontendBuild,
     databaseMigrationReport,
     apiGovernanceReport,
+    releaseEvidence,
   },
   overall: {
     passed: checks.every((check) => check.passed),

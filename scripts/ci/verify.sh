@@ -21,6 +21,7 @@ Stages:
                          Generate the database migration governance report artifact.
   api-governance-report  Generate the API governance report artifact.
   verification-summary   Generate a machine-readable verification summary.
+  release-evidence       Generate a machine-readable release evidence package.
   all                    Run the full CI verification sequence.
 EOF
 }
@@ -112,6 +113,13 @@ run_verification_summary() {
   "
 }
 
+run_release_evidence() {
+  run_with_toolchain bash -c "
+    cd '$ROOT_DIR'
+    bash scripts/ci/release-evidence.sh
+  "
+}
+
 run_all() {
   run_preflight
   run_build_metadata
@@ -124,6 +132,7 @@ run_all() {
   run_database_migration_report
   run_api_governance_report
   run_verification_summary
+  run_release_evidence
 }
 
 case "${1:-}" in
@@ -159,6 +168,9 @@ case "${1:-}" in
     ;;
   verification-summary)
     run_verification_summary
+    ;;
+  release-evidence)
+    run_release_evidence
     ;;
   all)
     run_all
