@@ -17,11 +17,10 @@ import {
   getEmployeeList,
   getExpiringContracts,
 } from '#/api';
-import { openSystemFile } from '#/api/system/file';
 import { $t } from '#/locales';
 
 import { errorMessageOf } from '../shared/error';
-import { downloadHrBlob } from '../shared/file';
+import { downloadHrBlob, openHrFile } from '../shared/file';
 import { isDueWithinDays } from '../shared/warning';
 import { useColumns, useExpiringColumns, useExpiringGridFormSchema } from './data';
 import {
@@ -194,11 +193,10 @@ async function onViewAttachment(row: HrContractApi.HrContract) {
   }
   try {
     const metadata = await getContractAttachmentMetadata(row.id);
-    if (!metadata.storedName) {
+    const opened = await openHrFile(metadata);
+    if (!opened) {
       message.warning($t('hr.contract.attachmentOpenUnavailable'));
-      return;
     }
-    await openSystemFile(metadata);
   } catch (error: unknown) {
     message.error(errorMessageOf(error, $t('hr.contract.attachmentLoadError')));
   }

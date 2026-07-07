@@ -12,14 +12,13 @@ import { useVbenForm } from '#/adapter/form';
 import {
   createContract,
   getContractAttachmentMetadata,
-  openSystemFile,
   updateContract,
   uploadSystemFile,
 } from '#/api';
 import { $t } from '#/locales';
 
 import { errorMessageOf, normalizeError } from '../../shared/error';
-import { formatFileSize } from '../../shared/file';
+import { formatFileSize, openHrFile } from '../../shared/file';
 import { useFormSchema } from '../data';
 
 const emits = defineEmits(['success']);
@@ -192,12 +191,11 @@ async function previewAttachment() {
           }
         : undefined,
     ));
-  if (!file?.storedName) {
-    message.warning($t('hr.contract.attachmentOpenUnavailable'));
-    return;
-  }
   try {
-    await openSystemFile(file);
+    const opened = await openHrFile(file);
+    if (!opened) {
+      message.warning($t('hr.contract.attachmentOpenUnavailable'));
+    }
   } catch (error: unknown) {
     message.error(errorMessageOf(error, $t('hr.contract.attachmentOpenError')));
   }

@@ -11,7 +11,6 @@ import { Button, Card, message, Statistic } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import { exportExpiringEmployeeDocuments, getExpiringEmployeeDocuments } from '#/api';
-import { openSystemFile } from '#/api/system/file';
 import { $t } from '#/locales';
 
 import {
@@ -19,7 +18,7 @@ import {
   HR_EMPLOYEE_DOCUMENT_TYPE_DICT,
 } from '../dict-options';
 import { errorMessageOf } from '../shared/error';
-import { downloadHrBlob } from '../shared/file';
+import { downloadHrBlob, openHrFile } from '../shared/file';
 import { isDueWithinDays } from '../shared/warning';
 import { useColumns, useGridFormSchema } from './data';
 
@@ -85,12 +84,11 @@ function onRefresh() {
 }
 
 async function onViewDocument(row: HrEmployeeApi.EmployeeDocument) {
-  if (!row.storedName) {
-    message.warning($t('hr.documentWarning.fileOpenUnavailable'));
-    return;
-  }
   try {
-    await openSystemFile(row);
+    const opened = await openHrFile(row);
+    if (!opened) {
+      message.warning($t('hr.documentWarning.fileOpenUnavailable'));
+    }
   } catch (error) {
     message.error(errorMessageOf(error, $t('hr.documentWarning.fileOpenError')));
   }

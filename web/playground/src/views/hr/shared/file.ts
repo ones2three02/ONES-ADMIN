@@ -1,5 +1,7 @@
 import { downloadFileFromBlob } from '@vben/utils';
 
+import { openSystemFile } from '#/api/system/file';
+
 export function formatFileSize(size?: number) {
   if (size === undefined || size === null) {
     return '-';
@@ -18,4 +20,14 @@ export function downloadHrBlob(fileName: string, source: Blob) {
     fileName,
     source,
   });
+}
+
+export async function openHrFile(
+  metadata: Parameters<typeof openSystemFile>[0] | undefined,
+) {
+  if (!metadata?.storedName) {
+    return false;
+  }
+  await openSystemFile(metadata);
+  return true;
 }
