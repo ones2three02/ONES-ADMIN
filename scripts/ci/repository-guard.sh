@@ -23,11 +23,6 @@ scan_tracked_files() {
 }
 
 scan_tracked_files \
-  "old version v0.0.128" \
-  '0\.0\.128-SNAPSHOT|ONES_ADMIN_VERSION:v0\.0\.128|ones\.version:v0\.0\.128|info\.version.*v0\.0\.128|currentVersion.*v0\.0\.128|applicationVersion.*v0\.0\.128|当前产品版本：`v0\.0\.128`' \
-  server README.md VERSION docs
-
-scan_tracked_files \
   "private intranet address" \
   '(^|[^0-9A-Za-z_.-])((10[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3})|(192[.]168[.][0-9]{1,3}[.][0-9]{1,3})|(172[.](1[6-9]|2[0-9]|3[0-1])[.][0-9]{1,3}[.][0-9]{1,3}))(:[0-9]{2,5})?($|[^0-9A-Za-z_.-])' \
   . ':(exclude)docs/local/**' ':(exclude)server/config/**'

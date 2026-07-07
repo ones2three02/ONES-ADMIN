@@ -31,7 +31,7 @@ pipeline {
             node --version
             corepack --version
             git diff --check
-            test "$(cat VERSION)" = "v0.0.129"
+            bash scripts/ci/version-guard.sh
           '
         '''
       }
@@ -107,6 +107,7 @@ pipeline {
       steps {
         sh '''
           set -eu
+          bash scripts/ci/version-guard.sh
           bash scripts/ci/repository-guard.sh
         '''
       }
