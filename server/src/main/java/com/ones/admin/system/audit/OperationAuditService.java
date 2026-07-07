@@ -132,6 +132,11 @@ public class OperationAuditService {
         if (query.getSuccess() != null) {
             wrapper.eq(SystemOperationLogEntity::getSuccess, query.getSuccess());
         }
+        if (Boolean.TRUE.equals(query.getAbnormalOnly())) {
+            wrapper.and(nested -> nested.eq(SystemOperationLogEntity::getSuccess, false)
+                    .or()
+                    .ne(SystemOperationLogEntity::getResponseCode, 0));
+        }
         if (query.getResponseCode() != null) {
             wrapper.eq(SystemOperationLogEntity::getResponseCode, query.getResponseCode());
         }

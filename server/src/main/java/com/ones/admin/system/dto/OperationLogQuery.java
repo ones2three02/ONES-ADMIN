@@ -14,6 +14,7 @@ public class OperationLogQuery extends PageQuery {
     private String operation;
     private String permissionCode;
     private Boolean success;
+    private Boolean abnormalOnly;
     private Integer responseCode;
     private String traceId;
 
@@ -77,6 +78,14 @@ public class OperationLogQuery extends PageQuery {
 
     public void setSuccess(Boolean success) {
         this.success = success;
+    }
+
+    public Boolean getAbnormalOnly() {
+        return abnormalOnly;
+    }
+
+    public void setAbnormalOnly(Boolean abnormalOnly) {
+        this.abnormalOnly = abnormalOnly;
     }
 
     public Integer getResponseCode() {

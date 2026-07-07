@@ -52,6 +52,7 @@ export namespace SystemAuditApi {
   }
 
   export interface OperationLogQuery {
+    abnormalOnly?: boolean;
     endTime?: string;
     method?: string;
     module?: string;

@@ -186,6 +186,48 @@ class AuditLogControllerTest {
     }
 
     @Test
+    void abnormalOperationLogsCanBeQueriedAndExported() throws Exception {
+        String token = login();
+        String traceSuffix = "abnormal-operation-" + System.nanoTime();
+        String normalTrace = traceSuffix + "-normal";
+        String abnormalTrace = traceSuffix + "-forbidden";
+        insertOperationLog(normalTrace, LocalDateTime.now());
+        insertOperationLog(abnormalTrace, LocalDateTime.now(), false, 403, "没有权限访问该资源");
+
+        mockMvc.perform(get("/api/system/audit/operation-logs")
+                        .param("pageNum", "1")
+                        .param("pageSize", "20")
+                        .param("traceId", normalTrace)
+                        .param("abnormalOnly", "true")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(0));
+
+        mockMvc.perform(get("/api/system/audit/operation-logs")
+                        .param("pageNum", "1")
+                        .param("pageSize", "20")
+                        .param("traceId", abnormalTrace)
+                        .param("abnormalOnly", "true")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[*].traceId", hasItem(abnormalTrace)))
+                .andExpect(jsonPath("$.data.list[*].success", hasItem(false)))
+                .andExpect(jsonPath("$.data.list[*].responseCode", hasItem(403)));
+
+        mockMvc.perform(get("/api/system/audit/operation-logs/export")
+                        .param("traceId", abnormalTrace)
+                        .param("abnormalOnly", "true")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", containsString("text/csv")))
+                .andExpect(content().string(containsString(abnormalTrace)))
+                .andExpect(content().string(containsString("没有权限访问该资源")));
+    }
+
+    @Test
     void rejectInvalidAuditPageSize() throws Exception {
         String token = login();
 
@@ -257,6 +299,16 @@ class AuditLogControllerTest {
     }
 
     private void insertOperationLog(String traceId, LocalDateTime createdAt) {
+        insertOperationLog(traceId, createdAt, true, 0, null);
+    }
+
+    private void insertOperationLog(
+            String traceId,
+            LocalDateTime createdAt,
+            boolean success,
+            Integer responseCode,
+            String errorMessage
+    ) {
         SystemOperationLogEntity log = new SystemOperationLogEntity();
         log.setUserId(1L);
         log.setMethod("POST");
@@ -264,8 +316,9 @@ class AuditLogControllerTest {
         log.setModule("系统管理-审计日志");
         log.setOperation("清理过期审计日志");
         log.setPermissionCode("system:audit:retention");
-        log.setSuccess(true);
-        log.setResponseCode(0);
+        log.setSuccess(success);
+        log.setResponseCode(responseCode);
+        log.setErrorMessage(errorMessage);
         log.setTraceId(traceId);
         log.setIp("127.0.0.1");
         log.setUserAgent("JUnit");

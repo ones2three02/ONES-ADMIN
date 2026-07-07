@@ -113,6 +113,15 @@ export function useOperationLogFormSchema(): VbenFormSchema[] {
       label: '执行结果',
     },
     {
+      component: 'Select',
+      componentProps: {
+        allowClear: true,
+        options: [{ label: '仅看异常', value: true }],
+      },
+      fieldName: 'abnormalOnly',
+      label: '异常操作',
+    },
+    {
       component: 'RangePicker',
       componentProps: {
         format: 'YYYY-MM-DD HH:mm:ss',
