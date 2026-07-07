@@ -26,6 +26,29 @@ export function downloadHrBlob(fileName: string, source: Blob) {
   });
 }
 
+export async function downloadHrBlobWithFeedback(
+  options: {
+    errorMessage: string;
+    fileName: string;
+    loadingMessage: string;
+    successMessage: string;
+  },
+  loader: () => Promise<Blob>,
+) {
+  const hide = message.loading(options.loadingMessage, 0);
+  try {
+    const blob = await loader();
+    downloadHrBlob(options.fileName, blob);
+    message.success(options.successMessage);
+    return true;
+  } catch (error) {
+    message.error(errorMessageOf(error, options.errorMessage));
+    return false;
+  } finally {
+    hide();
+  }
+}
+
 export async function openHrFile(
   metadata: Parameters<typeof openSystemFile>[0] | undefined,
 ) {

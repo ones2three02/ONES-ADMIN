@@ -7,7 +7,7 @@ import { computed, ref } from 'vue';
 import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
 
-import { Button, Card, message, Statistic } from 'antdv-next';
+import { Button, Card, Statistic } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import { exportExpiringEmployeeDocuments, getExpiringEmployeeDocuments } from '#/api';
@@ -17,8 +17,7 @@ import {
   getHrDictOptions,
   HR_EMPLOYEE_DOCUMENT_TYPE_DICT,
 } from '../dict-options';
-import { errorMessageOf } from '../shared/error';
-import { downloadHrBlob, openHrFileWithFeedback } from '../shared/file';
+import { downloadHrBlobWithFeedback, openHrFileWithFeedback } from '../shared/file';
 import { isDueWithinDays } from '../shared/warning';
 import { useColumns, useGridFormSchema } from './data';
 
@@ -93,16 +92,18 @@ async function onViewDocument(row: HrEmployeeApi.EmployeeDocument) {
 
 async function onExportDocuments() {
   exportLoading.value = true;
-  const hide = message.loading($t('hr.documentWarning.exporting'), 0);
   try {
-    const blob = await exportExpiringEmployeeDocuments(currentWindowDays.value);
-    downloadHrBlob('ones-hr-expiring-documents.csv', blob);
-    message.success($t('hr.documentWarning.exportSuccess'));
-  } catch (error) {
-    message.error(errorMessageOf(error, $t('hr.documentWarning.exportError')));
+    await downloadHrBlobWithFeedback(
+      {
+        errorMessage: $t('hr.documentWarning.exportError'),
+        fileName: 'ones-hr-expiring-documents.csv',
+        loadingMessage: $t('hr.documentWarning.exporting'),
+        successMessage: $t('hr.documentWarning.exportSuccess'),
+      },
+      () => exportExpiringEmployeeDocuments(currentWindowDays.value),
+    );
   } finally {
     exportLoading.value = false;
-    hide();
   }
 }
 

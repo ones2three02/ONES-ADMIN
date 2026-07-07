@@ -20,7 +20,7 @@ import {
   HR_ROSTER_IMPORT_STATUS_DICT,
 } from '../dict-options';
 import { errorMessageOf, normalizeError } from '../shared/error';
-import { downloadHrBlob } from '../shared/file';
+import { downloadHrBlobWithFeedback } from '../shared/file';
 import ErrorsModal from './modules/errors.vue';
 
 const [Errors, errorsModalApi] = useVbenModal({
@@ -106,16 +106,15 @@ function onRefresh() {
 }
 
 async function handleDownloadTemplate() {
-  const hide = message.loading($t('hr.rosterImport.templateDownloading'), 0);
-  try {
-    const blob = await downloadRosterTemplate();
-    downloadHrBlob('ones-hr-roster-template.csv', blob);
-    message.success($t('hr.rosterImport.templateDownloadSuccess'));
-  } catch (error: unknown) {
-    message.error(errorMessageOf(error, $t('hr.rosterImport.templateDownloadError')));
-  } finally {
-    hide();
-  }
+  await downloadHrBlobWithFeedback(
+    {
+      errorMessage: $t('hr.rosterImport.templateDownloadError'),
+      fileName: 'ones-hr-roster-template.csv',
+      loadingMessage: $t('hr.rosterImport.templateDownloading'),
+      successMessage: $t('hr.rosterImport.templateDownloadSuccess'),
+    },
+    downloadRosterTemplate,
+  );
 }
 
 async function handleCustomUpload(options: UploadRequestOptions) {

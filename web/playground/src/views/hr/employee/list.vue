@@ -21,7 +21,7 @@ import {
   HR_GENDER_DICT,
 } from '../dict-options';
 import { errorMessageOf } from '../shared/error';
-import { downloadHrBlob } from '../shared/file';
+import { downloadHrBlobWithFeedback } from '../shared/file';
 import Form from './modules/form.vue';
 import Lifecycle from './modules/lifecycle.vue';
 import Profile from './modules/profile.vue';
@@ -120,19 +120,18 @@ function onCreate() {
 }
 
 async function onExport() {
-  const hide = message.loading($t('hr.employeeList.exporting'), 0);
-  try {
-    const blob = await exportEmployees({
+  await downloadHrBlobWithFeedback(
+    {
+      errorMessage: $t('hr.employeeList.exportError'),
+      fileName: 'ones-hr-employees.csv',
+      loadingMessage: $t('hr.employeeList.exporting'),
+      successMessage: $t('hr.employeeList.exportSuccess'),
+    },
+    () => exportEmployees({
       ...latestQuery.value,
       deptId: selectedDeptId.value || undefined,
-    });
-    downloadHrBlob('ones-hr-employees.csv', blob);
-    message.success($t('hr.employeeList.exportSuccess'));
-  } catch (error: unknown) {
-    message.error(errorMessageOf(error, $t('hr.employeeList.exportError')));
-  } finally {
-    hide();
-  }
+    }),
+  );
 }
 
 function onEdit(row: HrEmployeeApi.HrEmployee) {

@@ -20,7 +20,7 @@ import {
 import { $t } from '#/locales';
 
 import { errorMessageOf } from '../shared/error';
-import { downloadHrBlob, openHrFileWithFeedback } from '../shared/file';
+import { downloadHrBlobWithFeedback, openHrFileWithFeedback } from '../shared/file';
 import { isDueWithinDays } from '../shared/warning';
 import { useColumns, useExpiringColumns, useExpiringGridFormSchema } from './data';
 import {
@@ -205,16 +205,18 @@ async function onViewAttachment(row: HrContractApi.HrContract) {
 
 async function onExportExpiringContracts() {
   expiringExportLoading.value = true;
-  const hide = message.loading($t('hr.contract.expiringExporting'), 0);
   try {
-    const blob = await exportExpiringContracts(expiringWindowDays.value);
-    downloadHrBlob('ones-hr-expiring-contracts.csv', blob);
-    message.success($t('hr.contract.expiringExportSuccess'));
-  } catch (error: unknown) {
-    message.error(errorMessageOf(error, $t('hr.contract.expiringExportError')));
+    await downloadHrBlobWithFeedback(
+      {
+        errorMessage: $t('hr.contract.expiringExportError'),
+        fileName: 'ones-hr-expiring-contracts.csv',
+        loadingMessage: $t('hr.contract.expiringExporting'),
+        successMessage: $t('hr.contract.expiringExportSuccess'),
+      },
+      () => exportExpiringContracts(expiringWindowDays.value),
+    );
   } finally {
     expiringExportLoading.value = false;
-    hide();
   }
 }
 
