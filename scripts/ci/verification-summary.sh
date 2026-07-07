@@ -115,11 +115,47 @@ function readFrontendBuildSummary() {
   };
 }
 
+function readApiGovernanceReportSummary() {
+  const reportPath = path.join(rootDir, '.ci-artifacts', 'api-governance-report.json');
+  const report = readJsonIfExists(reportPath);
+
+  if (!report) {
+    return {
+      reportPath: path.relative(rootDir, reportPath),
+      exists: false,
+      version: null,
+      qualityScore: null,
+      governancePassed: false,
+      manifestChecksum: null,
+      releaseStatus: null,
+      passed: false,
+    };
+  }
+
+  const manifestChecksum = report.manifest?.checksum ?? null;
+  const governancePassed = report.governance?.passed === true;
+  const versionMatches = report.applicationVersion === productVersion;
+  const qualityScore = Number(report.qualityScore);
+  const checksumValid = typeof manifestChecksum === 'string' && /^[a-f0-9]{64}$/.test(manifestChecksum);
+
+  return {
+    reportPath: path.relative(rootDir, reportPath),
+    exists: true,
+    version: report.applicationVersion ?? null,
+    qualityScore,
+    governancePassed,
+    manifestChecksum,
+    releaseStatus: report.releaseReadiness?.status ?? null,
+    passed: versionMatches && governancePassed && qualityScore >= 95 && checksumValid,
+  };
+}
+
 const buildMetadataPath = path.join(rootDir, '.ci-artifacts', 'build-metadata.json');
 const buildMetadata = readJsonIfExists(buildMetadataPath);
 const buildMetadataVersionMatches = buildMetadata?.product?.version === productVersion;
 const backendTests = readBackendTestSummary();
 const frontendBuild = readFrontendBuildSummary();
+const apiGovernanceReport = readApiGovernanceReportSummary();
 
 const checks = [
   {
@@ -149,6 +185,12 @@ const checks = [
     exitCode: frontendBuild.passed ? 0 : 1,
     passed: frontendBuild.passed,
   },
+  {
+    code: 'API_GOVERNANCE_REPORT_PRESENT',
+    command: 'read .ci-artifacts/api-governance-report.json',
+    exitCode: apiGovernanceReport.passed ? 0 : 1,
+    passed: apiGovernanceReport.passed,
+  },
 ];
 
 const summary = {
@@ -171,6 +213,7 @@ const summary = {
   artifacts: {
     backendTests,
     frontendBuild,
+    apiGovernanceReport,
   },
   overall: {
     passed: checks.every((check) => check.passed),

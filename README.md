@@ -2,7 +2,7 @@
 
 ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
-当前产品版本：`v0.0.133`
+当前产品版本：`v0.0.134`
 
 ## 当前能力
 
@@ -90,7 +90,7 @@ VITE_GLOB_AUTH_SSO_URL=
 
 ## 验证命令
 
-Jenkins 已提供根目录 `Jenkinsfile` 作为当前阶段验证门禁，默认只安装前端锁定依赖并执行测试、类型检查、构建、版本一致性检查、版本残留扫描和敏感信息扫描，不包含部署动作；本地与 Jenkins 共用 `scripts/ci/verify.sh` 阶段入口，版本检查沉淀在 `scripts/ci/version-guard.sh`，仓库扫描逻辑沉淀在 `scripts/ci/repository-guard.sh`。流水线会生成 `.ci-artifacts/build-metadata.json`，用于归档当前产品版本、Git 提交、分支和工具链版本，并生成 `.ci-artifacts/verification-summary.json` 汇总门禁结果、后端测试报告和前端构建产物，便于 Jenkins 构建追溯与质量审计。
+Jenkins 已提供根目录 `Jenkinsfile` 作为当前阶段验证门禁，默认只安装前端锁定依赖并执行测试、类型检查、构建、版本一致性检查、版本残留扫描和敏感信息扫描，不包含部署动作；本地与 Jenkins 共用 `scripts/ci/verify.sh` 阶段入口，版本检查沉淀在 `scripts/ci/version-guard.sh`，仓库扫描逻辑沉淀在 `scripts/ci/repository-guard.sh`。流水线会生成 `.ci-artifacts/build-metadata.json`，用于归档当前产品版本、Git 提交、分支和工具链版本，生成 `.ci-artifacts/api-governance-report.json` 归档接口治理聚合报告，并生成 `.ci-artifacts/verification-summary.json` 汇总门禁结果、接口治理状态、后端测试报告和前端构建产物，便于 Jenkins 构建追溯与质量审计。
 
 ```bash
 bash scripts/ci/verify.sh all

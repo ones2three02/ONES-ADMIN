@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.134 - 2026-07-07
+
+- 新增 `ApiGovernanceReportArtifactTest`，在后端测试上下文中生成 `.ci-artifacts/api-governance-report.json`，归档真实接口治理聚合报告。
+- `scripts/ci/verify.sh` 新增 `api-governance-report` 阶段，Jenkinsfile 新增 API Governance Report 阶段。
+- `scripts/ci/verification-summary.sh` 新增接口治理报告校验，要求报告版本匹配当前产品版本、治理通过、质量分不低于 95 且 Manifest 指纹格式有效。
+- 本版本不新增业务接口，不新增数据库迁移，不新增中间件。
+- 产品版本递增至 `v0.0.134`。
+
 ## v0.0.133 - 2026-07-07
 
 - 新增 `scripts/ci/verification-summary.sh`，生成 `.ci-artifacts/verification-summary.json`，汇总版本门禁、仓库扫描、diff 检查、后端测试报告和前端构建产物状态。

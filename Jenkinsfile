@@ -75,6 +75,12 @@ pipeline {
       }
     }
 
+    stage('API Governance Report') {
+      steps {
+        sh 'bash scripts/ci/verify.sh api-governance-report'
+      }
+    }
+
     stage('Verification Summary') {
       steps {
         sh 'bash scripts/ci/verify.sh verification-summary'

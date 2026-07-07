@@ -17,6 +17,7 @@ Stages:
   backend-test           Run backend Maven tests.
   frontend-build         Build the Playground frontend.
   repository-guard       Run version and repository safety guards.
+  api-governance-report  Generate the API governance report artifact.
   verification-summary   Generate a machine-readable verification summary.
   all                    Run the full CI verification sequence.
 EOF
@@ -88,6 +89,13 @@ run_repository_guard() {
   "
 }
 
+run_api_governance_report() {
+  run_with_toolchain bash -c "
+    cd '$ROOT_DIR/server'
+    ./mvnw -Dtest=ApiGovernanceReportArtifactTest test
+  "
+}
+
 run_verification_summary() {
   run_with_toolchain bash -c "
     cd '$ROOT_DIR'
@@ -104,6 +112,7 @@ run_all() {
   run_backend_test
   run_frontend_build
   run_repository_guard
+  run_api_governance_report
   run_verification_summary
 }
 
@@ -131,6 +140,9 @@ case "${1:-}" in
     ;;
   repository-guard)
     run_repository_guard
+    ;;
+  api-governance-report)
+    run_api_governance_report
     ;;
   verification-summary)
     run_verification_summary
