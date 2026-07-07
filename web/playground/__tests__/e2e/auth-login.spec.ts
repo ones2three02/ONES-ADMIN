@@ -25,11 +25,26 @@ test.describe('Auth Login Page Tests', () => {
     await expect(page.getByText('快速选择账号', { exact: true })).toHaveCount(0);
     await expect(page.getByText('创建账号', { exact: true })).toHaveCount(0);
     await expect(page.getByText('其他登录方式', { exact: true })).toHaveCount(0);
+    await expect(page.locator(`input[name='username']`)).toHaveAttribute(
+      'autocomplete',
+      'username',
+    );
+    await expect(page.locator(`input[name='password']`)).toHaveAttribute(
+      'autocomplete',
+      'current-password',
+    );
   });
 
   test('should present compact icon-only login methods', async ({ page }) => {
     const qrcodeCorner = page.locator('.enterprise-login-qrcode-corner');
-    await expect(qrcodeCorner).toHaveAttribute('href', '/auth/qrcode-login');
+    await expect(qrcodeCorner).toHaveAttribute(
+      'href',
+      /#?\/auth\/qrcode-login/,
+    );
+    await expect(qrcodeCorner).toHaveAttribute(
+      'aria-label',
+      /Switch to QR code login|切换到扫码登录/,
+    );
 
     const methodEntries = page.locator(
       '.enterprise-login-methods .enterprise-login-icon-button',
@@ -44,7 +59,60 @@ test.describe('Auth Login Page Tests', () => {
         .nth(index)
         .evaluate((element) => getComputedStyle(element).borderRadius);
       expect(Number.parseFloat(radius)).toBeGreaterThanOrEqual(20);
+      await expect(methodEntries.nth(index)).toHaveAttribute(
+        'aria-label',
+        /Enabled after admin configuration|管理员配置后启用/,
+      );
+      await expect(methodEntries.nth(index)).toHaveAttribute(
+        'data-ready',
+        'false',
+      );
     }
+  });
+
+  test('should guide unavailable mobile login without fake verification', async ({
+    page,
+  }) => {
+    await page
+      .locator('.enterprise-login-methods .enterprise-login-icon-button')
+      .nth(2)
+      .click();
+    await expect(page).toHaveURL(/code-login/);
+
+    await expect(
+      page.getByRole('heading', { name: /Mobile Login|手机号登录/ }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        /SMS authentication requires backend SMS integration|短信认证需后端短信服务接入/,
+      ),
+    ).toBeVisible();
+
+    const phoneInput = page.locator(`input[name='phoneNumber']`);
+    await expect(phoneInput).toHaveAttribute('autocomplete', 'tel');
+    await expect(phoneInput).toHaveAttribute('inputmode', 'numeric');
+    await expect(phoneInput).toHaveAttribute('maxlength', '11');
+    await phoneInput.fill('13800138000');
+    await page.getByText(/Get Security code|获取验证码/).click();
+    await expect(page.locator('.ant-message')).toContainText(
+      /SMS authentication is not configured|短信认证尚未配置/,
+    );
+    await expect(page.getByText(/60秒后重新获取|Resend in 60s/)).toHaveCount(0);
+  });
+
+  test('should present enterprise QR login entry state', async ({ page }) => {
+    await page.locator('.enterprise-login-qrcode-corner').click();
+    await expect(page).toHaveURL(/qrcode-login/);
+
+    await expect(
+      page.getByRole('heading', { name: /QR Code Login|扫码登录/ }),
+    ).toBeVisible();
+    await expect(page.getByAltText(/QR Code Login|扫码登录/)).toBeVisible();
+    await expect(
+      page.getByText(
+        /QR login is enabled after Feishu|扫码能力需飞书或企业 SSO 回调完成后启用/,
+      ),
+    ).toBeVisible();
   });
 
   // 测试用例: 成功登录

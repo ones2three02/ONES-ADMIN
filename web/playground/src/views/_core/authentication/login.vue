@@ -32,6 +32,8 @@ const formSchema = computed((): VbenFormSchema[] => {
     {
       component: 'VbenInput',
       componentProps: {
+        autocomplete: 'username',
+        autofocus: true,
         placeholder: $t('authentication.usernameTip'),
       },
       fieldName: 'username',
@@ -41,6 +43,7 @@ const formSchema = computed((): VbenFormSchema[] => {
     {
       component: 'VbenInputPassword',
       componentProps: {
+        autocomplete: 'current-password',
         placeholder: $t('authentication.password'),
       },
       fieldName: 'password',
@@ -97,6 +100,13 @@ function handleSsoLogin() {
   window.location.href = buildLoginUrlWithState(ssoAuthConfig.url, 'sso');
 }
 
+function getLoginMethodTitle(label: string, ready: boolean) {
+  const status = ready
+    ? $t('authentication.loginPanel.methodReadyTip')
+    : $t('authentication.loginPanel.methodPendingTip');
+  return `${label}，${status}`;
+}
+
 async function onSubmit(params: Recordable<any>) {
   authStore.authLogin(params).catch(() => {
     // 登陆失败后刷新验证码
@@ -126,9 +136,9 @@ async function onSubmit(params: Recordable<any>) {
   >
     <template #title>
       <RouterLink
-        :aria-label="$t('authentication.qrcodeLogin')"
+        :aria-label="$t('authentication.loginPanel.qrcodeSwitchTip')"
         class="enterprise-login-qrcode-corner"
-        :title="$t('authentication.qrcodeLogin')"
+        :title="$t('authentication.loginPanel.qrcodeSwitchTip')"
         to="/auth/qrcode-login"
       >
         <IconifyIcon icon="lucide:qr-code" />
@@ -164,10 +174,20 @@ async function onSubmit(params: Recordable<any>) {
 
         <div class="enterprise-login-icon-row">
           <button
-            :aria-label="$t('authentication.feishuLogin')"
+            :aria-label="
+              getLoginMethodTitle(
+                $t('authentication.feishuLogin'),
+                Boolean(feishuAuthConfig?.url),
+              )
+            "
             class="enterprise-login-icon-button enterprise-login-icon-button-primary"
             :data-ready="Boolean(feishuAuthConfig?.url)"
-            :title="$t('authentication.feishuLogin')"
+            :title="
+              getLoginMethodTitle(
+                $t('authentication.feishuLogin'),
+                Boolean(feishuAuthConfig?.url),
+              )
+            "
             type="button"
             @click="handleFeishuLogin"
           >
@@ -175,10 +195,20 @@ async function onSubmit(params: Recordable<any>) {
           </button>
 
           <button
-            :aria-label="$t('authentication.loginPanel.enterpriseSsoShort')"
+            :aria-label="
+              getLoginMethodTitle(
+                $t('authentication.loginPanel.enterpriseSsoShort'),
+                Boolean(ssoAuthConfig?.url),
+              )
+            "
             class="enterprise-login-icon-button"
             :data-ready="Boolean(ssoAuthConfig?.url)"
-            :title="$t('authentication.loginPanel.enterpriseSsoShort')"
+            :title="
+              getLoginMethodTitle(
+                $t('authentication.loginPanel.enterpriseSsoShort'),
+                Boolean(ssoAuthConfig?.url),
+              )
+            "
             type="button"
             @click="handleSsoLogin"
           >
@@ -186,9 +216,14 @@ async function onSubmit(params: Recordable<any>) {
           </button>
 
           <RouterLink
-            :aria-label="$t('authentication.mobileLogin')"
+            :aria-label="
+              getLoginMethodTitle($t('authentication.mobileLogin'), false)
+            "
             class="enterprise-login-icon-button"
-            :title="$t('authentication.mobileLogin')"
+            data-ready="false"
+            :title="
+              getLoginMethodTitle($t('authentication.mobileLogin'), false)
+            "
             to="/auth/code-login"
           >
             <IconifyIcon icon="lucide:smartphone" />
@@ -206,11 +241,12 @@ async function onSubmit(params: Recordable<any>) {
 
 .enterprise-login-qrcode-corner {
   position: absolute;
-  top: -38px;
-  right: -38px;
+  top: 0;
+  right: 0;
+  z-index: 2;
   display: inline-flex;
-  width: 68px;
-  height: 68px;
+  width: 62px;
+  height: 62px;
   align-items: flex-end;
   justify-content: flex-start;
   border-radius: 0 22px 0 18px;
@@ -226,6 +262,7 @@ async function onSubmit(params: Recordable<any>) {
   box-shadow:
     inset 1px -1px 0 hsl(var(--border) / 72%),
     0 12px 28px hsl(var(--primary) / 10%);
+  cursor: pointer;
   transition:
     background 0.18s ease,
     color 0.18s ease,
@@ -249,6 +286,11 @@ async function onSubmit(params: Recordable<any>) {
 .enterprise-login-qrcode-corner:hover {
   color: hsl(var(--primary));
   transform: translate(-1px, 1px);
+}
+
+.enterprise-login-qrcode-corner:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 3px;
 }
 
 .enterprise-login-qrcode-corner svg {
@@ -396,6 +438,7 @@ async function onSubmit(params: Recordable<any>) {
 }
 
 .enterprise-login-icon-button {
+  position: relative;
   display: inline-flex;
   width: 42px;
   height: 42px;
@@ -411,6 +454,7 @@ async function onSubmit(params: Recordable<any>) {
     ),
     hsl(var(--background));
   color: hsl(var(--foreground) / 82%);
+  cursor: pointer;
   outline: none;
   text-decoration: none;
   box-shadow:
@@ -432,6 +476,11 @@ async function onSubmit(params: Recordable<any>) {
   transform: translateY(-1px);
 }
 
+.enterprise-login-icon-button:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 3px;
+}
+
 .ones-auth-login .enterprise-login-methods .enterprise-login-icon-button {
   border-radius: 999px;
 }
@@ -442,6 +491,27 @@ async function onSubmit(params: Recordable<any>) {
 
 .enterprise-login-icon-button[data-ready='false'] {
   color: hsl(var(--foreground) / 58%);
+}
+
+.enterprise-login-icon-button[data-ready='false']::after {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border: 2px solid hsl(var(--background));
+  border-radius: 999px;
+  background: hsl(var(--warning));
+  box-shadow: 0 0 0 2px hsl(var(--warning) / 16%);
+  content: '';
+}
+
+.enterprise-login-icon-button[data-ready='false']:hover {
+  border-color: hsl(var(--warning) / 52%);
+  color: hsl(var(--foreground) / 76%);
+  box-shadow:
+    0 0 0 3px hsl(var(--warning) / 10%),
+    0 12px 24px hsl(var(--warning) / 10%);
 }
 
 .enterprise-login-icon-button svg {

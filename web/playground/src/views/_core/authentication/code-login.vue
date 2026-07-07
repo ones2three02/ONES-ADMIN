@@ -15,28 +15,16 @@ const loading = ref(false);
 const CODE_LENGTH = 6;
 const loginRef =
   useTemplateRef<InstanceType<typeof AuthenticationCodeLogin>>('loginRef');
-function sendCodeApi(phoneNumber: string) {
-  message.loading({
-    content: $t('page.auth.sendingCode'),
-    duration: 0,
-    key: 'sending-code',
-  });
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      message.success({
-        content: $t('page.auth.codeSentTo', [phoneNumber]),
-        duration: 3,
-        key: 'sending-code',
-      });
-      resolve({ code: '123456', phoneNumber });
-    }, 3000);
-  });
-}
+
 const formSchema = computed((): VbenFormSchema[] => {
   return [
     {
       component: 'VbenInput',
       componentProps: {
+        autocomplete: 'tel',
+        autofocus: true,
+        inputmode: 'numeric',
+        maxlength: 11,
         placeholder: $t('authentication.mobile'),
       },
       fieldName: 'phoneNumber',
@@ -60,23 +48,17 @@ const formSchema = computed((): VbenFormSchema[] => {
           return text;
         },
         handleSendCode: async () => {
-          // 模拟发送验证码
-          // Simulate sending verification code
-          loading.value = true;
           const formApi = loginRef.value?.getFormApi();
           if (!formApi) {
-            loading.value = false;
             throw new Error('formApi is not ready');
           }
           await formApi.validateField('phoneNumber');
           const isPhoneReady = await formApi.isFieldValid('phoneNumber');
           if (!isPhoneReady) {
-            loading.value = false;
             throw new Error('Phone number is not Ready');
           }
-          const { phoneNumber } = await formApi.getValues();
-          await sendCodeApi(phoneNumber);
-          loading.value = false;
+          message.info($t('authentication.loginPanel.smsConfigTip'));
+          throw new Error('SMS login is not configured');
         },
         placeholder: $t('authentication.code'),
       },
@@ -95,6 +77,7 @@ const formSchema = computed((): VbenFormSchema[] => {
  */
 async function handleLogin(values: Recordable<any>) {
   void values;
+  message.info($t('authentication.loginPanel.smsConfigTip'));
 }
 </script>
 
@@ -103,6 +86,9 @@ async function handleLogin(values: Recordable<any>) {
     ref="loginRef"
     :form-schema="formSchema"
     :loading="loading"
+    :sub-title="$t('authentication.loginPanel.mobileSubtitle')"
+    :submit-button-text="$t('authentication.loginPanel.mobileSubmitText')"
+    :title="$t('authentication.loginPanel.mobileTitle')"
     @submit="handleLogin"
   />
 </template>

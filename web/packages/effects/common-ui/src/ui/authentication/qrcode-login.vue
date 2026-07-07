@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { $t } from '@vben/locales';
@@ -32,6 +32,10 @@ interface Props {
    */
   submitButtonText?: string;
   /**
+   * @zh_CN 二维码内容
+   */
+  qrcodeText?: string;
+  /**
    * @zh_CN 描述
    */
   description?: string;
@@ -50,6 +54,7 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   showBack: true,
   loginPath: '/auth/login',
+  qrcodeText: '',
   submitButtonText: '',
   subTitle: '',
   title: '',
@@ -57,7 +62,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 const router = useRouter();
 
-const text = ref('https://vben.vvbin.cn');
+const text = computed(
+  () =>
+    props.qrcodeText ||
+    globalThis.location?.origin ||
+    'https://www.vben.pro',
+);
 
 const qrcode = useQRCode(text, {
   errorCorrectionLevel: 'H',
@@ -73,7 +83,7 @@ function goToLogin() {
   <div>
     <Title>
       <slot name="title">
-        {{ title || $t('authentication.welcomeBack') }} 📱
+        {{ title || $t('authentication.welcomeBack') }}
       </slot>
       <template #desc>
         <span class="text-muted-foreground">
@@ -85,8 +95,12 @@ function goToLogin() {
     </Title>
 
     <div class="mt-6 flex-col-center">
-      <img :src="qrcode" alt="qrcode" class="w-1/2" />
-      <p class="mt-4 text-sm text-muted-foreground">
+      <img
+        :src="qrcode"
+        :alt="title || $t('authentication.qrcodeLogin')"
+        class="size-44 rounded-lg border border-border bg-background p-3 shadow-sm"
+      />
+      <p aria-live="polite" class="mt-4 text-sm text-muted-foreground">
         <slot name="description">
           {{ description || $t('authentication.qrcodePrompt') }}
         </slot>
