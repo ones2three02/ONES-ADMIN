@@ -1,6 +1,10 @@
 import { downloadFileFromBlob } from '@vben/utils';
 
+import { message } from 'antdv-next';
+
 import { openSystemFile } from '#/api/system/file';
+
+import { errorMessageOf } from './error';
 
 export function formatFileSize(size?: number) {
   if (size === undefined || size === null) {
@@ -30,4 +34,23 @@ export async function openHrFile(
   }
   await openSystemFile(metadata);
   return true;
+}
+
+export async function openHrFileWithFeedback(
+  metadata: Parameters<typeof openSystemFile>[0] | undefined,
+  options: {
+    errorMessage: string;
+    unavailableMessage: string;
+  },
+) {
+  try {
+    const opened = await openHrFile(metadata);
+    if (!opened) {
+      message.warning(options.unavailableMessage);
+    }
+    return opened;
+  } catch (error) {
+    message.error(errorMessageOf(error, options.errorMessage));
+    return false;
+  }
 }

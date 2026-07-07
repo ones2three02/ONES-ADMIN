@@ -20,7 +20,7 @@ import {
 import { $t } from '#/locales';
 
 import { errorMessageOf } from '../shared/error';
-import { downloadHrBlob, openHrFile } from '../shared/file';
+import { downloadHrBlob, openHrFileWithFeedback } from '../shared/file';
 import { isDueWithinDays } from '../shared/warning';
 import { useColumns, useExpiringColumns, useExpiringGridFormSchema } from './data';
 import {
@@ -193,10 +193,10 @@ async function onViewAttachment(row: HrContractApi.HrContract) {
   }
   try {
     const metadata = await getContractAttachmentMetadata(row.id);
-    const opened = await openHrFile(metadata);
-    if (!opened) {
-      message.warning($t('hr.contract.attachmentOpenUnavailable'));
-    }
+    await openHrFileWithFeedback(metadata, {
+      errorMessage: $t('hr.contract.attachmentOpenError'),
+      unavailableMessage: $t('hr.contract.attachmentOpenUnavailable'),
+    });
   } catch (error: unknown) {
     message.error(errorMessageOf(error, $t('hr.contract.attachmentLoadError')));
   }

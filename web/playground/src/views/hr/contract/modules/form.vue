@@ -18,7 +18,7 @@ import {
 import { $t } from '#/locales';
 
 import { errorMessageOf, normalizeError } from '../../shared/error';
-import { formatFileSize, openHrFile } from '../../shared/file';
+import { formatFileSize, openHrFileWithFeedback } from '../../shared/file';
 import { useFormSchema } from '../data';
 
 const emits = defineEmits(['success']);
@@ -191,14 +191,10 @@ async function previewAttachment() {
           }
         : undefined,
     ));
-  try {
-    const opened = await openHrFile(file);
-    if (!opened) {
-      message.warning($t('hr.contract.attachmentOpenUnavailable'));
-    }
-  } catch (error: unknown) {
-    message.error(errorMessageOf(error, $t('hr.contract.attachmentOpenError')));
-  }
+  await openHrFileWithFeedback(file, {
+    errorMessage: $t('hr.contract.attachmentOpenError'),
+    unavailableMessage: $t('hr.contract.attachmentOpenUnavailable'),
+  });
 }
 </script>
 <template>

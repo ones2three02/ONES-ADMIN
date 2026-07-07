@@ -56,7 +56,7 @@ import {
   getHrDictOption,
 } from '../../dict-options';
 import { errorMessageOf } from '../../shared/error';
-import { formatFileSize, openHrFile } from '../../shared/file';
+import { formatFileSize, openHrFileWithFeedback } from '../../shared/file';
 
 const employee = ref<HrEmployeeApi.HrEmployee>();
 const contracts = ref<HrContractApi.HrContract[]>([]);
@@ -323,16 +323,10 @@ function cancelDocumentUpload() {
 }
 
 async function openDocument(file: HrEmployeeApi.EmployeeDocument) {
-  try {
-    const opened = await openHrFile(file);
-    if (!opened) {
-      message.warning($t('hr.employeeProfile.documentUnavailable'));
-    }
-  } catch (error: unknown) {
-    message.error(
-      errorMessageOf(error, $t('hr.employeeProfile.documentOpenError')),
-    );
-  }
+  await openHrFileWithFeedback(file, {
+    errorMessage: $t('hr.employeeProfile.documentOpenError'),
+    unavailableMessage: $t('hr.employeeProfile.documentUnavailable'),
+  });
 }
 
 function documentStatusColor(file: HrEmployeeApi.EmployeeDocument) {

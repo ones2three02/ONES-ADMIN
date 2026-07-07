@@ -18,7 +18,7 @@ import {
   HR_EMPLOYEE_DOCUMENT_TYPE_DICT,
 } from '../dict-options';
 import { errorMessageOf } from '../shared/error';
-import { downloadHrBlob, openHrFile } from '../shared/file';
+import { downloadHrBlob, openHrFileWithFeedback } from '../shared/file';
 import { isDueWithinDays } from '../shared/warning';
 import { useColumns, useGridFormSchema } from './data';
 
@@ -84,14 +84,10 @@ function onRefresh() {
 }
 
 async function onViewDocument(row: HrEmployeeApi.EmployeeDocument) {
-  try {
-    const opened = await openHrFile(row);
-    if (!opened) {
-      message.warning($t('hr.documentWarning.fileOpenUnavailable'));
-    }
-  } catch (error) {
-    message.error(errorMessageOf(error, $t('hr.documentWarning.fileOpenError')));
-  }
+  await openHrFileWithFeedback(row, {
+    errorMessage: $t('hr.documentWarning.fileOpenError'),
+    unavailableMessage: $t('hr.documentWarning.fileOpenUnavailable'),
+  });
 }
 
 async function onExportDocuments() {
