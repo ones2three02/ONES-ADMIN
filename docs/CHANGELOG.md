@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.94 - 2026-07-07
+
+- 系统文件上传响应新增 `storedName` 字段，前端可直接使用服务端存储对象名访问受控文件下载入口，不再从公开 URL 反解析文件标识。
+- 前端新增 `openSystemFile` 统一文件查看工具，通过 Axios 携带 `Authorization` 请求头拉取 Blob 后再打开临时预览地址，适配当前 Sa-Token 只读 Header、不读 Cookie 的安全配置。
+- HRMS 合同附件、员工档案资料附件和资料预警页的“查看附件”动作统一切换到受控 Blob 下载链路，避免页面直接打开 `sys_file.url` 导致认证头丢失或绕开业务授权语义。
+- 本版本不新增数据库迁移，不新增中间件，继续复用 `/api/system/files/{storedName}`、`FileAccessService`、HRMS 合同/员工资料业务访问策略和现有文件存储抽象。
+- 产品版本递增至 `v0.0.94`。
+
 ## v0.0.93 - 2026-07-07
 
 - HRMS 新增“资料预警”前端菜单页：`/hr/document-warning`，将 `v0.0.92` 的员工资料到期预警接口升级为可操作的 HR 运营视图。

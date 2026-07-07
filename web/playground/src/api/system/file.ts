@@ -109,6 +109,39 @@ export async function getFileMetadata(id: number | string) {
   return normalizeFileMetadata(response);
 }
 
+export async function downloadSystemFile(metadata: Pick<SystemFileApi.FileMetadata, 'storedName'>) {
+  if (!metadata.storedName) {
+    throw new Error('文件存储标识缺失');
+  }
+  return requestClient.get<Blob>(
+    `/system/files/${encodeURIComponent(metadata.storedName)}`,
+    {
+      responseReturn: 'body',
+      responseType: 'blob',
+    },
+  );
+}
+
+export async function openSystemFile(metadata: SystemFileApi.FileMetadata) {
+  const previewWindow = window.open('', '_blank');
+  try {
+    const blob = await downloadSystemFile(metadata);
+    const url = window.URL.createObjectURL(blob);
+    if (previewWindow) {
+      previewWindow.opener = null;
+      previewWindow.location.href = url;
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+    window.setTimeout(() => {
+      window.URL.revokeObjectURL(url);
+    }, 60_000);
+  } catch (error) {
+    previewWindow?.close();
+    throw error;
+  }
+}
+
 export async function uploadSystemFile(file: File) {
   const response = await requestClient.upload<SystemFileApi.FileUploadResponse>(
     '/system/files/upload',

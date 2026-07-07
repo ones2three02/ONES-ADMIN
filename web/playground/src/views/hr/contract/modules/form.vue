@@ -12,6 +12,7 @@ import { useVbenForm } from '#/adapter/form';
 import {
   createContract,
   getContractAttachmentMetadata,
+  openSystemFile,
   updateContract,
   uploadSystemFile,
 } from '#/api';
@@ -210,11 +211,11 @@ async function previewAttachment() {
           }
         : undefined,
     ));
-  if (!file?.url) {
+  if (!file?.storedName) {
     message.warning($t('hr.contract.attachmentOpenUnavailable'));
     return;
   }
-  window.open(file.url, '_blank', 'noopener,noreferrer');
+  await openSystemFile(file);
 }
 </script>
 <template>
@@ -272,7 +273,7 @@ async function previewAttachment() {
           </div>
           <div class="flex shrink-0 items-center gap-1">
             <Button
-              :disabled="!attachmentFile?.url && !attachmentFileId"
+              :disabled="!attachmentFile?.storedName && !attachmentFileId"
               :loading="attachmentLoading"
               size="small"
               type="link"

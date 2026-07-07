@@ -16,6 +16,7 @@ import {
   getEmployeeList,
   getExpiringContracts,
 } from '#/api';
+import { openSystemFile } from '#/api/system/file';
 import { $t } from '#/locales';
 
 import { useColumns, useExpiringColumns } from './data';
@@ -163,11 +164,11 @@ async function onViewAttachment(row: HrContractApi.HrContract) {
   }
   try {
     const metadata = await getContractAttachmentMetadata(row.id);
-    if (!metadata.url) {
+    if (!metadata.storedName) {
       message.warning($t('hr.contract.attachmentOpenUnavailable'));
       return;
     }
-    window.open(metadata.url, '_blank', 'noopener,noreferrer');
+    await openSystemFile(metadata);
   } catch (error: unknown) {
     message.error(errorMessageOf(error, $t('hr.contract.attachmentLoadError')));
   }

@@ -11,6 +11,7 @@ import { Button, Card, message, Statistic } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import { getExpiringEmployeeDocuments } from '#/api';
+import { openSystemFile } from '#/api/system/file';
 import { $t } from '#/locales';
 
 import { daysUntil, useColumns, useGridFormSchema } from './data';
@@ -86,13 +87,13 @@ function errorMessageOf(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
-function onViewDocument(row: HrEmployeeApi.EmployeeDocument) {
-  if (!row.url) {
+async function onViewDocument(row: HrEmployeeApi.EmployeeDocument) {
+  if (!row.storedName) {
     message.warning($t('hr.documentWarning.fileOpenUnavailable'));
     return;
   }
   try {
-    window.open(row.url, '_blank', 'noopener,noreferrer');
+    await openSystemFile(row);
   } catch (error) {
     message.error(errorMessageOf(error, $t('hr.documentWarning.fileOpenError')));
   }
@@ -141,7 +142,7 @@ getHrDictOptions(HR_EMPLOYEE_DOCUMENT_TYPE_DICT);
                 {
                   text: $t('hr.documentWarning.viewFile'),
                   icon: 'lucide:external-link',
-                  disabled: !row.url,
+                  disabled: !row.storedName,
                   onClick: () => onViewDocument(row),
                 },
               ]"

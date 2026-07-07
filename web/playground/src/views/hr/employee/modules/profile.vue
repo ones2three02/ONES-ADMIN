@@ -38,6 +38,7 @@ import {
   getEmployeeJobs,
   getEmployeeLifecycleEvents,
   getEmployeeOrgContext,
+  openSystemFile,
   removeEmployeeDocument,
   uploadSystemFile,
 } from '#/api';
@@ -338,12 +339,16 @@ function cancelDocumentUpload() {
   };
 }
 
-function openDocument(file: HrEmployeeApi.EmployeeDocument) {
-  if (!file.url) {
+async function openDocument(file: HrEmployeeApi.EmployeeDocument) {
+  if (!file.storedName) {
     message.warning('资料附件暂不可访问');
     return;
   }
-  window.open(file.url, '_blank', 'noopener,noreferrer');
+  try {
+    await openSystemFile(file);
+  } catch (error: unknown) {
+    message.error(errorMessageOf(error, '资料附件打开失败'));
+  }
 }
 
 function documentStatusColor(file: HrEmployeeApi.EmployeeDocument) {

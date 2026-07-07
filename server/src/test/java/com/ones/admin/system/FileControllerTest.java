@@ -81,6 +81,7 @@ class FileControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.id").isNumber())
+                .andExpect(jsonPath("$.data.storedName", containsString(".txt")))
                 .andExpect(jsonPath("$.data.url", containsString("/api/system/files/")))
                 .andExpect(jsonPath("$.data.originalName").value("report.txt"))
                 .andExpect(jsonPath("$.data.sizeBytes").value(5))
@@ -304,8 +305,7 @@ class FileControllerTest {
                 .getResponse()
                 .getContentAsString();
         long fileId = objectMapper.readTree(uploadResponse).at("/data/id").asLong();
-        String storedName = objectMapper.readTree(uploadResponse).at("/data/url").asText()
-                .substring("/api/system/files/".length());
+        String storedName = objectMapper.readTree(uploadResponse).at("/data/storedName").asText();
 
         mockMvc.perform(get("/api/system/files/" + fileId + "/metadata")
                         .header("Authorization", "Bearer " + uploaderToken))
@@ -351,8 +351,7 @@ class FileControllerTest {
                 .getResponse()
                 .getContentAsString();
         long fileId = objectMapper.readTree(uploadResponse).at("/data/id").asLong();
-        String storedName = objectMapper.readTree(uploadResponse).at("/data/url").asText()
-                .substring("/api/system/files/".length());
+        String storedName = objectMapper.readTree(uploadResponse).at("/data/storedName").asText();
 
         mockMvc.perform(get("/api/system/files/" + fileId + "/metadata")
                         .header("Authorization", "Bearer " + otherToken))

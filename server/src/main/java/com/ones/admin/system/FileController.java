@@ -208,6 +208,7 @@ public class FileController {
 
     public record FileUploadResponse(
             Long id,
+            String storedName,
             String url,
             String originalName,
             Long sizeBytes,
@@ -220,6 +221,7 @@ public class FileController {
         private static FileUploadResponse from(FileMetadataResponse metadata) {
             return new FileUploadResponse(
                     metadata.id(),
+                    metadata.storedName(),
                     metadata.url(),
                     metadata.originalName(),
                     metadata.sizeBytes(),
