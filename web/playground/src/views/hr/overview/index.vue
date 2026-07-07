@@ -5,6 +5,7 @@ import { computed, onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
+import { preferences } from '@vben/preferences';
 
 import { Alert, Button, Card, Empty, Skeleton, Statistic, Tag } from 'antdv-next';
 
@@ -30,32 +31,32 @@ const metrics = computed(() => {
   return [
     {
       icon: 'lucide:users',
-      title: '员工总数',
+      title: $t('hr.overview.metricEmployeeCount'),
       value: overview.value.employeeCount,
     },
     {
       icon: 'lucide:user-check',
-      title: '在职员工',
+      title: $t('hr.overview.metricActiveEmployeeCount'),
       value: overview.value.activeEmployeeCount,
     },
     {
       icon: 'lucide:badge-check',
-      title: '试用期员工',
+      title: $t('hr.overview.metricProbationEmployeeCount'),
       value: overview.value.probationEmployeeCount,
     },
     {
       icon: 'lucide:file-clock',
-      title: '30天内到期合同',
+      title: $t('hr.overview.metricExpiringContractCount'),
       value: overview.value.expiringContractCount,
     },
     {
       icon: 'lucide:files',
-      title: '30天内到期资料',
+      title: $t('hr.overview.metricExpiringDocumentCount'),
       value: overview.value.expiringDocumentCount,
     },
     {
       icon: 'lucide:calendar-check',
-      title: '30天内待转正',
+      title: $t('hr.overview.metricProbationDueCount'),
       value: overview.value.probationDueCount,
     },
   ];
@@ -65,7 +66,7 @@ const generatedAt = computed(() => {
   if (!overview.value?.generatedAt) {
     return '-';
   }
-  return new Date(overview.value.generatedAt).toLocaleString('zh-CN', {
+  return new Date(overview.value.generatedAt).toLocaleString(preferences.app.locale, {
     hour12: false,
   });
 });
@@ -95,7 +96,7 @@ async function loadOverview() {
   try {
     overview.value = await getHrOverview();
   } catch {
-    loadError.value = '人力概览加载失败，请稍后重试';
+    loadError.value = $t('hr.overview.loadError');
   } finally {
     loading.value = false;
   }
@@ -112,16 +113,16 @@ onMounted(async () => {
     <div class="flex size-full flex-col gap-4 p-4">
       <div class="flex items-center justify-between gap-3">
         <div>
-          <div class="text-lg font-medium">人力概览</div>
+          <div class="text-lg font-medium">{{ $t('hr.overview.title') }}</div>
           <div class="text-muted-foreground mt-1 text-sm">
-            数据来自 HRMS 当前主数据、合同和生命周期事件，更新时间：{{ generatedAt }}
+            {{ $t('hr.overview.description', { time: generatedAt }) }}
           </div>
         </div>
         <Button :loading="loading" @click="loadOverview">
           <template #icon>
             <IconifyIcon icon="lucide:refresh-cw" />
           </template>
-          刷新
+          {{ $t('common.refresh') }}
         </Button>
       </div>
 
@@ -147,7 +148,7 @@ onMounted(async () => {
         </div>
 
         <div class="grid gap-4 xl:grid-cols-3">
-          <Card variant="borderless" title="员工状态分布">
+          <Card variant="borderless" :title="$t('hr.overview.employmentStatusStats')">
             <div class="flex flex-col gap-3">
               <div
                 v-for="item in overview.employmentStatusStats"
@@ -165,7 +166,7 @@ onMounted(async () => {
             </div>
           </Card>
 
-          <Card variant="borderless" title="部门员工分布">
+          <Card variant="borderless" :title="$t('hr.overview.departmentStats')">
             <div v-if="overview.departmentStats.length" class="flex flex-col gap-3">
               <div
                 v-for="item in overview.departmentStats"
@@ -184,7 +185,7 @@ onMounted(async () => {
             <Empty v-else :image="Empty.PRESENTED_IMAGE_SIMPLE" />
           </Card>
 
-          <Card variant="borderless" title="近30天生命周期事件">
+          <Card variant="borderless" :title="$t('hr.overview.lifecycleEventStats')">
             <div class="flex flex-col gap-3">
               <div
                 v-for="item in overview.lifecycleEventStats"
@@ -205,16 +206,28 @@ onMounted(async () => {
 
         <div class="grid gap-4 lg:grid-cols-3">
           <Card variant="borderless">
-            <Statistic title="部门数量" :value="overview.departmentCount" />
+            <Statistic
+              :title="$t('hr.overview.departmentCount')"
+              :value="overview.departmentCount"
+            />
           </Card>
           <Card variant="borderless">
-            <Statistic title="有效合同" :value="overview.activeContractCount" />
+            <Statistic
+              :title="$t('hr.overview.activeContractCount')"
+              :value="overview.activeContractCount"
+            />
           </Card>
           <Card variant="borderless">
-            <Statistic title="已过期资料" :value="overview.expiredDocumentCount" />
+            <Statistic
+              :title="$t('hr.overview.expiredDocumentCount')"
+              :value="overview.expiredDocumentCount"
+            />
           </Card>
           <Card variant="borderless">
-            <Statistic title="已离职员工" :value="overview.resignedEmployeeCount" />
+            <Statistic
+              :title="$t('hr.overview.resignedEmployeeCount')"
+              :value="overview.resignedEmployeeCount"
+            />
           </Card>
         </div>
       </template>

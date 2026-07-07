@@ -1,7 +1,22 @@
 {
   "title": "人力资源管理",
   "overview": {
-    "title": "人力概览"
+    "title": "人力概览",
+    "description": "数据来自 HRMS 当前主数据、合同和生命周期事件，更新时间：{time}",
+    "loadError": "人力概览加载失败，请稍后重试",
+    "metricEmployeeCount": "员工总数",
+    "metricActiveEmployeeCount": "在职员工",
+    "metricProbationEmployeeCount": "试用期员工",
+    "metricExpiringContractCount": "30天内到期合同",
+    "metricExpiringDocumentCount": "30天内到期资料",
+    "metricProbationDueCount": "30天内待转正",
+    "employmentStatusStats": "员工状态分布",
+    "departmentStats": "部门员工分布",
+    "lifecycleEventStats": "近30天生命周期事件",
+    "departmentCount": "部门数量",
+    "activeContractCount": "有效合同",
+    "expiredDocumentCount": "已过期资料",
+    "resignedEmployeeCount": "已离职员工"
   },
   "employee": {
     "title": "员工管理",

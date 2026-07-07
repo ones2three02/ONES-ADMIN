@@ -1,7 +1,22 @@
 {
   "title": "HRMS",
   "overview": {
-    "title": "HR Overview"
+    "title": "HR Overview",
+    "description": "Data comes from current HRMS master data, contracts, and lifecycle events. Updated at: {time}",
+    "loadError": "Failed to load HR overview. Please try again later",
+    "metricEmployeeCount": "Total Employees",
+    "metricActiveEmployeeCount": "Active Employees",
+    "metricProbationEmployeeCount": "Probation Employees",
+    "metricExpiringContractCount": "Contracts Expiring in 30 Days",
+    "metricExpiringDocumentCount": "Documents Expiring in 30 Days",
+    "metricProbationDueCount": "Probation Due in 30 Days",
+    "employmentStatusStats": "Employment Status",
+    "departmentStats": "Department Distribution",
+    "lifecycleEventStats": "Lifecycle Events in 30 Days",
+    "departmentCount": "Departments",
+    "activeContractCount": "Active Contracts",
+    "expiredDocumentCount": "Expired Documents",
+    "resignedEmployeeCount": "Resigned Employees"
   },
   "employee": {
     "title": "Employees",
