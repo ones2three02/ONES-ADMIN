@@ -57,7 +57,12 @@ import {
 } from '../../dict-options';
 import { errorMessageOf } from '../../shared/error';
 import { formatFileSize, openHrFileWithFeedback } from '../../shared/file';
-import { runHrUploadWithFeedback } from '../../shared/upload';
+import {
+  type HrUploadRequestOptions,
+  rejectHrUploadFile,
+  resolveHrUploadFile,
+  runHrUploadWithFeedback,
+} from '../../shared/upload';
 
 const employee = ref<HrEmployeeApi.HrEmployee>();
 const contracts = ref<HrContractApi.HrContract[]>([]);
@@ -79,12 +84,6 @@ const canViewLifecycle = computed(() =>
   hasAccessByCodes(['hr:employee:lifecycle']),
 );
 const canManageDocuments = computed(() => hasAccessByCodes(['hr:employee:update']));
-
-type UploadRequestOptions = {
-  file: Blob | File | string;
-  onError?: (error: Error) => void;
-  onSuccess?: (data: unknown) => void;
-};
 
 const documentTypeOptions = computed(() =>
   getHrDictFallbackOptions(HR_EMPLOYEE_DOCUMENT_TYPE_DICT),
@@ -277,15 +276,20 @@ async function reloadDocuments() {
   documents.value = await getEmployeeDocuments(employee.value.id);
 }
 
-async function handleDocumentUpload(options: UploadRequestOptions) {
-  const { file, onError, onSuccess } = options;
-  if (!(file instanceof File) || !employee.value?.id) {
-    const error = new Error($t('hr.employeeProfile.documentUploadError'));
-    message.error(errorMessageOf(error, $t('hr.employeeProfile.documentUploadError')));
-    onError?.(error);
+async function handleDocumentUpload(options: HrUploadRequestOptions) {
+  const { onSuccess } = options;
+  const uploadFile = resolveHrUploadFile(
+    options,
+    $t('hr.employeeProfile.documentUploadError'),
+  );
+  if (!uploadFile) {
     return;
   }
-  pendingDocumentFile.value = file;
+  if (!employee.value?.id) {
+    rejectHrUploadFile(options, $t('hr.employeeProfile.documentUploadError'));
+    return;
+  }
+  pendingDocumentFile.value = uploadFile;
   documentMeta.value = {
     documentType: 'OTHER',
   };

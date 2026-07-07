@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.125 - 2026-07-07
+
+- 新增 HRMS Upload 文件解析共享工具 `resolveHrUploadFile` 与前置失败反馈工具 `rejectHrUploadFile`，统一处理 Ant Design Vue Upload 的 `File` 校验与 `onError` 回调。
+- 合同附件上传、员工资料附件上传和花名册导入复用统一文件解析入口，花名册导入不再直接断言上传对象为 `File`。
+- 本版本不新增后端接口，不新增数据库迁移，不新增中间件。
+- 产品版本递增至 `v0.0.125`。
+
 ## v0.0.124 - 2026-07-07
 
 - 新增 HRMS 状态切换执行反馈共享工具 `runHrStatusChangeWithFeedback`，统一承接确认后执行、成功提示、取消静默和失败提示。

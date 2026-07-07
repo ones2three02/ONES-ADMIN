@@ -19,7 +19,11 @@ import { $t } from '#/locales';
 
 import { errorMessageOf } from '../../shared/error';
 import { formatFileSize, openHrFileWithFeedback } from '../../shared/file';
-import { runHrUploadWithFeedback } from '../../shared/upload';
+import {
+  type HrUploadRequestOptions,
+  resolveHrUploadFile,
+  runHrUploadWithFeedback,
+} from '../../shared/upload';
 import { useFormSchema } from '../data';
 
 const emits = defineEmits(['success']);
@@ -37,12 +41,6 @@ type AttachmentMetadataContext = {
   attachmentFileId?: string;
   id?: string | number;
 };
-type UploadRequestOptions = {
-  file: Blob | File | string;
-  onError?: (error: Error) => void;
-  onSuccess?: (data: SystemFileApi.FileMetadata) => void;
-};
-
 const [Form, formApi] = useVbenForm({
   schema: useFormSchema(),
   showDefaultActions: false,
@@ -153,12 +151,15 @@ async function removeAttachment() {
   await formApi.setFieldValue('attachmentFileId', undefined, false);
 }
 
-async function handleCustomUpload(options: UploadRequestOptions) {
-  const { file, onError, onSuccess } = options;
-  if (!(file instanceof File)) {
-    const error = new Error($t('hr.contract.attachmentUploadError'));
-    message.error(errorMessageOf(error, $t('hr.contract.attachmentUploadError')));
-    onError?.(error);
+async function handleCustomUpload(
+  options: HrUploadRequestOptions<SystemFileApi.FileMetadata>,
+) {
+  const { onError, onSuccess } = options;
+  const uploadFile = resolveHrUploadFile(
+    options,
+    $t('hr.contract.attachmentUploadError'),
+  );
+  if (!uploadFile) {
     return;
   }
   uploadLoading.value = true;
@@ -172,7 +173,7 @@ async function handleCustomUpload(options: UploadRequestOptions) {
         successMessage: $t('hr.contract.attachmentUploadSuccess'),
       },
       async () => {
-        const uploadedFile = await uploadSystemFile(file);
+        const uploadedFile = await uploadSystemFile(uploadFile);
         await setAttachment(uploadedFile);
         return uploadedFile;
       },

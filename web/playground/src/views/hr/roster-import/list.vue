@@ -7,7 +7,7 @@ import { computed, onMounted, ref } from 'vue';
 import { Page, useVbenModal } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
 
-import { Button, Card, message, Statistic, Tag, Upload } from 'antdv-next';
+import { Button, Card, Statistic, Tag, Upload } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import { downloadRosterTemplate, getRosterImportBatches, uploadRosterFile } from '#/api';
@@ -19,9 +19,13 @@ import {
   getHrDictOptions,
   HR_ROSTER_IMPORT_STATUS_DICT,
 } from '../dict-options';
-import { errorMessageOf } from '../shared/error';
 import { downloadHrBlobWithFeedback } from '../shared/file';
-import { runHrUploadWithFeedback } from '../shared/upload';
+import {
+  type HrUploadRequestOptions,
+  rejectHrUploadFile,
+  resolveHrUploadFile,
+  runHrUploadWithFeedback,
+} from '../shared/upload';
 import ErrorsModal from './modules/errors.vue';
 
 const [Errors, errorsModalApi] = useVbenModal({
@@ -30,12 +34,6 @@ const [Errors, errorsModalApi] = useVbenModal({
 
 const latestBatches = ref<HrRosterImportApi.ImportBatch[]>([]);
 const totalBatchCount = ref(0);
-
-type UploadRequestOptions = {
-  file: Blob | File | string;
-  onError?: (error: Error) => void;
-  onSuccess?: (data?: unknown) => void;
-};
 
 const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions: {
@@ -118,19 +116,20 @@ async function handleDownloadTemplate() {
   );
 }
 
-async function handleCustomUpload(options: UploadRequestOptions) {
-  const { file, onSuccess, onError } = options;
-  const uploadFile = file as File;
+async function handleCustomUpload(
+  options: HrUploadRequestOptions<HrRosterImportApi.ImportBatch>,
+) {
+  const { onSuccess, onError } = options;
+  const uploadFile = resolveHrUploadFile(options, $t('hr.rosterImport.uploadError'));
+  if (!uploadFile) {
+    return;
+  }
   if (!uploadFile.name.toLowerCase().endsWith('.csv')) {
-    const error = new Error($t('hr.rosterImport.csvOnlyError'));
-    message.error(errorMessageOf(error, $t('hr.rosterImport.csvOnlyError')));
-    onError?.(error);
+    rejectHrUploadFile(options, $t('hr.rosterImport.csvOnlyError'));
     return;
   }
   if (uploadFile.size > 2 * 1024 * 1024) {
-    const error = new Error($t('hr.rosterImport.csvSizeLimitError'));
-    message.error(errorMessageOf(error, $t('hr.rosterImport.csvSizeLimitError')));
-    onError?.(error);
+    rejectHrUploadFile(options, $t('hr.rosterImport.csvSizeLimitError'));
     return;
   }
   const result = await runHrUploadWithFeedback(
