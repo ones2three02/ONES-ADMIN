@@ -17,6 +17,12 @@
     "emptyDescription": "No users yet. Create a user or adjust filters.",
     "deptEmptyDescription": "No matched departments",
     "clearDeptSearch": "Clear search",
+    "allDepartmentScope": "Viewing users in all departments",
+    "currentDepartment": "Viewing: {name}",
+    "allDepartmentTip": "Search, filter, or create system users",
+    "currentDepartmentTip": "Department scope is active. Return to all departments when needed.",
+    "allDepartmentStatus": "All departments",
+    "departmentScoped": "Department filter",
     "deptLoadError": "Failed to load departments. Please try again later"
   },
   "dept": {

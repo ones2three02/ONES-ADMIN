@@ -16,6 +16,7 @@ import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import { deleteUser, getDeptList, getUserList, updateUser } from '#/api';
 import { $t } from '#/locales';
 
+import GuidedWorkbenchBar from '../../shared/guided-workbench-bar.vue';
 import SplitListLayout from '../../shared/split-list-layout.vue';
 import { useColumns, useGridFormSchema } from './data';
 import Detail from './modules/detail.vue';
@@ -87,6 +88,18 @@ const userTableTitle = computed(() =>
   selectedDeptName.value
     ? $t('system.user.departmentUserList', { name: selectedDeptName.value })
     : $t('system.user.list'),
+);
+
+const userScopeTitle = computed(() =>
+  selectedDeptName.value
+    ? $t('system.user.currentDepartment', { name: selectedDeptName.value })
+    : $t('system.user.allDepartmentScope'),
+);
+
+const userScopeDescription = computed(() =>
+  selectedDeptName.value
+    ? $t('system.user.currentDepartmentTip')
+    : $t('system.user.allDepartmentTip'),
 );
 
 /**
@@ -297,6 +310,20 @@ watch(inputSearchValue, (value) => {
           </Empty>
         </Spin>
       </template>
+
+      <GuidedWorkbenchBar
+        icon="lucide:users-round"
+        :title="userScopeTitle"
+        :description="userScopeDescription"
+        :status-text="
+          selectedDeptName
+            ? $t('system.user.departmentScoped')
+            : $t('system.user.allDepartmentStatus')
+        "
+        :action-text="$t('system.user.allDepartments')"
+        :action-disabled="!selectedDeptId"
+        @action="clearDeptSelection"
+      />
 
       <Grid :table-title="userTableTitle">
         <template #empty>

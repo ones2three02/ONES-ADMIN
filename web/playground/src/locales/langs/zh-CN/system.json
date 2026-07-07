@@ -17,6 +17,12 @@
     "emptyDescription": "暂无用户，可先新增用户或调整筛选条件",
     "deptEmptyDescription": "暂无匹配部门",
     "clearDeptSearch": "清空搜索",
+    "allDepartmentScope": "当前查看全部部门用户",
+    "currentDepartment": "当前查看：{name}",
+    "allDepartmentTip": "搜索、筛选或新增系统用户",
+    "currentDepartmentTip": "已按部门收窄，可返回全部部门",
+    "allDepartmentStatus": "全部部门",
+    "departmentScoped": "部门筛选",
     "deptLoadError": "部门列表加载失败，请稍后重试"
   },
   "dept": {

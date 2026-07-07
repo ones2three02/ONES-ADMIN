@@ -2,7 +2,7 @@
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 import type { HrEmployeeApi, SystemDeptApi } from '#/api';
 
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import { Page, Tree, useVbenDrawer } from '@vben/common-ui';
 import { IconifyIcon, Plus } from '@vben/icons';
@@ -22,6 +22,7 @@ import {
 } from '../dict-options';
 import { errorMessageOf } from '../shared/error';
 import { downloadHrBlobWithFeedback } from '../shared/file';
+import GuidedWorkbenchBar from '../../shared/guided-workbench-bar.vue';
 import SplitListLayout from '../../shared/split-list-layout.vue';
 import Form from './modules/form.vue';
 import Lifecycle from './modules/lifecycle.vue';
@@ -31,6 +32,7 @@ import ResignForm from './modules/resign-form.vue';
 import TransferForm from './modules/transfer-form.vue';
 
 const deptList = ref<SystemDeptApi.SystemDept[]>([]);
+const fullDeptList = ref<SystemDeptApi.SystemDept[]>([]);
 const searchDeptValue = ref('');
 const selectedDeptId = ref<string>('');
 const latestQuery = ref<Partial<HrEmployeeApi.EmployeeQuery>>({});
@@ -117,6 +119,23 @@ const [Grid, gridApi] = useVbenVxeGrid({
   } as VxeTableGridOptions<HrEmployeeApi.HrEmployee>,
 });
 
+const selectedDeptName = computed(() => {
+  if (!selectedDeptId.value) return '';
+  return findDeptName(fullDeptList.value, selectedDeptId.value) ?? '';
+});
+
+const employeeScopeTitle = computed(() =>
+  selectedDeptName.value
+    ? $t('hr.employeeList.currentDepartment', { name: selectedDeptName.value })
+    : $t('hr.employeeList.allDepartmentScope'),
+);
+
+const employeeScopeDescription = computed(() =>
+  selectedDeptName.value
+    ? $t('hr.employeeList.currentDepartmentTip')
+    : $t('hr.employeeList.allDepartmentTip'),
+);
+
 function onRefresh() {
   gridApi.query();
 }
@@ -167,7 +186,15 @@ function onViewProfile(row: HrEmployeeApi.HrEmployee) {
 async function loadDeptList() {
   try {
     const res = await getDeptList();
-    deptList.value = res;
+    fullDeptList.value = res;
+    deptList.value = filterDeptTree(res, searchDeptValue.value);
+    if (
+      selectedDeptId.value &&
+      !findDeptName(fullDeptList.value, selectedDeptId.value)
+    ) {
+      selectedDeptId.value = '';
+      onRefresh();
+    }
   } catch (error: unknown) {
     message.error(errorMessageOf(error, $t('hr.employeeList.deptLoadError')));
   }
@@ -186,15 +213,44 @@ function clearDeptSelection() {
   onRefresh();
 }
 
+function clearDeptSearch() {
+  searchDeptValue.value = '';
+}
+
 function searchDept(value: string) {
-  if (!value) {
-    loadDeptList();
-    return;
+  deptList.value = filterDeptTree(fullDeptList.value, value);
+}
+
+function filterDeptTree(
+  depts: SystemDeptApi.SystemDept[],
+  keyword: string,
+): SystemDeptApi.SystemDept[] {
+  const normalizedKeyword = keyword.trim().toLowerCase();
+  if (!normalizedKeyword) return depts;
+
+  const filtered: SystemDeptApi.SystemDept[] = [];
+  for (const dept of depts) {
+    const children = filterDeptTree(dept.children ?? [], keyword);
+    const matched = dept.name.toLowerCase().includes(normalizedKeyword);
+    if (!matched && children.length === 0) continue;
+    filtered.push({
+      ...dept,
+      children,
+    });
   }
-  const filtered = deptList.value.filter((dept) =>
-    dept.name.toLowerCase().includes(value.toLowerCase()),
-  );
-  deptList.value = filtered;
+  return filtered;
+}
+
+function findDeptName(
+  depts: SystemDeptApi.SystemDept[],
+  deptId: string,
+): string | undefined {
+  for (const dept of depts) {
+    if (dept.id === deptId) return dept.name;
+    const childName = findDeptName(dept.children ?? [], deptId);
+    if (childName) return childName;
+  }
+  return undefined;
 }
 
 onMounted(async () => {
@@ -239,6 +295,7 @@ watch(searchDeptValue, (value) => {
         </div>
         <div class="employee-dept-tree">
           <Tree
+            v-if="deptList.length > 0"
             v-model="selectedDeptId"
             label-field="name"
             value-field="id"
@@ -246,8 +303,30 @@ watch(searchDeptValue, (value) => {
             :default-expanded-level="2"
             @select="selectDept"
           />
+          <Empty
+            v-else
+            :description="$t('hr.employeeList.deptEmptyDescription')"
+            image="simple"
+          >
+            <Button v-if="searchDeptValue" type="link" @click="clearDeptSearch">
+              {{ $t('hr.employeeList.clearDeptSearch') }}
+            </Button>
+          </Empty>
         </div>
       </template>
+
+      <GuidedWorkbenchBar
+        :title="employeeScopeTitle"
+        :description="employeeScopeDescription"
+        :status-text="
+          selectedDeptName
+            ? $t('hr.employeeList.departmentScoped')
+            : $t('hr.employeeList.allDepartmentStatus')
+        "
+        :action-text="$t('hr.employeeList.allDepartments')"
+        :action-disabled="!selectedDeptId"
+        @action="clearDeptSelection"
+      />
 
       <Grid :table-title="$t('hr.employee.list')">
         <template #empty>

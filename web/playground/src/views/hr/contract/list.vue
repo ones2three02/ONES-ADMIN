@@ -33,6 +33,7 @@ import { $t } from '#/locales';
 import { errorMessageOf } from '../shared/error';
 import { downloadHrBlobWithFeedback, openHrFileWithFeedback } from '../shared/file';
 import { isDueWithinDays } from '../shared/warning';
+import GuidedWorkbenchBar from '../../shared/guided-workbench-bar.vue';
 import SplitListLayout from '../../shared/split-list-layout.vue';
 import { useColumns, useExpiringColumns, useExpiringGridFormSchema } from './data';
 import {
@@ -156,6 +157,24 @@ const historyEmptyDescription = computed(() =>
   selectedEmployee.value
     ? $t('hr.contract.historyEmptyDescription')
     : $t('hr.contract.historyEmptySelectDescription'),
+);
+
+const historyGuideTitle = computed(() =>
+  selectedEmployee.value
+    ? $t('hr.contract.currentEmployeeScope', {
+        name: selectedEmployee.value.realName,
+      })
+    : $t('hr.contract.employeeUnselectedScope'),
+);
+
+const historyGuideDescription = computed(() =>
+  selectedEmployee.value
+    ? $t('hr.contract.currentEmployeeTip')
+    : $t('hr.contract.employeeUnselectedTip'),
+);
+
+const expiringGuideTitle = computed(() =>
+  $t('hr.contract.expiringScope', { days: expiringWindowDays.value }),
 );
 
 async function loadEmployeeList() {
@@ -322,6 +341,21 @@ watch(searchEmployeeValue, () => {
             </Spin>
           </template>
 
+          <GuidedWorkbenchBar
+            icon="lucide:file-signature"
+            :title="historyGuideTitle"
+            :description="historyGuideDescription"
+            :status-text="
+              selectedEmployeeId
+                ? $t('hr.contract.employeeScoped')
+                : $t('hr.contract.needEmployeeSelection')
+            "
+            :status-color="selectedEmployeeId ? 'processing' : 'warning'"
+            :action-text="$t('hr.contract.create')"
+            :action-disabled="!selectedEmployeeId"
+            @action="onSignContract"
+          />
+
           <HistoryGrid
             :table-title="
               selectedEmployee
@@ -389,6 +423,18 @@ watch(searchEmployeeValue, () => {
       </TabPane>
       <TabPane key="expiring" :tab="$t('hr.contract.expiringContracts')">
         <div class="flex size-full min-h-0 flex-col gap-4">
+          <GuidedWorkbenchBar
+            icon="lucide:calendar-clock"
+            :title="expiringGuideTitle"
+            :description="$t('hr.contract.expiringScopeTip')"
+            :status-text="$t('hr.contract.expiringWarn')"
+            status-color="warning"
+            :action-text="$t('hr.contract.exportExpiringCsv')"
+            :action-disabled="expiringExportLoading"
+            :action-loading="expiringExportLoading"
+            @action="onExportExpiringContracts"
+          />
+
           <div class="grid gap-4 md:grid-cols-3">
             <Card v-for="item in expiringMetrics" :key="item.title" variant="borderless">
               <div class="flex items-start justify-between gap-3">
