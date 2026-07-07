@@ -19,6 +19,7 @@ import {
 import { $t } from '#/locales';
 
 import { errorMessageOf, normalizeError } from '../../shared/error';
+import { formatFileSize } from '../../shared/file';
 import { useFormSchema } from '../data';
 
 const emits = defineEmits(['success']);
@@ -110,19 +111,6 @@ const getDrawerTitle = computed(() => {
 
 function dataStatus(values: ContractFormValues, editing: boolean) {
   return editing && values.status ? values.status : 'ACTIVE';
-}
-
-function formatFileSize(size?: number) {
-  if (size === undefined || size === null) {
-    return '-';
-  }
-  if (size < 1024) {
-    return `${size} B`;
-  }
-  if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(1)} KB`;
-  }
-  return `${(size / 1024 / 1024).toFixed(1)} MB`;
 }
 
 function resetAttachment() {

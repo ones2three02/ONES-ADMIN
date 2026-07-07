@@ -57,6 +57,7 @@ import {
   getHrDictOption,
 } from '../../dict-options';
 import { errorMessageOf, normalizeError } from '../../shared/error';
+import { formatFileSize } from '../../shared/file';
 
 const employee = ref<HrEmployeeApi.HrEmployee>();
 const contracts = ref<HrContractApi.HrContract[]>([]);
@@ -266,19 +267,6 @@ function orgNodeMeta(node?: HrEmployeeApi.OrgEmployeeNode) {
     node.positionName,
     node.gradeName,
   ].filter(Boolean).join(' / ') || '-';
-}
-
-function formatFileSize(size?: number) {
-  if (size === undefined || size === null) {
-    return '-';
-  }
-  if (size < 1024) {
-    return `${size} B`;
-  }
-  if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(1)} KB`;
-  }
-  return `${(size / 1024 / 1024).toFixed(1)} MB`;
 }
 
 async function reloadDocuments() {

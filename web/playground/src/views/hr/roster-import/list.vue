@@ -20,6 +20,7 @@ import {
   HR_ROSTER_IMPORT_STATUS_DICT,
 } from '../dict-options';
 import { normalizeError } from '../shared/error';
+import { downloadHrBlob } from '../shared/file';
 import ErrorsModal from './modules/errors.vue';
 
 const [Errors, errorsModalApi] = useVbenModal({
@@ -108,13 +109,7 @@ async function handleDownloadTemplate() {
   const hide = message.loading($t('hr.rosterImport.templateDownloading'), 0);
   try {
     const blob = await downloadRosterTemplate();
-    const url = window.URL.createObjectURL(new Blob([blob]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'ones-hr-roster-template.csv');
-    document.body.appendChild(link);
-    link.click();
-    link.parentNode?.removeChild(link);
+    downloadHrBlob('ones-hr-roster-template.csv', blob);
     message.success($t('hr.rosterImport.templateDownloadSuccess'));
   } catch (error) {
     message.error($t('hr.rosterImport.templateDownloadError'));

@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.113 - 2026-07-07
+
+- 新增 HRMS 前端共享文件工具 `shared/file.ts`，统一承接文件大小展示和 Blob 下载。
+- 合同附件表单、员工档案资料附件复用统一文件大小格式化，花名册模板下载改为复用 Vben `downloadFileFromBlob` 封装，避免页面手写 DOM 下载逻辑。
+- 本版本不新增后端接口，不新增数据库迁移，不新增中间件。
+- 产品版本递增至 `v0.0.113`。
+
 ## v0.0.112 - 2026-07-07
 
 - 新增 HRMS 前端共享错误工具 `shared/error.ts`，统一承接 `errorMessageOf` 与 `normalizeError`。
