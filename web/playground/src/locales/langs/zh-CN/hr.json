@@ -106,7 +106,9 @@
   },
   "employeeList": {
     "keyword": "姓名/工号/手机/邮箱",
+    "allDepartments": "查看全部部门",
     "deptSearchPlaceholder": "搜索部门...",
+    "emptyDescription": "暂无员工档案，可先新增员工或调整部门/状态筛选",
     "exportRoster": "导出花名册",
     "exporting": "正在导出员工花名册...",
     "exportSuccess": "导出成功",

@@ -7,7 +7,7 @@ import { onMounted, ref, watch } from 'vue';
 import { Page, Tree, useVbenDrawer } from '@vben/common-ui';
 import { IconifyIcon, Plus } from '@vben/icons';
 
-import { Button, Card, InputSearch, message } from 'antdv-next';
+import { Button, Card, Empty, InputSearch, message } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import { exportEmployees, getDeptList, getEmployeeList } from '#/api';
@@ -66,22 +66,27 @@ const [ProfileDrawer, profileDrawerApi] = useVbenDrawer({
 
 const [Grid, gridApi] = useVbenVxeGrid({
   formOptions: {
+    commonConfig: {
+      labelWidth: 120,
+    },
     schema: useGridFormSchema(),
     submitOnChange: true,
+    wrapperClass: 'grid-cols-1 xl:grid-cols-2',
   },
   gridOptions: {
+    autoResize: true,
     columns: [
       ...(useColumns() as any[]),
       {
         align: 'center',
         field: 'action',
         fixed: 'right',
-        title: $t('common.action'),
-        width: 260,
+        title: $t('hr.employee.action'),
+        width: 188,
         slots: { default: 'action' },
       },
     ],
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -167,8 +172,16 @@ async function loadDeptList() {
   }
 }
 
-function selectDept(v: string) {
-  selectedDeptId.value = v;
+function selectDept(item: { value?: SystemDeptApi.SystemDept }) {
+  selectedDeptId.value = item.value?.id || '';
+  onRefresh();
+}
+
+function clearDeptSelection() {
+  if (!selectedDeptId.value) {
+    return;
+  }
+  selectedDeptId.value = '';
   onRefresh();
 }
 
@@ -206,24 +219,52 @@ watch(searchDeptValue, (value) => {
     <LifecycleDrawer @success="onRefresh" />
     <ProfileDrawer @success="onRefresh" />
 
-    <div class="flex size-full">
-      <Card class="w-1/5" :title="$t('system.dept.title')">
-        <InputSearch
-          v-model:value="searchDeptValue"
-          :placeholder="$t('hr.employeeList.deptSearchPlaceholder')"
-          class="mb-4"
-        />
-        <Tree
-          label-field="name"
-          value-field="id"
-          :tree-data="deptList"
-          :default-expanded-level="2"
-          @select="selectDept"
-        />
+    <div class="flex size-full min-h-0 gap-4">
+      <Card
+        class="employee-dept-card"
+        :title="$t('system.dept.title')"
+        :body-style="{ display: 'flex', flexDirection: 'column', minHeight: 0 }"
+      >
+        <div class="employee-dept-search">
+          <InputSearch
+            v-model:value="searchDeptValue"
+            :placeholder="$t('hr.employeeList.deptSearchPlaceholder')"
+          />
+          <Button
+            block
+            :disabled="!selectedDeptId"
+            size="small"
+            type="link"
+            @click="clearDeptSelection"
+          >
+            {{ $t('hr.employeeList.allDepartments') }}
+          </Button>
+        </div>
+        <div class="employee-dept-tree">
+          <Tree
+            v-model="selectedDeptId"
+            label-field="name"
+            value-field="id"
+            :tree-data="deptList"
+            :default-expanded-level="2"
+            @select="selectDept"
+          />
+        </div>
       </Card>
 
-      <div class="w-4/5 ml-4">
+      <div class="flex min-w-0 flex-1 flex-col">
         <Grid :table-title="$t('hr.employee.list')">
+          <template #empty>
+            <Empty
+              :description="$t('hr.employeeList.emptyDescription')"
+              image="simple"
+            >
+              <Button type="primary" @click="onCreate">
+                <Plus class="size-5" />
+                {{ $t('hr.employee.createEmployee') }}
+              </Button>
+            </Empty>
+          </template>
           <template #toolbar-tools>
             <Button v-access:code="['hr:employee:export']" class="mr-2" @click="onExport">
               <IconifyIcon icon="lucide:download" class="size-4" />
@@ -287,3 +328,44 @@ watch(searchDeptValue, (value) => {
     </div>
   </Page>
 </template>
+
+<style scoped>
+.employee-dept-card {
+  display: flex;
+  width: 280px;
+  min-width: 240px;
+  max-width: 320px;
+  min-height: 0;
+  flex: 0 0 280px;
+  flex-direction: column;
+}
+
+.employee-dept-card :deep(.ant-card-body) {
+  flex: 1;
+  overflow: hidden;
+}
+
+.employee-dept-search {
+  flex: 0 0 auto;
+  margin-bottom: 12px;
+}
+
+.employee-dept-tree {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+.employee-dept-tree :deep(.ant-tree-node-content-wrapper) {
+  min-width: 0;
+}
+
+.employee-dept-tree :deep(.ant-tree-title) {
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+</style>

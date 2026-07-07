@@ -136,7 +136,16 @@ async function onSubmit(params: Recordable<any>) {
 
       <div class="enterprise-login-heading">
         <div class="enterprise-login-brand">
-          <img alt="ONES SYSTEM" :src="loginBrandLogo" />
+          <span class="enterprise-login-logo-frame">
+            <img
+              alt="ONES SYSTEM"
+              decoding="async"
+              fetchpriority="high"
+              height="46"
+              :src="loginBrandLogo"
+              width="46"
+            />
+          </span>
           <div>
             <strong>ONES-ADMIN</strong>
           </div>
@@ -258,13 +267,24 @@ async function onSubmit(params: Recordable<any>) {
   margin-bottom: 18px;
 }
 
-.enterprise-login-brand img {
+.enterprise-login-logo-frame {
+  display: inline-flex;
   width: 46px;
   height: 46px;
+  flex: 0 0 46px;
   border-radius: 12px;
+  background: hsl(var(--background));
   box-shadow:
     0 16px 36px hsl(var(--primary) / 18%),
     0 0 0 1px hsl(var(--border));
+  overflow: hidden;
+}
+
+.enterprise-login-logo-frame img {
+  width: 46px;
+  height: 46px;
+  object-fit: cover;
+  transform: translateZ(0);
 }
 
 .enterprise-login-brand div {

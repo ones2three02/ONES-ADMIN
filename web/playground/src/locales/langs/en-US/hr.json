@@ -106,7 +106,9 @@
   },
   "employeeList": {
     "keyword": "Name / Employee No / Mobile / Email",
+    "allDepartments": "View all departments",
     "deptSearchPlaceholder": "Search departments...",
+    "emptyDescription": "No employee records. Create an employee or adjust department/status filters.",
     "exportRoster": "Export Roster",
     "exporting": "Exporting employee roster...",
     "exportSuccess": "Export succeeded",
