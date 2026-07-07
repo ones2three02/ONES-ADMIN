@@ -60,6 +60,13 @@ export async function getExpiringContracts(days?: number) {
   })) as HrContractApi.HrContract[];
 }
 
+export async function exportExpiringContracts(days?: number) {
+  return await requestClient.get<Blob>('/hr/contracts/expiring/export', {
+    params: { days },
+    responseType: 'blob',
+  });
+}
+
 export async function getContractAttachmentMetadata(contractId: string | number) {
   const response = await requestClient.get<SystemFileApi.FileMetadata>(
     `/hr/contracts/${contractId}/attachment/metadata`,

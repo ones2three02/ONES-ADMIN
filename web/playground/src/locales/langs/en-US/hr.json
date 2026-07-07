@@ -82,7 +82,11 @@
     "attachmentUploadSuccess": "Contract attachment uploaded",
     "attachmentUploadError": "Failed to upload contract attachment",
     "attachmentLoadError": "Failed to load contract attachment",
-    "attachmentOpenUnavailable": "Attachment URL is unavailable"
+    "attachmentOpenUnavailable": "Attachment URL is unavailable",
+    "exportExpiringCsv": "Export CSV",
+    "expiringExporting": "Exporting expiring contracts...",
+    "expiringExportSuccess": "Export succeeded",
+    "expiringExportError": "Export failed. Please try again later"
   },
   "documentWarning": {
     "title": "Document Alerts",

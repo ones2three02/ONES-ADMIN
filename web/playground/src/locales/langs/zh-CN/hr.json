@@ -82,7 +82,11 @@
     "attachmentUploadSuccess": "合同附件上传成功",
     "attachmentUploadError": "合同附件上传失败，请稍后重试",
     "attachmentLoadError": "合同附件信息获取失败",
-    "attachmentOpenUnavailable": "附件访问地址不可用"
+    "attachmentOpenUnavailable": "附件访问地址不可用",
+    "exportExpiringCsv": "导出 CSV",
+    "expiringExporting": "正在导出到期合同...",
+    "expiringExportSuccess": "导出成功",
+    "expiringExportError": "导出失败，请稍后重试"
   },
   "documentWarning": {
     "title": "资料预警",

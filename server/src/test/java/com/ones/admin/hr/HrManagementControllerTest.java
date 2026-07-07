@@ -220,6 +220,25 @@ class HrManagementControllerTest {
                 .andExpect(jsonPath("$.data[0].contractNo").value("CEXP-" + suffix))
                 .andExpect(jsonPath("$.data[0].status").value("ACTIVE"))
                 .andExpect(jsonPath("$.data[0].endDate").value(expiringEndDate.toString()));
+        String expiringContractExport = mockMvc.perform(get("/api/hr/contracts/expiring/export")
+                        .header("Authorization", "Bearer " + token)
+                        .param("days", "30"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", containsString("text/csv")))
+                .andExpect(header().string("Content-Disposition", containsString("ones-hr-expiring-contracts.csv")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString(StandardCharsets.UTF_8);
+        assertThat(expiringContractExport)
+                .startsWith("employeeNo,realName,contractNo,contractType,status,startDate,endDate")
+                .contains("E" + suffix)
+                .contains("张三丰")
+                .contains("CEXP-" + suffix)
+                .contains("FIXED_TERM")
+                .contains("ACTIVE")
+                .contains(expiringEndDate.toString())
+                .doesNotContain("C" + suffix + ",")
+                .doesNotContain("2029-12-31");
 
         terminateEmployeeContract(token, contractId, LocalDate.of(2028, 12, 31));
         mockMvc.perform(get("/api/hr/employees/" + employeeId + "/contracts")

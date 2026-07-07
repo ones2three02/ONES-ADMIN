@@ -1,5 +1,14 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.99 - 2026-07-07
+
+- HRMS 员工合同到期预警新增 CSV 导出接口 `GET /api/hr/contracts/expiring/export`，复用 `hr:contract:list` 权限、合同到期窗口校验和员工数据范围过滤。
+- 合同预警导出使用现有 `CsvExportUtils`，避免公式注入，并输出员工工号、姓名、合同编号、合同类型、状态、生效日期、到期日期、续签提醒日期和合同标识，便于 HR 对续签风险进行线下跟进留档。
+- 合同管理页的“即将到期合同”Tab 在现有 Vben / Ant Design Vue 表格工具栏中新增“导出 CSV”按钮，沿用当前 30 天预警窗口，不新增视觉体系。
+- 补充 HRMS 管理集成测试和接口治理 Manifest 断言，验证 30 天窗口导出只包含到期合同，并将新接口纳入版本、权限和风险等级治理。
+- 本版本不新增数据库迁移，不新增中间件。
+- 产品版本递增至 `v0.0.99`。
+
 ## v0.0.98 - 2026-07-07
 
 - HRMS 员工资料到期预警新增 CSV 导出接口 `GET /api/hr/employees/documents/expiring/export`，复用 `hr:employee:detail` 权限、员工数据范围、资料有效期窗口和 ACTIVE 文件过滤。

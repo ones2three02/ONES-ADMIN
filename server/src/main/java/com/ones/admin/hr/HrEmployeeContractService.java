@@ -2,6 +2,7 @@ package com.ones.admin.hr;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ones.admin.common.exception.BusinessException;
+import com.ones.admin.common.web.CsvExportUtils;
 import com.ones.admin.hr.dto.HrEmployeeContractResponse;
 import com.ones.admin.hr.dto.HrEmployeeContractSaveRequest;
 import com.ones.admin.hr.dto.HrEmployeeContractTerminateRequest;
@@ -35,6 +36,8 @@ public class HrEmployeeContractService {
     private static final String CONTRACT_ATTACHMENT_BUSINESS_TYPE = "HR_EMPLOYEE_CONTRACT";
     private static final Set<String> CONTRACT_TYPES = Set.of("FIXED_TERM", "OPEN_ENDED", "INTERNSHIP", "SERVICE");
     private static final Set<String> CONTRACT_STATUSES = Set.of("DRAFT", "ACTIVE", "EXPIRING", "TERMINATED");
+    private static final String EXPIRING_CONTRACT_CSV_HEADER = "employeeNo,realName,contractNo,contractType,"
+            + "status,startDate,endDate,renewalRemindDate,probationMonths,attachmentFileId,remark,contractId,employeeId";
 
     private final HrEmployeeContractMapper contractMapper;
     private final HrEmployeeMapper employeeMapper;
@@ -87,6 +90,27 @@ public class HrEmployeeContractService {
                 })
                 .map(contract -> toResponse(contract, employees.get(contract.getEmployeeId())))
                 .toList();
+    }
+
+    public String exportExpiringContracts(Integer days) {
+        StringBuilder csv = new StringBuilder(EXPIRING_CONTRACT_CSV_HEADER).append('\n');
+        listExpiringContracts(days)
+                .forEach(contract -> csv.append(CsvExportUtils.row(
+                        contract.employeeNo(),
+                        contract.realName(),
+                        contract.contractNo(),
+                        contract.contractType(),
+                        contract.status(),
+                        contract.startDate(),
+                        contract.endDate(),
+                        contract.renewalRemindDate(),
+                        contract.probationMonths(),
+                        contract.attachmentFileId(),
+                        contract.remark(),
+                        contract.id(),
+                        contract.employeeId()
+                )).append('\n'));
+        return csv.toString();
     }
 
     public FileMetadataResponse getAttachmentMetadata(Long contractId) {

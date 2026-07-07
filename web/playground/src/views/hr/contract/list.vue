@@ -6,11 +6,13 @@ import { onMounted, ref, watch } from 'vue';
 
 import { Page, useVbenDrawer } from '@vben/common-ui';
 import { IconifyIcon, Plus } from '@vben/icons';
+import { downloadFileFromBlob } from '@vben/utils';
 
 import { Button, Card, InputSearch, message, TabPane, Tabs } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import {
+  exportExpiringContracts,
   getContractAttachmentMetadata,
   getEmployeeContracts,
   getEmployeeList,
@@ -33,6 +35,8 @@ const employees = ref<HrEmployeeApi.HrEmployee[]>([]);
 const searchEmployeeValue = ref('');
 const selectedEmployeeId = ref<string>('');
 const selectedEmployee = ref<HrEmployeeApi.HrEmployee | null>(null);
+const expiringWindowDays = 30;
+const expiringExportLoading = ref(false);
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   connectedComponent: Form,
@@ -174,6 +178,24 @@ async function onViewAttachment(row: HrContractApi.HrContract) {
   }
 }
 
+async function onExportExpiringContracts() {
+  expiringExportLoading.value = true;
+  const hide = message.loading($t('hr.contract.expiringExporting'), 0);
+  try {
+    const blob = await exportExpiringContracts(expiringWindowDays);
+    downloadFileFromBlob({
+      fileName: 'ones-hr-expiring-contracts.csv',
+      source: blob,
+    });
+    message.success($t('hr.contract.expiringExportSuccess'));
+  } catch (error: unknown) {
+    message.error(errorMessageOf(error, $t('hr.contract.expiringExportError')));
+  } finally {
+    expiringExportLoading.value = false;
+    hide();
+  }
+}
+
 onMounted(async () => {
   await Promise.all([
     getHrDictOptions(HR_CONTRACT_TYPE_DICT),
@@ -274,7 +296,16 @@ watch(searchEmployeeValue, () => {
         </div>
       </TabPane>
       <TabPane key="expiring" :tab="$t('hr.contract.expiringContracts')">
-        <ExpiringGrid :table-title="$t('hr.contract.expiringContracts')" />
+        <ExpiringGrid :table-title="$t('hr.contract.expiringContracts')">
+          <template #toolbar-tools>
+            <Button :loading="expiringExportLoading" @click="onExportExpiringContracts">
+              <template #icon>
+                <IconifyIcon icon="lucide:download" />
+              </template>
+              {{ $t('hr.contract.exportExpiringCsv') }}
+            </Button>
+          </template>
+        </ExpiringGrid>
       </TabPane>
     </Tabs>
   </Page>
