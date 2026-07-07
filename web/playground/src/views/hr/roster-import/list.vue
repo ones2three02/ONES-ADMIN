@@ -74,17 +74,17 @@ const metrics = computed(() => {
   return [
     {
       icon: 'lucide:files',
-      title: '导入批次',
+      title: $t('hr.rosterImport.metricBatchCount'),
       value: totalBatchCount.value,
     },
     {
       icon: 'lucide:circle-check',
-      title: '当前页成功',
+      title: $t('hr.rosterImport.metricCurrentPageSuccess'),
       value: currentPageBatches.reduce((total, item) => total + item.successCount, 0),
     },
     {
       icon: 'lucide:triangle-alert',
-      title: '当前页失败',
+      title: $t('hr.rosterImport.metricCurrentPageFailed'),
       value: currentPageBatches.reduce((total, item) => total + item.failedCount, 0),
     },
   ];
@@ -98,7 +98,7 @@ function onRefresh() {
 }
 
 async function handleDownloadTemplate() {
-  const hide = message.loading('正在下载模板...', 0);
+  const hide = message.loading($t('hr.rosterImport.templateDownloading'), 0);
   try {
     const blob = await downloadRosterTemplate();
     const url = window.URL.createObjectURL(new Blob([blob]));
@@ -108,9 +108,9 @@ async function handleDownloadTemplate() {
     document.body.appendChild(link);
     link.click();
     link.parentNode?.removeChild(link);
-    message.success('下载成功');
+    message.success($t('hr.rosterImport.templateDownloadSuccess'));
   } catch (error) {
-    message.error('下载模板失败');
+    message.error($t('hr.rosterImport.templateDownloadError'));
   } finally {
     hide();
   }
@@ -120,23 +120,30 @@ async function handleCustomUpload(options: any) {
   const { file, onSuccess, onError } = options;
   const uploadFile = file as File;
   if (!uploadFile.name.toLowerCase().endsWith('.csv')) {
-    message.error('仅支持 CSV 文件');
-    onError?.(new Error('仅支持 CSV 文件'));
+    const error = new Error($t('hr.rosterImport.csvOnlyError'));
+    message.error(error.message);
+    onError?.(error);
     return;
   }
   if (uploadFile.size > 2 * 1024 * 1024) {
-    message.error('CSV 文件不能超过 2MB');
-    onError?.(new Error('CSV 文件不能超过 2MB'));
+    const error = new Error($t('hr.rosterImport.csvSizeLimitError'));
+    message.error(error.message);
+    onError?.(error);
     return;
   }
-  const hide = message.loading('正在上传并解析花名册...', 0);
+  const hide = message.loading($t('hr.rosterImport.uploading'), 0);
   try {
     const batch = await uploadRosterFile(uploadFile);
-    message.success(`导入完成：成功 ${batch.successCount} 行，失败 ${batch.failedCount} 行`);
+    message.success(
+      $t('hr.rosterImport.uploadSuccess', {
+        failed: batch.failedCount,
+        success: batch.successCount,
+      }),
+    );
     onSuccess?.();
     onRefresh();
   } catch (error: any) {
-    message.error(error.message || '导入失败，请检查文件格式');
+    message.error(error.message || $t('hr.rosterImport.uploadError'));
     onError?.(error);
   } finally {
     hide();
@@ -184,7 +191,7 @@ onMounted(async () => {
         <Card variant="borderless">
           <div class="flex items-start justify-between gap-3">
             <Statistic
-              title="最近批次"
+              :title="$t('hr.rosterImport.latestBatch')"
               :value="latestBatch?.batchNo || '-'"
               :value-style="{ fontSize: '14px' }"
             />
@@ -196,7 +203,7 @@ onMounted(async () => {
         </Card>
       </div>
 
-      <Card title="导入花名册 (CSV)" class="w-full" variant="borderless">
+      <Card :title="$t('hr.rosterImport.importCsvTitle')" class="w-full" variant="borderless">
         <div class="flex flex-col gap-4 xl:flex-row xl:items-center">
           <div class="max-w-xl flex-1">
             <Upload.Dragger
@@ -210,7 +217,7 @@ onMounted(async () => {
                 <IconifyIcon icon="lucide:upload" class="size-10 text-primary" />
               </p>
               <p class="ant-upload-text px-4 pb-4">
-                点击或拖拽 CSV 文件到此区域进行花名册上传导入
+                {{ $t('hr.rosterImport.uploadDraggerText') }}
               </p>
             </Upload.Dragger>
           </div>

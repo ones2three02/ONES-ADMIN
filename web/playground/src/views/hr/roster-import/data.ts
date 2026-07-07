@@ -60,7 +60,7 @@ export function useErrorColumns(): VxeTableGridColumns {
     },
     {
       field: 'employeeNo',
-      title: '工号',
+      title: $t('hr.employee.employeeNo'),
       width: 120,
     },
     {
