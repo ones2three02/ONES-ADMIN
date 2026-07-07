@@ -28,6 +28,12 @@ pipeline {
       }
     }
 
+    stage('Build Metadata') {
+      steps {
+        sh 'bash scripts/ci/verify.sh build-metadata'
+      }
+    }
+
     stage('Frontend Dependencies') {
       steps {
         sh 'bash scripts/ci/verify.sh frontend-dependencies'
@@ -72,7 +78,7 @@ pipeline {
 
   post {
     always {
-      archiveArtifacts allowEmptyArchive: true, artifacts: 'web/playground/dist/**,server/target/surefire-reports/*.xml'
+      archiveArtifacts allowEmptyArchive: true, artifacts: '.ci-artifacts/**,web/playground/dist/**,server/target/surefire-reports/*.xml'
     }
   }
 }

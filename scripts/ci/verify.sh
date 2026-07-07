@@ -10,6 +10,7 @@ Usage: scripts/ci/verify.sh <stage>
 
 Stages:
   preflight              Check toolchain, formatting residue, and version consistency.
+  build-metadata         Generate CI build metadata for Jenkins artifact archive.
   frontend-dependencies  Install frontend dependencies from the lockfile.
   frontend-unit          Run Playground package and root frontend unit tests.
   frontend-typecheck     Run Playground typecheck.
@@ -32,6 +33,13 @@ run_preflight() {
     corepack --version
     git diff --check
     bash scripts/ci/version-guard.sh
+  "
+}
+
+run_build_metadata() {
+  run_with_toolchain bash -c "
+    cd '$ROOT_DIR'
+    bash scripts/ci/build-metadata.sh
   "
 }
 
@@ -81,6 +89,7 @@ run_repository_guard() {
 
 run_all() {
   run_preflight
+  run_build_metadata
   run_frontend_dependencies
   run_frontend_unit
   run_frontend_typecheck
@@ -92,6 +101,9 @@ run_all() {
 case "${1:-}" in
   preflight)
     run_preflight
+    ;;
+  build-metadata)
+    run_build_metadata
     ;;
   frontend-dependencies)
     run_frontend_dependencies

@@ -1,5 +1,14 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.132 - 2026-07-07
+
+- 新增 `scripts/ci/build-metadata.sh`，生成 `.ci-artifacts/build-metadata.json`，记录产品版本、后端快照版本、Git 提交、分支、构建时间和工具链版本。
+- `scripts/ci/verify.sh` 新增 `build-metadata` 阶段，`all` 阶段会在前后端验证前生成构建元数据。
+- Jenkinsfile 新增 Build Metadata 阶段，并将 `.ci-artifacts/**` 纳入构建产物归档，便于 Jenkins、GitHub 和人工排障追溯构建来源。
+- 构建元数据不记录中间件地址、账号密码、Git 远端 URL 或 Jenkins 内部 URL；动态产物目录 `.ci-artifacts/` 已加入 `.gitignore`。
+- 本版本不新增后端接口，不新增数据库迁移，不新增中间件。
+- 产品版本递增至 `v0.0.132`。
+
 ## v0.0.131 - 2026-07-07
 
 - 新增 `scripts/ci/verify.sh`，将 Jenkins 与本地验证统一收口到同一套阶段入口。
