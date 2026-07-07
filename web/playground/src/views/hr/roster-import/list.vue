@@ -19,6 +19,7 @@ import {
   getHrDictOptions,
   HR_ROSTER_IMPORT_STATUS_DICT,
 } from '../dict-options';
+import { normalizeError } from '../shared/error';
 import ErrorsModal from './modules/errors.vue';
 
 const [Errors, errorsModalApi] = useVbenModal({
@@ -149,10 +150,7 @@ async function handleCustomUpload(options: UploadRequestOptions) {
     onSuccess?.();
     onRefresh();
   } catch (error: unknown) {
-    const normalizedError =
-      error instanceof Error
-        ? error
-        : new Error($t('hr.rosterImport.uploadError'));
+    const normalizedError = normalizeError(error, $t('hr.rosterImport.uploadError'));
     message.error(normalizedError.message || $t('hr.rosterImport.uploadError'));
     onError?.(normalizedError);
   } finally {

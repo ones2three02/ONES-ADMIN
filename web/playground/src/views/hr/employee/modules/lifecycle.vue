@@ -10,6 +10,8 @@ import { message, Spin, Timeline, TimelineItem } from 'antdv-next';
 import { getEmployeeLifecycleEvents } from '#/api';
 import { $t } from '#/locales';
 
+import { errorMessageOf } from '../../shared/error';
+
 const employeeName = ref('');
 const events = ref<HrEmployeeApi.LifecycleEvent[]>([]);
 const loading = ref(false);
@@ -35,10 +37,6 @@ const [Drawer, drawerApi] = useVbenDrawer({
     }
   },
 });
-
-function errorMessageOf(error: unknown, fallback: string) {
-  return error instanceof Error && error.message ? error.message : fallback;
-}
 
 function getTimelineItemColor(type: string) {
   switch (type) {

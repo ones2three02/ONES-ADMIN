@@ -21,6 +21,7 @@ import {
 import { openSystemFile } from '#/api/system/file';
 import { $t } from '#/locales';
 
+import { errorMessageOf } from '../shared/error';
 import { isDueWithinDays } from '../shared/warning';
 import { useColumns, useExpiringColumns, useExpiringGridFormSchema } from './data';
 import {
@@ -184,10 +185,6 @@ function onEditContract(row: HrContractApi.HrContract) {
 
 function onTerminateContract(row: HrContractApi.HrContract) {
   terminateDrawerApi.setData(row).open();
-}
-
-function errorMessageOf(error: unknown, fallback: string) {
-  return error instanceof Error && error.message ? error.message : fallback;
 }
 
 async function onViewAttachment(row: HrContractApi.HrContract) {

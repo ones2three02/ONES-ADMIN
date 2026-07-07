@@ -19,6 +19,7 @@ import {
   getHrDictOptions,
   HR_EMPLOYEE_DOCUMENT_TYPE_DICT,
 } from '../dict-options';
+import { errorMessageOf } from '../shared/error';
 import { isDueWithinDays } from '../shared/warning';
 import { useColumns, useGridFormSchema } from './data';
 
@@ -81,10 +82,6 @@ const metrics = computed(() => [
 
 function onRefresh() {
   gridApi.query();
-}
-
-function errorMessageOf(error: unknown, fallback: string) {
-  return error instanceof Error && error.message ? error.message : fallback;
 }
 
 async function onViewDocument(row: HrEmployeeApi.EmployeeDocument) {

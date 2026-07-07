@@ -18,6 +18,7 @@ import {
 } from '#/api';
 import { $t } from '#/locales';
 
+import { errorMessageOf, normalizeError } from '../../shared/error';
 import { useFormSchema } from '../data';
 
 const emits = defineEmits(['success']);
@@ -109,14 +110,6 @@ const getDrawerTitle = computed(() => {
 
 function dataStatus(values: ContractFormValues, editing: boolean) {
   return editing && values.status ? values.status : 'ACTIVE';
-}
-
-function errorMessageOf(error: unknown, fallback: string) {
-  return error instanceof Error && error.message ? error.message : fallback;
-}
-
-function normalizeError(error: unknown, fallback: string) {
-  return error instanceof Error ? error : new Error(fallback);
 }
 
 function formatFileSize(size?: number) {

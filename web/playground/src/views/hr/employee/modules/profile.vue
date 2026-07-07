@@ -56,6 +56,7 @@ import {
   getHrDictFallbackOptions,
   getHrDictOption,
 } from '../../dict-options';
+import { errorMessageOf, normalizeError } from '../../shared/error';
 
 const employee = ref<HrEmployeeApi.HrEmployee>();
 const contracts = ref<HrContractApi.HrContract[]>([]);
@@ -278,14 +279,6 @@ function formatFileSize(size?: number) {
     return `${(size / 1024).toFixed(1)} KB`;
   }
   return `${(size / 1024 / 1024).toFixed(1)} MB`;
-}
-
-function errorMessageOf(error: unknown, fallback: string) {
-  return error instanceof Error && error.message ? error.message : fallback;
-}
-
-function normalizeError(error: unknown, fallback: string) {
-  return error instanceof Error ? error : new Error(fallback);
 }
 
 async function reloadDocuments() {

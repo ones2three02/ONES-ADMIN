@@ -21,6 +21,7 @@ import {
   HR_EMPLOYMENT_TYPE_DICT,
   HR_GENDER_DICT,
 } from '../dict-options';
+import { errorMessageOf } from '../shared/error';
 import Form from './modules/form.vue';
 import Lifecycle from './modules/lifecycle.vue';
 import Profile from './modules/profile.vue';
@@ -135,10 +136,6 @@ async function onExport() {
   } finally {
     hide();
   }
-}
-
-function errorMessageOf(error: unknown, fallback: string) {
-  return error instanceof Error && error.message ? error.message : fallback;
 }
 
 function onEdit(row: HrEmployeeApi.HrEmployee) {
