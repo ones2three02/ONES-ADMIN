@@ -7,7 +7,7 @@ ONES-ADMIN 使用 `main + develop + 短生命周期分支` 的企业级分支模
 | 分支 | 生命周期 | 用途 | Jenkins 行为 |
 | --- | --- | --- | --- |
 | `main` | 长期 | 生产稳定分支，只接收已验证版本 | 构建生产制品，生产部署建议人工确认 |
-| `develop` | 长期 | 日常集成分支，作为开发环境的主干 | 自动构建、测试、部署开发环境 |
+| `develop` | 长期 | 日常集成分支，作为开发环境的主干 | 当前阶段自动验证；部署待环境与凭据策略确认后接入 |
 | `feature/*` | 短期 | 单个功能或模块开发 | 运行构建、测试、静态检查，不自动部署生产 |
 | `release/*` | 短期 | 预发布稳定分支，例如 `release/0.2.0` | 构建候选版本，部署测试/预发环境 |
 | `hotfix/*` | 短期 | 生产紧急修复，例如 `hotfix/login-lock` | 构建、测试，通过后合并 `main` 和 `develop` |
@@ -31,6 +31,8 @@ ONES-ADMIN 使用 `main + develop + 短生命周期分支` 的企业级分支模
 
 ## Jenkins 推荐流水线
 
+当前仓库已在 v0.0.129 新增根目录 `Jenkinsfile`。这个流水线是第一阶段验证门禁，只负责安装前端锁定依赖、测试、类型检查、构建、版本残留扫描和敏感信息扫描；仓库扫描规则沉淀在 `scripts/ci/repository-guard.sh`，便于本地和 Jenkins 复用同一套规则。当前流水线不包含任何部署动作，也不写入数据库、Redis、RabbitMQ、MinIO 等中间件连接信息。
+
 ### feature/* 或 Pull Request
 
 - 后端构建节点配置 JDK 21+；Maven Enforcer 会在 `validate` 阶段提前拦截错误 JDK 或 Maven 版本。
@@ -41,12 +43,12 @@ ONES-ADMIN 使用 `main + develop + 短生命周期分支` 的企业级分支模
 
 ### develop
 
-- 执行完整构建与测试。
+- 执行 `Jenkinsfile` 中的验证门禁。
 - 后端使用 JDK 21+ 和项目内 `./mvnw`，避免 Jenkins 节点默认 Java 版本漂移。
-- 生成开发环境制品。
-- 自动部署到开发环境。
-- 适合连接开发数据库、开发 Redis、开发 RabbitMQ。
-- 建议部署后优先调用接口治理聚合报告、最新快照门禁干跑和 Manifest 发布快照接口，将当前接口契约固化为下一次发布的对比基线。
+- 执行前端锁定依赖安装、Playground 包级单测、根级单测、类型检查、后端测试和前端构建。
+- 执行版本残留扫描和敏感信息扫描，避免旧版本号或本地中间件凭据进入仓库。
+- 当前阶段不自动部署开发环境；后续接入部署前，需要先确认服务器地址、凭据管理、制品路径、回滚策略和人工审批边界。
+- 后续接入部署后，优先调用接口治理聚合报告、最新快照门禁干跑和 Manifest 发布快照接口，将当前接口契约固化为下一次发布的对比基线。
 - 接口治理聚合报告 `/api/system/api-resources/governance/report` 会一次性返回 summary、governance、rules、manifest 和 latestGate，适合作为 Jenkins 报告和前端接口管理页的数据源。
 - Manifest Gate 返回 `checks` 机器可读检查项，Jenkins 报告应优先按 `checkCode`、`passed`、`blocking`、`remediation` 输出门禁明细，避免解析中文 `reasons`。
 

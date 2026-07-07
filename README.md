@@ -2,7 +2,7 @@
 
 ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
-当前产品版本：`v0.0.128`
+当前产品版本：`v0.0.129`
 
 ## 当前能力
 
@@ -19,6 +19,7 @@ ONES-ADMIN
 ├── web/                            # Vue3 + Vite 前端
 ├── docs/architecture/              # 架构与选型文档
 ├── docs/CHANGELOG.md               # 产品版本记录
+├── Jenkinsfile                     # Jenkins 验证门禁流水线
 ├── VERSION                         # 当前产品版本号
 ├── server/mvnw / server/mvnw.cmd   # Maven Wrapper
 └── README.md
@@ -89,15 +90,18 @@ VITE_GLOB_AUTH_SSO_URL=
 
 ## 验证命令
 
+Jenkins 已提供根目录 `Jenkinsfile` 作为当前阶段验证门禁，默认只安装前端锁定依赖并执行测试、类型检查、构建、版本残留扫描和敏感信息扫描，不包含部署动作；仓库扫描逻辑沉淀在 `scripts/ci/repository-guard.sh`，便于本地和 Jenkins 复用同一套规则。
+
 ```bash
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
 cd server
 ./mvnw test
 
 cd web
-pnpm test:unit
 pnpm -F @vben/playground run test:unit
-pnpm build
+pnpm test:unit
+pnpm -F @vben/playground run typecheck
+pnpm -F @vben/playground run build
 ```
 
 ## 首版接口
