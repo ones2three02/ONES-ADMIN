@@ -248,6 +248,51 @@ function readEnvironmentConfigReportSummary() {
   };
 }
 
+function readFrontendLayoutReportSummary() {
+  const reportPath = path.join(rootDir, '.ci-artifacts', 'frontend-layout-report.json');
+  const report = readJsonIfExists(reportPath);
+
+  if (!report) {
+    return {
+      reportPath: path.relative(rootDir, reportPath),
+      exists: false,
+      version: null,
+      governancePassed: false,
+      errorCount: null,
+      warningCount: null,
+      splitLayoutUserCount: 0,
+      autoHeightGridFileCount: 0,
+      readsIgnoredSensitiveSources: null,
+      passed: false,
+    };
+  }
+
+  const versionMatches = report.product?.version === productVersion;
+  const governancePassed = report.governance?.passed === true;
+  const errorCount = Number(report.governance?.errorCount ?? 1);
+  const splitLayoutUserCount = Number(report.layout?.splitLayoutUserCount ?? 0);
+  const splitLayoutExists = report.layout?.splitLayoutExists === true;
+  const readsIgnoredSensitiveSources = report.scanPolicy?.readsIgnoredSensitiveSources === true;
+
+  return {
+    reportPath: path.relative(rootDir, reportPath),
+    exists: true,
+    version: report.product?.version ?? null,
+    governancePassed,
+    errorCount,
+    warningCount: report.governance?.warningCount ?? null,
+    splitLayoutUserCount,
+    autoHeightGridFileCount: report.layout?.autoHeightGridFileCount ?? null,
+    readsIgnoredSensitiveSources,
+    passed: versionMatches
+      && governancePassed
+      && errorCount === 0
+      && splitLayoutExists
+      && splitLayoutUserCount >= 3
+      && !readsIgnoredSensitiveSources,
+  };
+}
+
 function readReleaseEvidenceSummary() {
   const reportPath = path.join(rootDir, '.ci-artifacts', 'release-evidence.json');
   const report = readJsonIfExists(reportPath);
@@ -291,6 +336,7 @@ function readReleaseEvidenceSummary() {
     'BUILD_METADATA',
     'DATABASE_MIGRATION_REPORT',
     'ENVIRONMENT_CONFIG_REPORT',
+    'FRONTEND_LAYOUT_REPORT',
     'VERIFICATION_SUMMARY',
   ]);
   const artifactCodes = new Set(artifacts.map((artifact) => artifact.code));
@@ -316,6 +362,7 @@ const backendTests = readBackendTestSummary();
 const frontendBuild = readFrontendBuildSummary();
 const environmentConfigReport = readEnvironmentConfigReportSummary();
 const databaseMigrationReport = readDatabaseMigrationReportSummary();
+const frontendLayoutReport = readFrontendLayoutReportSummary();
 const apiGovernanceReport = readApiGovernanceReportSummary();
 const releaseEvidence = readReleaseEvidenceSummary();
 
@@ -366,6 +413,12 @@ const checks = [
     passed: apiGovernanceReport.passed,
   },
   {
+    code: 'FRONTEND_LAYOUT_REPORT_PRESENT',
+    command: 'read .ci-artifacts/frontend-layout-report.json',
+    exitCode: frontendLayoutReport.passed ? 0 : 1,
+    passed: frontendLayoutReport.passed,
+  },
+  {
     code: 'RELEASE_EVIDENCE_PRESENT',
     command: 'read .ci-artifacts/release-evidence.json',
     exitCode: releaseEvidence.exists ? (releaseEvidence.passed ? 0 : 1) : 0,
@@ -395,6 +448,7 @@ const summary = {
     frontendBuild,
     environmentConfigReport,
     databaseMigrationReport,
+    frontendLayoutReport,
     apiGovernanceReport,
     releaseEvidence,
   },

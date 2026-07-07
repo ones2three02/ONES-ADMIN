@@ -60,18 +60,21 @@ function gate(code, passed, message, remediation) {
 const buildMetadataPath = '.ci-artifacts/build-metadata.json';
 const environmentConfigReportPath = '.ci-artifacts/environment-config-report.json';
 const databaseMigrationReportPath = '.ci-artifacts/database-migration-report.json';
+const frontendLayoutReportPath = '.ci-artifacts/frontend-layout-report.json';
 const apiGovernanceReportPath = '.ci-artifacts/api-governance-report.json';
 const verificationSummaryPath = '.ci-artifacts/verification-summary.json';
 
 const buildMetadata = readJson(buildMetadataPath);
 const environmentConfigReport = readJson(environmentConfigReportPath);
 const databaseMigrationReport = readJson(databaseMigrationReportPath);
+const frontendLayoutReport = readJson(frontendLayoutReportPath);
 const apiGovernanceReport = readJson(apiGovernanceReportPath);
 const verificationSummary = readJson(verificationSummaryPath);
 
 const buildMetadataVersionMatches = buildMetadata?.product?.version === productVersion;
 const environmentConfigVersionMatches = environmentConfigReport?.product?.version === productVersion;
 const databaseMigrationVersionMatches = databaseMigrationReport?.product?.version === productVersion;
+const frontendLayoutVersionMatches = frontendLayoutReport?.product?.version === productVersion;
 const apiGovernanceVersionMatches = apiGovernanceReport?.applicationVersion === productVersion;
 const verificationSummaryVersionMatches = verificationSummary?.product?.version === productVersion;
 
@@ -94,6 +97,13 @@ const environmentConfigPassed = Boolean(environmentConfigReport)
   && Number(environmentConfigReport.configuration?.totalItemCount ?? 0) > 0
   && Number(environmentConfigReport.configuration?.uniqueEnvCount ?? 0) > 0
   && environmentConfigReport.scanPolicy?.readsIgnoredSensitiveSources === false;
+const frontendLayoutPassed = Boolean(frontendLayoutReport)
+  && frontendLayoutVersionMatches
+  && frontendLayoutReport.governance?.passed === true
+  && Number(frontendLayoutReport.governance?.errorCount ?? 1) === 0
+  && frontendLayoutReport.layout?.splitLayoutExists === true
+  && Number(frontendLayoutReport.layout?.splitLayoutUserCount ?? 0) >= 3
+  && frontendLayoutReport.scanPolicy?.readsIgnoredSensitiveSources === false;
 const apiGovernancePassed = Boolean(apiGovernanceReport)
   && apiGovernanceVersionMatches
   && apiGovernanceReport.governance?.passed === true
@@ -155,6 +165,21 @@ const statuses = [
     },
   ),
   artifactStatus(
+    'FRONTEND_LAYOUT_REPORT',
+    frontendLayoutReportPath,
+    Boolean(frontendLayoutReport),
+    frontendLayoutReport?.product?.version,
+    frontendLayoutVersionMatches,
+    frontendLayoutPassed,
+    {
+      splitLayoutUserCount: frontendLayoutReport?.layout?.splitLayoutUserCount ?? null,
+      autoHeightGridFileCount: frontendLayoutReport?.layout?.autoHeightGridFileCount ?? null,
+      governancePassed: frontendLayoutReport?.governance?.passed ?? null,
+      errorCount: frontendLayoutReport?.governance?.errorCount ?? null,
+      warningCount: frontendLayoutReport?.governance?.warningCount ?? null,
+    },
+  ),
+  artifactStatus(
     'API_GOVERNANCE_REPORT',
     apiGovernanceReportPath,
     Boolean(apiGovernanceReport),
@@ -188,8 +213,8 @@ const releaseGates = [
   gate(
     'ALL_REQUIRED_ARTIFACTS_PRESENT',
     statuses.every((status) => status.exists),
-    '发布证据包必须包含构建元数据、环境配置报告、数据库迁移报告、接口治理报告和验证摘要',
-    '先执行 build-metadata、environment-config-report、database-migration-report、api-governance-report 和 verification-summary 阶段',
+    '发布证据包必须包含构建元数据、环境配置报告、数据库迁移报告、前端布局治理报告、接口治理报告和验证摘要',
+    '先执行 build-metadata、environment-config-report、database-migration-report、frontend-layout-report、api-governance-report 和 verification-summary 阶段',
   ),
   gate(
     'ALL_ARTIFACT_VERSIONS_MATCH',
@@ -214,6 +239,12 @@ const releaseGates = [
     databaseMigrationPassed,
     '数据库迁移治理必须通过',
     '修复 Flyway 命名、连续版本、旧 schema.sql 或未审批破坏性 SQL 问题',
+  ),
+  gate(
+    'FRONTEND_LAYOUT_GOVERNED',
+    frontendLayoutPassed,
+    '前端布局治理必须通过',
+    '修复左右分栏旧布局类、共享分栏表格高度或布局报告版本不一致问题',
   ),
   gate(
     'API_GOVERNANCE_READY',
@@ -249,6 +280,7 @@ const report = {
       frontendBuild: verificationSummary?.artifacts?.frontendBuild ?? null,
       environmentConfig: verificationSummary?.artifacts?.environmentConfigReport ?? null,
       databaseMigration: verificationSummary?.artifacts?.databaseMigrationReport ?? null,
+      frontendLayout: verificationSummary?.artifacts?.frontendLayoutReport ?? null,
       apiGovernance: verificationSummary?.artifacts?.apiGovernanceReport ?? null,
     },
   },

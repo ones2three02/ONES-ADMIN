@@ -69,6 +69,12 @@ pipeline {
       }
     }
 
+    stage('Frontend Layout Report') {
+      steps {
+        sh 'bash scripts/ci/verify.sh frontend-layout-report'
+      }
+    }
+
     stage('Repository Guard') {
       steps {
         sh 'bash scripts/ci/verify.sh repository-guard'

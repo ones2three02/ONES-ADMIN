@@ -16,6 +16,7 @@ Stages:
   frontend-typecheck     Run Playground typecheck.
   backend-test           Run backend Maven tests.
   frontend-build         Build the Playground frontend.
+  frontend-layout-report Generate the frontend layout governance report artifact.
   repository-guard       Run version and repository safety guards.
   environment-config-report
                          Generate the environment configuration governance report artifact.
@@ -86,6 +87,13 @@ run_frontend_build() {
   "
 }
 
+run_frontend_layout_report() {
+  run_with_toolchain bash -c "
+    cd '$ROOT_DIR'
+    bash scripts/ci/frontend-layout-report.sh
+  "
+}
+
 run_repository_guard() {
   run_with_toolchain bash -c "
     cd '$ROOT_DIR'
@@ -137,6 +145,7 @@ run_all() {
   run_frontend_typecheck
   run_backend_test
   run_frontend_build
+  run_frontend_layout_report
   run_repository_guard
   run_environment_config_report
   run_database_migration_report
@@ -166,6 +175,9 @@ case "${1:-}" in
     ;;
   frontend-build)
     run_frontend_build
+    ;;
+  frontend-layout-report)
+    run_frontend_layout_report
     ;;
   repository-guard)
     run_repository_guard

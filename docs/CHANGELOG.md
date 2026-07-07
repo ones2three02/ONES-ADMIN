@@ -1,5 +1,14 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.141 - 2026-07-07
+
+- 新增 `scripts/ci/frontend-layout-report.sh`，生成 `.ci-artifacts/frontend-layout-report.json`，扫描后台业务视图的共享分栏布局使用、旧 `w-*/ml-*` 拼接布局回退、SplitListLayout 内 VXE 表格高度和 `autoResize` 配置。
+- `scripts/ci/verify.sh` 新增 `frontend-layout-report` 阶段，Jenkinsfile 新增 Frontend Layout Report 阶段，让本地验证与 Jenkins 都能输出同一份前端布局治理证据。
+- `scripts/ci/verification-summary.sh` 新增前端布局治理报告门禁，要求报告版本匹配、共享分栏组件存在、已治理页面数量达标、硬错误为 0 且不读取 ignored 敏感来源。
+- `scripts/ci/release-evidence.sh` 将前端布局治理纳入发布证据包，新增 `FRONTEND_LAYOUT_GOVERNED` 发布门禁，防止后续列表页回退到不稳定左右分栏或表格高度配置。
+- `height: auto` 的存量 VXE 页面先作为 WARN 治理清单输出，不阻塞本版本；本版本不新增后端接口，不新增数据库迁移，不连接真实中间件，不改变 Vben / Ant Design Vue 选型和整体视觉体系。
+- 产品版本递增至 `v0.0.141`。
+
 ## v0.0.140 - 2026-07-07
 
 - 新增 `web/playground/src/views/shared/split-list-layout.vue`，沉淀后台左右分栏列表共享布局，统一左侧范围面板、右侧表格工作区、固定宽度、`min-height: 0`、移动端纵向堆叠等稳定布局规则。
