@@ -5,17 +5,13 @@ import type { HrJobGradeApi } from '#/api';
 import { Page, useVbenDrawer } from '@vben/common-ui';
 import { Plus } from '@vben/icons';
 
-import { Button, message } from 'antdv-next';
+import { Button } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getJobGradeList, updateJobGrade } from '#/api';
 import { $t } from '#/locales';
 
-import { errorMessageOf } from '../shared/error';
-import {
-  confirmHrStatusChange,
-  isHrStatusChangeCancelled,
-} from '../shared/status-change';
+import { runHrStatusChangeWithFeedback } from '../shared/status-change';
 import { useColumns } from './data';
 import Form from './modules/form.vue';
 
@@ -75,29 +71,22 @@ async function onStatusChange(
   const statusStr = newStatus
     ? $t('hr.statusChange.enabledAction')
     : $t('hr.statusChange.disabledAction');
-  try {
-    await confirmHrStatusChange(
-      $t('hr.statusChange.jobGradeConfirm', {
-        name: row.gradeName,
-        status: statusStr,
+  return runHrStatusChangeWithFeedback({
+    confirmContent: $t('hr.statusChange.jobGradeConfirm', {
+      name: row.gradeName,
+      status: statusStr,
+    }),
+    confirmTitle: $t('hr.statusChange.title'),
+    errorMessage: $t('hr.statusChange.error'),
+    successMessage: $t('hr.statusChange.success', { status: statusStr }),
+    updater: () =>
+      updateJobGrade(row.id, {
+        gradeCode: row.gradeCode,
+        gradeName: row.gradeName,
+        gradeRank: row.gradeRank,
+        enabled: newStatus,
       }),
-      $t('hr.statusChange.title'),
-    );
-    await updateJobGrade(row.id, {
-      gradeCode: row.gradeCode,
-      gradeName: row.gradeName,
-      gradeRank: row.gradeRank,
-      enabled: newStatus,
-    });
-    message.success($t('hr.statusChange.success', { status: statusStr }));
-    return true;
-  } catch (error) {
-    if (isHrStatusChangeCancelled(error)) {
-      return false;
-    }
-    message.error(errorMessageOf(error, $t('hr.statusChange.error')));
-    return false;
-  }
+  });
 }
 </script>
 <template>
