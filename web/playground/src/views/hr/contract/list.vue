@@ -151,8 +151,8 @@ async function loadEmployeeList() {
         selectEmployee(firstEmployee);
       }
     }
-  } catch (error) {
-    console.error('Failed to load employee list:', error);
+  } catch (error: unknown) {
+    message.error(errorMessageOf(error, $t('hr.contract.employeeLoadError')));
   }
 }
 

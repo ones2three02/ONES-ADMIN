@@ -5,7 +5,7 @@ import { ref } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
 
-import { Spin, Timeline, TimelineItem } from 'antdv-next';
+import { message, Spin, Timeline, TimelineItem } from 'antdv-next';
 
 import { getEmployeeLifecycleEvents } from '#/api';
 import { $t } from '#/locales';
@@ -26,8 +26,8 @@ const [Drawer, drawerApi] = useVbenDrawer({
         loading.value = true;
         try {
           events.value = await getEmployeeLifecycleEvents(data.id);
-        } catch (error) {
-          console.error('Failed to load lifecycle events:', error);
+        } catch (error: unknown) {
+          message.error(errorMessageOf(error, $t('hr.employeeLifecycle.loadError')));
         } finally {
           loading.value = false;
         }
@@ -35,6 +35,10 @@ const [Drawer, drawerApi] = useVbenDrawer({
     }
   },
 });
+
+function errorMessageOf(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
 
 function getTimelineItemColor(type: string) {
   switch (type) {

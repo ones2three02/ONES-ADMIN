@@ -109,6 +109,7 @@
     "exporting": "Exporting employee roster...",
     "exportSuccess": "Export succeeded",
     "exportError": "Export failed. Please try again later",
+    "deptLoadError": "Failed to load departments. Please try again later",
     "profile": "Profile"
   },
   "employeeLifecycle": {
@@ -128,6 +129,7 @@
     "eventDateDisplay": "Change Date: {date}",
     "operatorDisplay": "Operator: {operator}",
     "detailDisplay": "Details: {detail}",
+    "loadError": "Failed to load lifecycle events. Please try again later",
     "noEvents": "No lifecycle events"
   },
   "dictFallback": {
@@ -221,6 +223,7 @@
     "actualTerminateDate": "Termination Date",
     "terminateReason": "Terminate Reason",
     "employeeSearchPlaceholder": "Search name...",
+    "employeeLoadError": "Failed to load employees. Please try again later",
     "contractHistory": "Contract History",
     "employeeContractHistory": "{name}'s Contract History",
     "expiringWarn": "Expiring Alert",

@@ -109,6 +109,7 @@
     "exporting": "正在导出员工花名册...",
     "exportSuccess": "导出成功",
     "exportError": "导出失败，请稍后重试",
+    "deptLoadError": "部门列表加载失败，请稍后重试",
     "profile": "档案"
   },
   "employeeLifecycle": {
@@ -128,6 +129,7 @@
     "eventDateDisplay": "变动日期: {date}",
     "operatorDisplay": "操作人: {operator}",
     "detailDisplay": "详情: {detail}",
+    "loadError": "生命周期事件加载失败，请稍后重试",
     "noEvents": "暂无生命周期事件记录"
   },
   "dictFallback": {
@@ -221,6 +223,7 @@
     "actualTerminateDate": "终止日期",
     "terminateReason": "终止原因",
     "employeeSearchPlaceholder": "搜索姓名...",
+    "employeeLoadError": "员工列表加载失败，请稍后重试",
     "contractHistory": "合同历史",
     "employeeContractHistory": "【{name}】的合同历史",
     "expiringWarn": "到期预警",

@@ -1,5 +1,12 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.111 - 2026-07-07
+
+- HRMS 员工列表部门树、合同管理员工列表和员工生命周期抽屉加载失败时，统一改为 Ant Design Vue `message.error` 可见提示，不再只输出 `console.error`。
+- 新增 `hr.employeeList.deptLoadError`、`hr.contract.employeeLoadError`、`hr.employeeLifecycle.loadError` 中英文语言资源，让加载失败提示继续纳入 HRMS 国际化治理。
+- 本版本不新增后端接口，不新增数据库迁移，不新增中间件。
+- 产品版本递增至 `v0.0.111`。
+
 ## v0.0.110 - 2026-07-07
 
 - HRMS 前端岗位、职级、员工、合同和花名册 API 响应边界移除 `any[]`/`any` 强转，补充远端响应类型与 normalize 函数，继续对齐后端 DTO 契约。

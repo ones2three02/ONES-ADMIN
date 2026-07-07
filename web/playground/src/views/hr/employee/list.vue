@@ -169,8 +169,8 @@ async function loadDeptList() {
   try {
     const res = await getDeptList();
     deptList.value = res;
-  } catch (error) {
-    console.error('Failed to load department list:', error);
+  } catch (error: unknown) {
+    message.error(errorMessageOf(error, $t('hr.employeeList.deptLoadError')));
   }
 }
 
