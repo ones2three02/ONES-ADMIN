@@ -25,11 +25,11 @@ const [Drawer, drawerApi] = useVbenDrawer({
   async onConfirm() {
     const { valid } = await formApi.validate();
     if (!valid) return;
-    const values = await formApi.getValues();
+    const values = await formApi.getValues<HrEmployeeApi.RegularizeRequest>();
     if (!employeeId.value) return;
 
     drawerApi.lock();
-    regularizeEmployee(employeeId.value, values as any)
+    regularizeEmployee(employeeId.value, values)
       .then(() => {
         emits('success');
         drawerApi.close();

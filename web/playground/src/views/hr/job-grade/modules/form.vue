@@ -25,9 +25,9 @@ const [Drawer, drawerApi] = useVbenDrawer({
   async onConfirm() {
     const { valid } = await formApi.validate();
     if (!valid) return;
-    const values = await formApi.getValues();
+    const values = await formApi.getValues<HrJobGradeApi.SaveRequest>();
     drawerApi.lock();
-    (id.value ? updateJobGrade(id.value, values as any) : createJobGrade(values as any))
+    (id.value ? updateJobGrade(id.value, values) : createJobGrade(values))
       .then(() => {
         emits('success');
         drawerApi.close();

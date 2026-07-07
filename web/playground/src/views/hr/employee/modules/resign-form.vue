@@ -25,11 +25,11 @@ const [Drawer, drawerApi] = useVbenDrawer({
   async onConfirm() {
     const { valid } = await formApi.validate();
     if (!valid) return;
-    const values = await formApi.getValues();
+    const values = await formApi.getValues<HrEmployeeApi.ResignRequest>();
     if (!employeeId.value) return;
 
     drawerApi.lock();
-    resignEmployee(employeeId.value, values as any)
+    resignEmployee(employeeId.value, values)
       .then(() => {
         emits('success');
         drawerApi.close();

@@ -28,23 +28,53 @@ export namespace HrRosterImportApi {
     pageNum?: number;
     pageSize?: number;
   }
+
+  export type ImportBatchResponse = Omit<ImportBatch, 'id'> & {
+    id: number | string;
+  };
+
+  export interface ImportBatchPageResponse {
+    list: ImportBatchResponse[];
+    total: number;
+  }
+
+  export type RosterErrorResponse = Omit<RosterError, 'batchId' | 'id'> & {
+    batchId: number | string;
+    id: number | string;
+  };
+}
+
+function normalizeImportBatch(
+  item: HrRosterImportApi.ImportBatchResponse,
+): HrRosterImportApi.ImportBatch {
+  return {
+    ...item,
+    id: String(item.id),
+  };
+}
+
+function normalizeRosterError(
+  item: HrRosterImportApi.RosterErrorResponse,
+): HrRosterImportApi.RosterError {
+  return {
+    ...item,
+    batchId: String(item.batchId),
+    id: String(item.id),
+  };
 }
 
 export async function getRosterImportBatches(params: HrRosterImportApi.BatchQuery) {
-  const res = await requestClient.get<{
-    list: any[];
-    total: number;
-  }>('/hr/roster-import/batches', {
+  const res = await requestClient.get<HrRosterImportApi.ImportBatchPageResponse>(
+    '/hr/roster-import/batches',
+    {
     params: {
       ...params,
       pageNum: params.page ?? params.pageNum,
     },
-  });
+    },
+  );
   return {
-    items: res.list.map((item) => ({
-      ...item,
-      id: String(item.id),
-    })) as HrRosterImportApi.ImportBatch[],
+    items: res.list.map(normalizeImportBatch),
     total: res.total,
   };
 }
@@ -52,7 +82,7 @@ export async function getRosterImportBatches(params: HrRosterImportApi.BatchQuer
 export async function uploadRosterFile(file: File) {
   const formData = new FormData();
   formData.append('file', file);
-  const res = await requestClient.post<HrRosterImportApi.ImportBatch>(
+  const res = await requestClient.post<HrRosterImportApi.ImportBatchResponse>(
     '/hr/roster-import/batches',
     formData,
     {
@@ -61,27 +91,21 @@ export async function uploadRosterFile(file: File) {
       },
     },
   );
-  return {
-    ...res,
-    id: String(res.id),
-  } as HrRosterImportApi.ImportBatch;
+  return normalizeImportBatch(res);
 }
 
 export async function getRosterImportBatch(id: string | number) {
-  const res = await requestClient.get<any>(`/hr/roster-import/batches/${id}`);
-  return {
-    ...res,
-    id: String(res.id),
-  } as HrRosterImportApi.ImportBatch;
+  const res = await requestClient.get<HrRosterImportApi.ImportBatchResponse>(
+    `/hr/roster-import/batches/${id}`,
+  );
+  return normalizeImportBatch(res);
 }
 
 export async function getRosterImportErrors(id: string | number) {
-  const res = await requestClient.get<any[]>(`/hr/roster-import/batches/${id}/errors`);
-  return res.map((item) => ({
-    ...item,
-    id: String(item.id),
-    batchId: String(item.batchId),
-  })) as HrRosterImportApi.RosterError[];
+  const res = await requestClient.get<HrRosterImportApi.RosterErrorResponse[]>(
+    `/hr/roster-import/batches/${id}/errors`,
+  );
+  return res.map(normalizeRosterError);
 }
 
 export async function downloadRosterTemplate() {

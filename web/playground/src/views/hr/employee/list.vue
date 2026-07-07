@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
-import type { HrEmployeeApi } from '#/api';
+import type { HrEmployeeApi, SystemDeptApi } from '#/api';
 
 import { onMounted, ref, watch } from 'vue';
 
@@ -28,7 +28,7 @@ import RegularizeForm from './modules/regularize-form.vue';
 import ResignForm from './modules/resign-form.vue';
 import TransferForm from './modules/transfer-form.vue';
 
-const deptList = ref<any[]>([]);
+const deptList = ref<SystemDeptApi.SystemDept[]>([]);
 const searchDeptValue = ref('');
 const selectedDeptId = ref<string>('');
 const latestQuery = ref<Partial<HrEmployeeApi.EmployeeQuery>>({});
@@ -130,11 +130,15 @@ async function onExport() {
       source: blob,
     });
     message.success($t('hr.employeeList.exportSuccess'));
-  } catch (error: any) {
-    message.error(error?.message || $t('hr.employeeList.exportError'));
+  } catch (error: unknown) {
+    message.error(errorMessageOf(error, $t('hr.employeeList.exportError')));
   } finally {
     hide();
   }
+}
+
+function errorMessageOf(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
 }
 
 function onEdit(row: HrEmployeeApi.HrEmployee) {

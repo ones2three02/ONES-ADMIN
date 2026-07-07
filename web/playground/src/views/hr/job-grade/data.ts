@@ -49,7 +49,10 @@ export function useFormSchema(): VbenFormSchema[] {
 
 export function useColumns<T = HrJobGradeApi.HrJobGrade>(
   onActionClick: OnActionClickFn<T>,
-  onStatusChange?: (newStatus: any, row: T) => PromiseLike<boolean | undefined>,
+  onStatusChange?: (
+    newStatus: boolean,
+    row: T,
+  ) => PromiseLike<boolean | undefined>,
 ): VxeTableGridColumns {
   return [
     {

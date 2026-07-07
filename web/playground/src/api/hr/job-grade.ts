@@ -16,14 +16,22 @@ export namespace HrJobGradeApi {
     gradeRank: number;
     enabled: boolean;
   }
+
+  export type JobGradeResponse = Omit<HrJobGrade, 'id'> & {
+    id: number | string;
+  };
+}
+
+function normalizeJobGrade(item: HrJobGradeApi.JobGradeResponse): HrJobGradeApi.HrJobGrade {
+  return {
+    ...item,
+    id: String(item.id),
+  };
 }
 
 export async function getJobGradeList() {
-  const res = await requestClient.get<any[]>('/hr/job-grades');
-  return res.map((item) => ({
-    ...item,
-    id: String(item.id),
-  })) as HrJobGradeApi.HrJobGrade[];
+  const res = await requestClient.get<HrJobGradeApi.JobGradeResponse[]>('/hr/job-grades');
+  return res.map(normalizeJobGrade);
 }
 
 export async function createJobGrade(data: HrJobGradeApi.SaveRequest) {

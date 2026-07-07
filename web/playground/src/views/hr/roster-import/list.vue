@@ -28,6 +28,12 @@ const [Errors, errorsModalApi] = useVbenModal({
 const latestBatches = ref<HrRosterImportApi.ImportBatch[]>([]);
 const totalBatchCount = ref(0);
 
+type UploadRequestOptions = {
+  file: Blob | File | string;
+  onError?: (error: Error) => void;
+  onSuccess?: (data?: unknown) => void;
+};
+
 const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions: {
     columns: [
@@ -116,7 +122,7 @@ async function handleDownloadTemplate() {
   }
 }
 
-async function handleCustomUpload(options: any) {
+async function handleCustomUpload(options: UploadRequestOptions) {
   const { file, onSuccess, onError } = options;
   const uploadFile = file as File;
   if (!uploadFile.name.toLowerCase().endsWith('.csv')) {
@@ -142,9 +148,13 @@ async function handleCustomUpload(options: any) {
     );
     onSuccess?.();
     onRefresh();
-  } catch (error: any) {
-    message.error(error.message || $t('hr.rosterImport.uploadError'));
-    onError?.(error);
+  } catch (error: unknown) {
+    const normalizedError =
+      error instanceof Error
+        ? error
+        : new Error($t('hr.rosterImport.uploadError'));
+    message.error(normalizedError.message || $t('hr.rosterImport.uploadError'));
+    onError?.(normalizedError);
   } finally {
     hide();
   }

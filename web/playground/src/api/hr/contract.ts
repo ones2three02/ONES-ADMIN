@@ -36,28 +36,40 @@ export namespace HrContractApi {
     actualTerminateDate: string;
     terminateReason: string;
   }
+
+  export type ContractResponse = Omit<
+    HrContract,
+    'attachmentFileId' | 'employeeId' | 'id'
+  > & {
+    attachmentFileId?: number | string;
+    employeeId: number | string;
+    id: number | string;
+  };
+}
+
+function normalizeContract(item: HrContractApi.ContractResponse): HrContractApi.HrContract {
+  return {
+    ...item,
+    attachmentFileId: item.attachmentFileId
+      ? String(item.attachmentFileId)
+      : undefined,
+    employeeId: String(item.employeeId),
+    id: String(item.id),
+  };
 }
 
 export async function getEmployeeContracts(employeeId: string | number) {
-  const res = await requestClient.get<any[]>(`/hr/employees/${employeeId}/contracts`);
-  return res.map((item) => ({
-    ...item,
-    id: String(item.id),
-    employeeId: String(item.employeeId),
-    attachmentFileId: item.attachmentFileId ? String(item.attachmentFileId) : undefined,
-  })) as HrContractApi.HrContract[];
+  const res = await requestClient.get<HrContractApi.ContractResponse[]>(
+    `/hr/employees/${employeeId}/contracts`,
+  );
+  return res.map(normalizeContract);
 }
 
 export async function getExpiringContracts(days?: number) {
-  const res = await requestClient.get<any[]>('/hr/contracts/expiring', {
+  const res = await requestClient.get<HrContractApi.ContractResponse[]>('/hr/contracts/expiring', {
     params: { days },
   });
-  return res.map((item) => ({
-    ...item,
-    id: String(item.id),
-    employeeId: String(item.employeeId),
-    attachmentFileId: item.attachmentFileId ? String(item.attachmentFileId) : undefined,
-  })) as HrContractApi.HrContract[];
+  return res.map(normalizeContract);
 }
 
 export async function exportExpiringContracts(days?: number) {

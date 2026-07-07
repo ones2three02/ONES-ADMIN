@@ -146,7 +146,10 @@ async function loadEmployeeList() {
     });
     employees.value = res.items;
     if (res.items.length > 0 && !selectedEmployeeId.value) {
-      selectEmployee(res.items[0]);
+      const firstEmployee = res.items[0];
+      if (firstEmployee) {
+        selectEmployee(firstEmployee);
+      }
     }
   } catch (error) {
     console.error('Failed to load employee list:', error);

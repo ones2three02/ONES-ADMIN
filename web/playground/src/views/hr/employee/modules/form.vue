@@ -14,6 +14,12 @@ import { useFormSchema } from '../data';
 const emits = defineEmits(['success']);
 const editingEmployee = ref<HrEmployeeApi.HrEmployee>();
 
+type EmployeeFormValues = Partial<
+  HrEmployeeApi.CreateRequest & HrEmployeeApi.UpdateRequest
+> & {
+  sensitiveVisible?: boolean;
+};
+
 const [Form, formApi] = useVbenForm({
   schema: useFormSchema(),
   showDefaultActions: false,
@@ -23,7 +29,7 @@ const [Drawer, drawerApi] = useVbenDrawer({
   async onConfirm() {
     const { valid } = await formApi.validate();
     if (!valid) return;
-    const values = await formApi.getValues();
+    const values = await formApi.getValues<EmployeeFormValues>();
     drawerApi.lock();
     const submit = editingEmployee.value
       ? updateEmployee(editingEmployee.value.id, buildUpdatePayload(values))
@@ -65,31 +71,31 @@ function emptyToUndefined(value: unknown) {
   return value === '' || value === null ? undefined : value;
 }
 
-function buildCreatePayload(values: Record<string, any>): HrEmployeeApi.CreateRequest {
+function buildCreatePayload(values: EmployeeFormValues): HrEmployeeApi.CreateRequest {
   return {
-    employeeNo: values.employeeNo,
-    realName: values.realName,
+    employeeNo: values.employeeNo!,
+    realName: values.realName!,
     preferredName: emptyToUndefined(values.preferredName) as string | undefined,
-    gender: values.gender,
-    mobile: values.mobile,
-    email: values.email,
+    gender: values.gender!,
+    mobile: values.mobile!,
+    email: values.email!,
     idCardNumber: emptyToUndefined(values.idCardNumber) as string | undefined,
     userId: emptyToUndefined(values.userId) as string | undefined,
-    deptId: values.deptId,
+    deptId: values.deptId!,
     positionId: emptyToUndefined(values.positionId) as string | undefined,
     gradeId: emptyToUndefined(values.gradeId) as string | undefined,
     managerEmployeeId: emptyToUndefined(values.managerEmployeeId) as string | undefined,
-    employmentType: values.employmentType,
+    employmentType: values.employmentType!,
     employmentStatus: emptyToUndefined(values.employmentStatus) as string | undefined,
-    hireDate: values.hireDate,
+    hireDate: values.hireDate!,
     probationEndDate: emptyToUndefined(values.probationEndDate) as string | undefined,
     remark: emptyToUndefined(values.remark) as string | undefined,
   };
 }
 
-function buildUpdatePayload(values: Record<string, any>): HrEmployeeApi.UpdateRequest {
+function buildUpdatePayload(values: EmployeeFormValues): HrEmployeeApi.UpdateRequest {
   const payload: HrEmployeeApi.UpdateRequest = {
-    realName: values.realName,
+    realName: values.realName!,
     preferredName: emptyToUndefined(values.preferredName) as string | undefined,
     gender: emptyToUndefined(values.gender) as string | undefined,
     userId: emptyToUndefined(values.userId) as string | undefined,

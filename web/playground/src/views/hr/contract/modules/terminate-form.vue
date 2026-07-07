@@ -24,11 +24,11 @@ const [Drawer, drawerApi] = useVbenDrawer({
   async onConfirm() {
     const { valid } = await formApi.validate();
     if (!valid) return;
-    const values = await formApi.getValues();
+    const values = await formApi.getValues<HrContractApi.TerminateRequest>();
     if (!contractId.value) return;
 
     drawerApi.lock();
-    terminateContract(contractId.value, values as any)
+    terminateContract(contractId.value, values)
       .then(() => {
         emits('success');
         drawerApi.close();

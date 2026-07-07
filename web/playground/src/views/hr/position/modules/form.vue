@@ -25,9 +25,9 @@ const [Drawer, drawerApi] = useVbenDrawer({
   async onConfirm() {
     const { valid } = await formApi.validate();
     if (!valid) return;
-    const values = await formApi.getValues();
+    const values = await formApi.getValues<HrPositionApi.SaveRequest>();
     drawerApi.lock();
-    (id.value ? updatePosition(id.value, values as any) : createPosition(values as any))
+    (id.value ? updatePosition(id.value, values) : createPosition(values))
       .then(() => {
         emits('success');
         drawerApi.close();

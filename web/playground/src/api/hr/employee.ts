@@ -176,13 +176,30 @@ export namespace HrEmployeeApi {
     issueDate?: string;
     remark?: string;
   }
+
+  export type EmployeeResponse = Omit<
+    HrEmployee,
+    'deptId' | 'gradeId' | 'id' | 'managerEmployeeId' | 'positionId' | 'userId'
+  > & {
+    deptId: number | string;
+    gradeId?: number | string;
+    id: number | string;
+    managerEmployeeId?: number | string;
+    positionId?: number | string;
+    userId?: number | string;
+  };
+
+  export interface EmployeePageResponse {
+    list: EmployeeResponse[];
+    total: number;
+  }
 }
 
 export async function getEmployeeList(params: HrEmployeeApi.EmployeeQuery) {
-  const res = await requestClient.get<{
-    list: any[];
-    total: number;
-  }>('/hr/employees', { params });
+  const res = await requestClient.get<HrEmployeeApi.EmployeePageResponse>(
+    '/hr/employees',
+    { params },
+  );
   return {
     items: res.list.map((item) => ({
       ...item,

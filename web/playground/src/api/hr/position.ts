@@ -19,15 +19,24 @@ export namespace HrPositionApi {
     description?: string;
     enabled: boolean;
   }
+
+  export type PositionResponse = Omit<HrPosition, 'deptId' | 'id'> & {
+    deptId?: number | string;
+    id: number | string;
+  };
+}
+
+function normalizePosition(item: HrPositionApi.PositionResponse): HrPositionApi.HrPosition {
+  return {
+    ...item,
+    deptId: item.deptId ? String(item.deptId) : undefined,
+    id: String(item.id),
+  };
 }
 
 export async function getPositionList() {
-  const res = await requestClient.get<any[]>('/hr/positions');
-  return res.map((item) => ({
-    ...item,
-    id: String(item.id),
-    deptId: item.deptId ? String(item.deptId) : undefined,
-  })) as HrPositionApi.HrPosition[];
+  const res = await requestClient.get<HrPositionApi.PositionResponse[]>('/hr/positions');
+  return res.map(normalizePosition);
 }
 
 export async function createPosition(data: HrPositionApi.SaveRequest) {
