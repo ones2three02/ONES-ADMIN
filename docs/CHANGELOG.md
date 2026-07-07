@@ -1,5 +1,14 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.143 - 2026-07-07
+
+- 新增 `docs/architecture/hrms-architecture-governance-roadmap.md`，沉淀 ONES-ADMIN 作为企业级 HRMS 平台的长期架构治理路线图。
+- 使用 agent-reach 的 GitHub CLI 路由复核 Vben Admin、Cool Admin Java、Smart Admin、RuoYi、JeecgBoot、Frappe HRMS、IceHrm 和 OpenHRMS 的公开仓库信息，并提炼“吸收点 / 不直接照搬点”。
+- 路线图补齐当前系统基线、架构原则、目标架构地图、三阶段演进路线、近期小版本 Backlog 和关键决策记录，为后续服务边界、字段级权限、SSO、数据范围、部署矩阵和可观测性治理提供统一入口。
+- README 架构文档入口新增 HRMS 架构治理路线图，并将后续路线调整为按路线图持续推进服务边界、字段级权限、数据范围、前端页面模板和部署环境矩阵。
+- 本版本不新增运行时代码，不新增后端接口，不新增数据库迁移，不连接真实中间件，不改变 Vben / Ant Design Vue 选型和整体视觉体系。
+- 产品版本递增至 `v0.0.143`。
+
 ## v0.0.142 - 2026-07-07
 
 - 新增 `GuidedWorkbenchBar` 共享工作区状态条，复用 Ant Design Vue Button/Tag 与 Vben Iconify 图标，为后台列表页提供轻量当前范围、状态和下一步动作提示。

@@ -2,7 +2,7 @@
 
 ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
-当前产品版本：`v0.0.142`
+当前产品版本：`v0.0.143`
 
 ## 当前能力
 
@@ -165,11 +165,12 @@ bash scripts/ci/verify.sh all
 - [认证架构设计](docs/architecture/authentication.md)
 - [数据库迁移治理规范](docs/architecture/database-migration-governance.md)
 - [HRMS 一期企业级设计方案](docs/architecture/hrms-phase-one-design.md)
+- [HRMS 架构治理路线图](docs/architecture/hrms-architecture-governance-roadmap.md)
 
 ## 后续路线
 
 1. 持续补充 Flyway 增量迁移脚本和数据库变更回滚说明。
 2. 为 Sa-Token Redis 会话补充独立库、Key 前缀、过期监控和多实例压测，完善分布式登录态运维能力。
-3. 完成系统参数等企业后台基础模块，继续推进文件管理页、文件访问策略、数据字典接入更多 HRMS 和系统表单，并将数据权限扩展到更多业务域、自定义部门集合和字段脱敏策略。
+3. 按 HRMS 架构治理路线图持续推进服务边界、字段级权限、数据范围、前端页面模板和部署环境矩阵。
 4. 完成飞书 OAuth 回调、用户绑定和企业 SSO 后端适配层，再扩展企业微信、钉钉等其他第三方入口。
 5. 增加多租户、代码生成、工作流与监控告警，持续增强角色数据范围、字段级权限和跨租户隔离能力。
