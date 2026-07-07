@@ -364,9 +364,16 @@ function confirmRemoveDocument(file: HrEmployeeApi.EmployeeDocument) {
     okText: $t('hr.employeeProfile.documentRemoveOk'),
     title: $t('hr.employeeProfile.documentRemoveTitle'),
     async onOk() {
-      await removeEmployeeDocument(employee.value!.id, file.id);
-      message.success($t('hr.employeeProfile.documentRemoveSuccess'));
-      await reloadDocuments();
+      try {
+        await removeEmployeeDocument(employee.value!.id, file.id);
+        message.success($t('hr.employeeProfile.documentRemoveSuccess'));
+        await reloadDocuments();
+      } catch (error) {
+        message.error(
+          errorMessageOf(error, $t('hr.employeeProfile.documentRemoveError')),
+        );
+        throw error;
+      }
     },
   });
 }

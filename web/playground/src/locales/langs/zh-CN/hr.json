@@ -88,6 +88,7 @@
     "documentRemoveConfirm": "确认移除资料附件「{name}」吗？",
     "documentRemoveOk": "确认移除",
     "documentRemoveSuccess": "资料附件已移除",
+    "documentRemoveError": "资料附件移除失败",
     "issueDate": "签发日期",
     "expireDate": "到期日期",
     "issueDateDisplay": "签发：{date}",
