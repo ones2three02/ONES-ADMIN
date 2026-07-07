@@ -120,6 +120,15 @@ public class OperationAuditService {
         if (hasText(query.getPath())) {
             wrapper.like(SystemOperationLogEntity::getPath, query.getPath().trim());
         }
+        if (hasText(query.getModule())) {
+            wrapper.like(SystemOperationLogEntity::getModule, query.getModule().trim());
+        }
+        if (hasText(query.getOperation())) {
+            wrapper.like(SystemOperationLogEntity::getOperation, query.getOperation().trim());
+        }
+        if (hasText(query.getPermissionCode())) {
+            wrapper.like(SystemOperationLogEntity::getPermissionCode, query.getPermissionCode().trim());
+        }
         if (query.getSuccess() != null) {
             wrapper.eq(SystemOperationLogEntity::getSuccess, query.getSuccess());
         }

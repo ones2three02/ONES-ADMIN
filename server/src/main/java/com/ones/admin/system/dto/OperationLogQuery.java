@@ -10,6 +10,9 @@ public class OperationLogQuery extends PageQuery {
     private Long userId;
     private String method;
     private String path;
+    private String module;
+    private String operation;
+    private String permissionCode;
     private Boolean success;
     private Integer responseCode;
     private String traceId;
@@ -42,6 +45,30 @@ public class OperationLogQuery extends PageQuery {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getModule() {
+        return module;
+    }
+
+    public void setModule(String module) {
+        this.module = module;
+    }
+
+    public String getOperation() {
+        return operation;
+    }
+
+    public void setOperation(String operation) {
+        this.operation = operation;
+    }
+
+    public String getPermissionCode() {
+        return permissionCode;
+    }
+
+    public void setPermissionCode(String permissionCode) {
+        this.permissionCode = permissionCode;
     }
 
     public Boolean getSuccess() {

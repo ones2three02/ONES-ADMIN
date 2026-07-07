@@ -54,10 +54,13 @@ export namespace SystemAuditApi {
   export interface OperationLogQuery {
     endTime?: string;
     method?: string;
+    module?: string;
+    operation?: string;
     page?: number;
     pageNum?: number;
     pageSize?: number;
     path?: string;
+    permissionCode?: string;
     responseCode?: number;
     startTime?: string;
     success?: boolean;

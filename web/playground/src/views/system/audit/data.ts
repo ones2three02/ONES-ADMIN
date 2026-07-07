@@ -82,6 +82,21 @@ export function useOperationLogFormSchema(): VbenFormSchema[] {
     },
     {
       component: 'Input',
+      fieldName: 'module',
+      label: '模块',
+    },
+    {
+      component: 'Input',
+      fieldName: 'operation',
+      label: '操作',
+    },
+    {
+      component: 'Input',
+      fieldName: 'permissionCode',
+      label: '权限码',
+    },
+    {
+      component: 'Input',
       fieldName: 'traceId',
       label: 'TraceId',
     },
