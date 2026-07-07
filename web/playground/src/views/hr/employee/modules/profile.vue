@@ -57,6 +57,7 @@ import {
 } from '../../dict-options';
 import { errorMessageOf } from '../../shared/error';
 import { formatFileSize, openHrFileWithFeedback } from '../../shared/file';
+import { runHrUploadWithFeedback } from '../../shared/upload';
 
 const employee = ref<HrEmployeeApi.HrEmployee>();
 const contracts = ref<HrContractApi.HrContract[]>([]);
@@ -298,16 +299,21 @@ async function submitDocumentUpload() {
     return;
   }
   documentUploadLoading.value = true;
-  const hide = message.loading($t('hr.employeeProfile.documentUploading'), 0);
   try {
-    const uploadedFile = await uploadSystemFile(pendingDocumentFile.value);
-    await bindEmployeeDocument(employee.value.id, uploadedFile.id, documentMeta.value);
-    await reloadDocuments();
-    message.success($t('hr.employeeProfile.documentUploadSuccess'));
-  } catch (error: unknown) {
-    message.error(errorMessageOf(error, $t('hr.employeeProfile.documentUploadError')));
+    await runHrUploadWithFeedback(
+      {
+        errorMessage: $t('hr.employeeProfile.documentUploadError'),
+        loadingMessage: $t('hr.employeeProfile.documentUploading'),
+        successMessage: $t('hr.employeeProfile.documentUploadSuccess'),
+      },
+      async () => {
+        const uploadedFile = await uploadSystemFile(pendingDocumentFile.value!);
+        await bindEmployeeDocument(employee.value!.id, uploadedFile.id, documentMeta.value);
+        await reloadDocuments();
+        return uploadedFile;
+      },
+    );
   } finally {
-    hide();
     documentUploadLoading.value = false;
     documentMetaOpen.value = false;
     pendingDocumentFile.value = undefined;

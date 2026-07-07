@@ -17,8 +17,9 @@ import {
 } from '#/api';
 import { $t } from '#/locales';
 
-import { errorMessageOf, normalizeError } from '../../shared/error';
+import { errorMessageOf } from '../../shared/error';
 import { formatFileSize, openHrFileWithFeedback } from '../../shared/file';
+import { runHrUploadWithFeedback } from '../../shared/upload';
 import { useFormSchema } from '../data';
 
 const emits = defineEmits(['success']);
@@ -161,21 +162,22 @@ async function handleCustomUpload(options: UploadRequestOptions) {
     return;
   }
   uploadLoading.value = true;
-  const hide = message.loading($t('hr.contract.attachmentUploading'), 0);
   try {
-    const uploadedFile = await uploadSystemFile(file);
-    await setAttachment(uploadedFile);
-    message.success($t('hr.contract.attachmentUploadSuccess'));
-    onSuccess?.(uploadedFile);
-  } catch (error: unknown) {
-    const normalizedError = normalizeError(
-      error,
-      $t('hr.contract.attachmentUploadError'),
+    await runHrUploadWithFeedback(
+      {
+        errorMessage: $t('hr.contract.attachmentUploadError'),
+        loadingMessage: $t('hr.contract.attachmentUploading'),
+        onError,
+        onSuccess,
+        successMessage: $t('hr.contract.attachmentUploadSuccess'),
+      },
+      async () => {
+        const uploadedFile = await uploadSystemFile(file);
+        await setAttachment(uploadedFile);
+        return uploadedFile;
+      },
     );
-    message.error(errorMessageOf(normalizedError, $t('hr.contract.attachmentUploadError')));
-    onError?.(normalizedError);
   } finally {
-    hide();
     uploadLoading.value = false;
   }
 }

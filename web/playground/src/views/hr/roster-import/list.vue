@@ -19,8 +19,9 @@ import {
   getHrDictOptions,
   HR_ROSTER_IMPORT_STATUS_DICT,
 } from '../dict-options';
-import { errorMessageOf, normalizeError } from '../shared/error';
+import { errorMessageOf } from '../shared/error';
 import { downloadHrBlobWithFeedback } from '../shared/file';
+import { runHrUploadWithFeedback } from '../shared/upload';
 import ErrorsModal from './modules/errors.vue';
 
 const [Errors, errorsModalApi] = useVbenModal({
@@ -132,23 +133,22 @@ async function handleCustomUpload(options: UploadRequestOptions) {
     onError?.(error);
     return;
   }
-  const hide = message.loading($t('hr.rosterImport.uploading'), 0);
-  try {
-    const batch = await uploadRosterFile(uploadFile);
-    message.success(
-      $t('hr.rosterImport.uploadSuccess', {
-        failed: batch.failedCount,
-        success: batch.successCount,
-      }),
-    );
-    onSuccess?.();
+  const result = await runHrUploadWithFeedback(
+    {
+      errorMessage: $t('hr.rosterImport.uploadError'),
+      loadingMessage: $t('hr.rosterImport.uploading'),
+      onError,
+      onSuccess,
+      successMessage: (batch) =>
+        $t('hr.rosterImport.uploadSuccess', {
+          failed: batch.failedCount,
+          success: batch.successCount,
+        }),
+    },
+    () => uploadRosterFile(uploadFile),
+  );
+  if (result.success) {
     onRefresh();
-  } catch (error: unknown) {
-    const normalizedError = normalizeError(error, $t('hr.rosterImport.uploadError'));
-    message.error(errorMessageOf(normalizedError, $t('hr.rosterImport.uploadError')));
-    onError?.(normalizedError);
-  } finally {
-    hide();
   }
 }
 
