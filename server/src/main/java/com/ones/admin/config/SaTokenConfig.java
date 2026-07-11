@@ -7,31 +7,25 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.util.List;
-
 @Configuration
 public class SaTokenConfig implements WebMvcConfigurer {
 
-    public static final List<String> LOGIN_EXCLUDE_PATH_PATTERNS = List.of(
-            "/api/auth/login",
-            "/api/health",
-            "/actuator/**",
-            "/v3/api-docs/**",
-            "/swagger-ui/**",
-            "/swagger-ui.html"
-    );
-
     private final OperationAuditInterceptor operationAuditInterceptor;
+    private final PublicEndpointRegistry publicEndpointRegistry;
 
-    public SaTokenConfig(OperationAuditInterceptor operationAuditInterceptor) {
+    public SaTokenConfig(
+            OperationAuditInterceptor operationAuditInterceptor,
+            PublicEndpointRegistry publicEndpointRegistry
+    ) {
         this.operationAuditInterceptor = operationAuditInterceptor;
+        this.publicEndpointRegistry = publicEndpointRegistry;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new SaInterceptor(handle -> StpUtil.checkLogin()))
-                .addPathPatterns("/api/**")
-                .excludePathPatterns(LOGIN_EXCLUDE_PATH_PATTERNS);
+                .addPathPatterns(publicEndpointRegistry.protectedPathPatterns())
+                .excludePathPatterns(publicEndpointRegistry.publicPathPatterns());
         registry.addInterceptor(operationAuditInterceptor)
                 .addPathPatterns("/api/system/**", "/api/hr/**");
     }

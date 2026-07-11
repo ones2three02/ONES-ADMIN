@@ -40,7 +40,7 @@ SaPermissionProvider 提供角色与权限
 - 菜单：`MenuItem`
 - Sa-Token 权限适配：`SaPermissionProvider`
 
-当前演示账号：
+测试环境账号：
 
 ```text
 用户名：admin
@@ -48,7 +48,17 @@ SaPermissionProvider 提供角色与权限
 角色：SUPER_ADMIN
 ```
 
-当前默认数据由 `SystemDataInitializer` 初始化，账号密码只用于本地开发验证。生产环境必须替换默认密码，并接入正式数据库和密码策略。
+测试配置显式启用 `SystemDataInitializer` 并注入上述账号密码。正式运行默认不装配初始化器，代码和正式配置不包含固定管理员密码；空数据库首次初始化必须显式设置 `ONES_BOOTSTRAP_ENABLED=true` 和 `ONES_BOOTSTRAP_ADMIN_PASSWORD`，初始化完成后立即关闭开关。
+
+## v0.0.148 生产安全基线
+
+- `sys_user.failed_login_count` 使用数据库原子 SQL 递增，避免并发失败请求相互覆盖。
+- 账号锁定继续由 `ONES_LOGIN_MAX_FAILED_COUNT` 和 `ONES_LOGIN_LOCK_DURATION` 控制，默认 5 次失败锁定 15 分钟。
+- Redis 登录限流同时按账号和客户端 IP 计数，Redis Key 使用 SHA-256 摘要，不直接暴露用户名或 IP；测试环境可切换为内存存储。
+- 账号默认 10 次、IP 默认 30 次失败进入 15 分钟限流，限流响应使用 HTTP 429 和认证错误码 `4203`。
+- 账号登录成功后清理账号维度失败状态，但不会清理共享 IP 的失败状态，避免单个成功登录绕过 IP 防护。
+- Swagger、OpenAPI 和 Actuator 纳入 Sa-Token 拦截范围；生产默认关闭 Swagger，公开端点必须通过 `PublicEndpointRegistry` 对应配置显式放开。
+- 后端统一增加 `nosniff`、禁止 iframe、Referrer Policy 和 Permissions Policy；跨域只允许配置清单内的来源，Token 继续只从 Authorization Header 读取。
 
 ## 飞书扫码登录与 SSO 接入建议
 

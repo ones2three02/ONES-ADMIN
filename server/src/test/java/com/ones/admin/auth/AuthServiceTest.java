@@ -18,7 +18,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class AuthServiceTest {
 
-    private final AuthService authService = AuthService.createForTest();
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final AuthService authService = createAuthService();
 
     @Test
     void loginReturnsUserRolesAndPermissionsWhenPasswordIsValid() {
@@ -39,7 +40,6 @@ class AuthServiceTest {
 
     @Test
     void loginLocksAccountAfterRepeatedFailures() {
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         MutableUserRepository repository = new MutableUserRepository(new AdminUser(
                 2L,
                 "locked-user",
@@ -67,6 +67,21 @@ class AuthServiceTest {
                 .hasMessage("账号已被临时锁定，请稍后再试");
     }
 
+    private AuthService createAuthService() {
+        return new AuthService(new MutableUserRepository(new AdminUser(
+                1L,
+                "admin",
+                "系统管理员",
+                "",
+                passwordEncoder.encode("admin123"),
+                List.of("SUPER_ADMIN"),
+                List.of("dashboard:view", "system:user:list", "system:menu:list"),
+                true,
+                0,
+                null
+        )), passwordEncoder);
+    }
+
     private static final class MutableUserRepository implements UserRepository {
 
         private AdminUser user;
@@ -91,8 +106,12 @@ class AuthServiceTest {
         }
 
         @Override
-        public void recordLoginFailure(Long userId, int failedLoginCount, LocalDateTime lockedUntil) {
-            user = copyWithLoginState(failedLoginCount, lockedUntil);
+        public void recordLoginFailure(Long userId, int maxFailedLoginCount, LocalDateTime lockedUntil) {
+            int failedLoginCount = user.failedLoginCount() + 1;
+            user = copyWithLoginState(
+                    failedLoginCount,
+                    failedLoginCount >= maxFailedLoginCount ? lockedUntil : null
+            );
         }
 
         private AdminUser copyWithLoginState(int failedLoginCount, LocalDateTime lockedUntil) {

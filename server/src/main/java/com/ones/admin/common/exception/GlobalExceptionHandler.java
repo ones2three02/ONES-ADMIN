@@ -4,6 +4,7 @@ import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.NotPermissionException;
 import cn.dev33.satoken.exception.NotRoleException;
 import com.ones.admin.common.code.CommonErrorCode;
+import com.ones.admin.common.security.RateLimitExceededException;
 import com.ones.admin.common.web.ApiResult;
 import com.ones.admin.system.SystemErrorCode;
 import jakarta.validation.ConstraintViolationException;
@@ -26,6 +27,12 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ApiResult<Void>> handleRateLimitExceeded(RateLimitExceededException exception) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(ApiResult.fail(exception.getCode(), exception.getMessage()));
+    }
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResult<Void>> handleBusinessException(BusinessException exception) {

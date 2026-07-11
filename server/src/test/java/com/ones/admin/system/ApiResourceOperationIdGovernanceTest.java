@@ -310,7 +310,7 @@ class ApiResourceOperationIdGovernanceTest {
                 "PUBLIC_API_NOT_IN_RUNTIME_WHITELIST"
         );
         assertThat(violation.path("severity").asText()).isEqualTo("ERROR");
-        assertThat(violation.path("remediation").asText()).contains("LOGIN_EXCLUDE_PATH_PATTERNS");
+        assertThat(violation.path("remediation").asText()).contains("PublicEndpointRegistry");
     }
 
     @Test

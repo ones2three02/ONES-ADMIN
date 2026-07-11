@@ -82,7 +82,7 @@ Sa-Token
   └─ 注解鉴权
 ```
 
-当前用户、角色、权限已经接入 MyBatis-Plus + H2 内存库，默认账号由 `SystemDataInitializer` 初始化。H2 只作为本地验证基座，生产环境需要切换 MySQL/PostgreSQL，并补充数据库迁移工具。
+当前用户、角色、权限已经接入 MyBatis-Plus；H2 只作为自动化测试基座，正式运行使用 MySQL。`SystemDataInitializer` 默认关闭，只有开发/测试显式开启并从环境变量提供初始管理员密码时才执行，生产环境不创建固定演示账号。
 
 ## 演进路线
 
