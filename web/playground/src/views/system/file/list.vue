@@ -34,8 +34,9 @@ const [Grid, gridApi] = useVbenVxeGrid({
     submitOnChange: true,
   },
   gridOptions: {
+    autoResize: true,
     columns: useColumns(),
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -238,7 +239,7 @@ refreshRetention();
         </Card>
       </div>
 
-      <div class="min-h-[420px] flex-1">
+      <div class="min-h-0 flex-1">
         <Grid table-title="文件资产">
           <template #action="{ row }">
             <VbenTableAction

@@ -28,8 +28,9 @@ function onActionClick(e: OnActionClickParams<HrPositionApi.HrPosition>) {
 
 const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions: {
+    autoResize: true,
     columns: useColumns(onActionClick, onStatusChange),
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -93,13 +94,15 @@ async function onStatusChange(
 <template>
   <Page auto-content-height>
     <FormDrawer @success="onRefresh" />
-    <Grid :table-title="$t('hr.position.list')">
-      <template #toolbar-tools>
-        <Button type="primary" @click="onCreate">
-          <Plus class="size-5" />
-          {{ $t('hr.position.create') }}
-        </Button>
-      </template>
-    </Grid>
+    <div class="size-full min-h-0">
+      <Grid :table-title="$t('hr.position.list')">
+        <template #toolbar-tools>
+          <Button type="primary" @click="onCreate">
+            <Plus class="size-5" />
+            {{ $t('hr.position.create') }}
+          </Button>
+        </template>
+      </Grid>
+    </div>
   </Page>
 </template>

@@ -1,5 +1,13 @@
 # ONES-ADMIN 版本记录
 
+## v0.0.147 - 2026-07-08
+
+- 治理 11 个存量业务 VXE 表格页面，将资料预警、岗位、职级、花名册导入、接口资源、审计、部门、字典、文件、菜单和角色页面从 `height: auto` 收敛为稳定高度配置。
+- 所有本轮治理页面补齐 `autoResize: true` 与 `height: '100%'`，并按页面结构补充 `min-height: 0`、固定表格工作区或 Ant Tabs/Card 内容区 flex 约束，避免表格高度持续变小。
+- `frontend-layout-report` 的 `autoHeightGridFileCount` 从 11 降为 0，前端布局治理 WARN 清单清空。
+- 本版本不新增后端接口，不新增数据库迁移，不连接真实中间件，不改变 Vben / Ant Design Vue / VXE 选型和整体视觉体系。
+- 产品版本递增至 `v0.0.147`。
+
 ## v0.0.146 - 2026-07-08
 
 - 新增 `docs/architecture/project-status-closure-audit.md`，沉淀项目状态与问题闭环审计，明确区分已闭环能力、部分闭环能力、未闭环事项、主要风险和后续版本优先级。

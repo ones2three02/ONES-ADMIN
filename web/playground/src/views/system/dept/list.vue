@@ -94,8 +94,9 @@ function onActionClick({
 const [Grid, gridApi] = useVbenVxeGrid({
   gridEvents: {},
   gridOptions: {
+    autoResize: true,
     columns: useColumns(onActionClick),
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     pagerConfig: {
       enabled: false,
@@ -131,13 +132,15 @@ function refreshGrid() {
 <template>
   <Page auto-content-height>
     <FormModal @success="refreshGrid" />
-    <Grid table-title="部门列表">
-      <template #toolbar-tools>
-        <Button type="primary" @click="onCreate">
-          <Plus class="size-5" />
-          {{ $t('ui.actionTitle.create', [$t('system.dept.name')]) }}
-        </Button>
-      </template>
-    </Grid>
+    <div class="size-full min-h-0">
+      <Grid table-title="部门列表">
+        <template #toolbar-tools>
+          <Button type="primary" @click="onCreate">
+            <Plus class="size-5" />
+            {{ $t('ui.actionTitle.create', [$t('system.dept.name')]) }}
+          </Button>
+        </template>
+      </Grid>
+    </div>
   </Page>
 </template>

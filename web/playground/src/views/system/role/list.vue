@@ -31,8 +31,9 @@ const [Grid, gridApi] = useVbenVxeGrid({
     submitOnChange: true,
   },
   gridOptions: {
+    autoResize: true,
     columns: useColumns(onActionClick, onStatusChange),
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -152,13 +153,15 @@ function onCreate() {
 <template>
   <Page auto-content-height>
     <FormDrawer @success="onRefresh" />
-    <Grid :table-title="$t('system.role.list')">
-      <template #toolbar-tools>
-        <Button type="primary" @click="onCreate">
-          <Plus class="size-5" />
-          {{ $t('ui.actionTitle.create', [$t('system.role.name')]) }}
-        </Button>
-      </template>
-    </Grid>
+    <div class="size-full min-h-0">
+      <Grid :table-title="$t('system.role.list')">
+        <template #toolbar-tools>
+          <Button type="primary" @click="onCreate">
+            <Plus class="size-5" />
+            {{ $t('ui.actionTitle.create', [$t('system.role.name')]) }}
+          </Button>
+        </template>
+      </Grid>
+    </div>
   </Page>
 </template>

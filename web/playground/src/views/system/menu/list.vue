@@ -25,8 +25,9 @@ const [FormDrawer, formDrawerApi] = useVbenDrawer({
 
 const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions: {
+    autoResize: true,
     columns: useColumns(onActionClick),
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     pagerConfig: {
       enabled: false,
@@ -113,39 +114,41 @@ function onDelete(row: SystemMenuApi.SystemMenu) {
 <template>
   <Page auto-content-height>
     <FormDrawer @success="onRefresh" />
-    <Grid>
-      <template #toolbar-tools>
-        <Button type="primary" @click="onCreate">
-          <Plus class="size-5" />
-          {{ $t('ui.actionTitle.create', [$t('system.menu.name')]) }}
-        </Button>
-      </template>
-      <template #title="{ row }">
-        <div class="flex w-full items-center gap-1">
-          <div class="size-5 shrink-0">
-            <IconifyIcon
-              v-if="row.type === 'button'"
-              icon="carbon:security"
-              class="size-full"
-            />
-            <IconifyIcon
-              v-else-if="row.meta?.icon"
-              :icon="row.meta?.icon || 'carbon:circle-dash'"
-              class="size-full"
-            />
+    <div class="size-full min-h-0">
+      <Grid>
+        <template #toolbar-tools>
+          <Button type="primary" @click="onCreate">
+            <Plus class="size-5" />
+            {{ $t('ui.actionTitle.create', [$t('system.menu.name')]) }}
+          </Button>
+        </template>
+        <template #title="{ row }">
+          <div class="flex w-full items-center gap-1">
+            <div class="size-5 shrink-0">
+              <IconifyIcon
+                v-if="row.type === 'button'"
+                icon="carbon:security"
+                class="size-full"
+              />
+              <IconifyIcon
+                v-else-if="row.meta?.icon"
+                :icon="row.meta?.icon || 'carbon:circle-dash'"
+                class="size-full"
+              />
+            </div>
+            <span class="flex-auto">{{ $t(row.meta?.title) }}</span>
+            <div class="items-center justify-end"></div>
           </div>
-          <span class="flex-auto">{{ $t(row.meta?.title) }}</span>
-          <div class="items-center justify-end"></div>
-        </div>
-        <MenuBadge
-          v-if="row.meta?.badgeType"
-          class="menu-badge"
-          :badge="row.meta.badge"
-          :badge-type="row.meta.badgeType"
-          :badge-variants="row.meta.badgeVariants"
-        />
-      </template>
-    </Grid>
+          <MenuBadge
+            v-if="row.meta?.badgeType"
+            class="menu-badge"
+            :badge="row.meta.badge"
+            :badge-type="row.meta.badgeType"
+            :badge-variants="row.meta.badgeVariants"
+          />
+        </template>
+      </Grid>
+    </div>
   </Page>
 </template>
 <style lang="scss" scoped>

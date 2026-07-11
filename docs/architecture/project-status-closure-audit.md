@@ -1,7 +1,7 @@
 # ONES-ADMIN 项目状态与问题闭环审计
 
-更新时间：2026-07-08  
-当前版本：v0.0.146  
+更新时间：2026-07-08
+当前版本：v0.0.147
 定位：长期架构负责人口径下的事实校准文档，用于区分已落地能力、部分闭环能力、未闭环事项和下一版本优先级。
 
 ## 1. 审计结论
@@ -12,7 +12,7 @@ ONES-ADMIN 已具备企业级后台管理系统的起步基座，但还没有达
 
 - 账号密码登录、Sa-Token 鉴权、权限菜单、系统管理、HRMS 一期、文件、字典、审计、Flyway、接口治理和 Jenkins 验证门禁已有代码基础。
 - 飞书 OAuth、企业 SSO、短信登录、二维码扫码登录仍未完成后端闭环，目前只存在前端入口、配置提示和架构建议。
-- 前端表格稳定高度只治理了员工、合同、系统用户等复杂分栏页，仍有 11 个业务 VXE 页面停留在 `height: auto`，目前只作为 WARN 输出。
+- 前端表格稳定高度已在 v0.0.147 清理存量 `height: auto` 业务页，`frontend-layout-report` 的自动高度页面数量降为 0；后续重点转为视觉回归、业务页 E2E 和新增页面门禁。
 - README 之前把“已完成能力、治理规范、部分实现和未来方向”写在同一段当前能力里，存在过度承诺风险。
 - 后端 `ApiResourceService` 和 `HrEmployeeService` 已出现明显职责膨胀，需要在后续版本拆分服务边界。
 
@@ -69,23 +69,13 @@ ONES-ADMIN 已具备企业级后台管理系统的起步基座，但还没有达
 
 - HRMS 员工、HRMS 合同、系统用户已迁移到 `SplitListLayout`。
 - 上述分栏页面的主表格已使用 `height: '100%'` 和 `autoResize: true`。
-- `frontend-layout-report` 已能扫描布局治理状态。
+- 资料预警、岗位、职级、花名册导入、接口资源、审计、部门、字典、文件、菜单和角色页面已补齐稳定表格高度。
+- `frontend-layout-report` 已能扫描布局治理状态，当前 `autoHeightGridFileCount` 为 0。
 
 仍需治理：
 
-- 以下业务页仍为 `height: auto`，需要继续治理：
-  - `web/playground/src/views/hr/document-warning/list.vue`
-  - `web/playground/src/views/hr/job-grade/list.vue`
-  - `web/playground/src/views/hr/position/list.vue`
-  - `web/playground/src/views/hr/roster-import/list.vue`
-  - `web/playground/src/views/system/api-resource/list.vue`
-  - `web/playground/src/views/system/audit/list.vue`
-  - `web/playground/src/views/system/dept/list.vue`
-  - `web/playground/src/views/system/dict/list.vue`
-  - `web/playground/src/views/system/file/list.vue`
-  - `web/playground/src/views/system/menu/list.vue`
-  - `web/playground/src/views/system/role/list.vue`
-- 当前报告只将这些页面列为 WARN，没有阻断发布。
+- 继续补充 Playwright 或组件级视觉回归，覆盖审计双表格 Tab、字典双表格、接口治理长页面和文件/资料预警等高风险页面。
+- 新增业务页必须默认满足稳定高度，避免重新引入 `height: auto`。
 
 ### 3.3 API 治理
 
@@ -157,20 +147,20 @@ ONES-ADMIN 已具备企业级后台管理系统的起步基座，但还没有达
 | --- | --- | --- | --- |
 | 文档过度承诺 | P0 | README 容易把规划当成已完成能力 | 将当前能力拆成已落地、部分闭环、规划中 |
 | SSO 未闭环 | P0 | 前端有入口，后端无回调和绑定 | 先做设计和表结构，再做飞书 OAuth |
-| 表格高度治理不完整 | P0 | 11 个业务页仍可能出现高度持续变小 | 分批治理并提高 CI 门禁 |
+| 表格视觉回归不足 | P1 | 存量 `height: auto` 已清零，但缺少足够业务页视觉回归 | 补 Playwright/组件级验证并提高新增页面门禁 |
 | 服务职责膨胀 | P0 | 大服务继续膨胀会影响维护和测试 | 拆分 HRMS 和 API 治理服务边界 |
 | 测试覆盖不足 | P1 | E2E 和单测覆盖不够支撑完整 HRMS | 补前端业务页 E2E、后端服务边界测试 |
 | Manifest 基线缺失 | P1 | 接口发布差异缺少正式基线 | 在运行环境发布接口 Manifest 基线快照 |
 
 ## 6. 推荐版本路线
 
-### v0.0.147：前端表格稳定高度治理
+### v0.0.147：前端表格稳定高度治理（已完成）
 
 目标：
 
-- 优先治理接口资源、审计、文件、字典、岗位、职级、资料预警、花名册导入等 `height: auto` 业务页。
-- 将 `frontend-layout-report` 的剩余自动高度页面数量纳入更严格阈值。
-- 补充至少一个业务页 Playwright 或组件级验证。
+- 已治理接口资源、审计、文件、字典、岗位、职级、资料预警、花名册导入、部门、菜单和角色等 `height: auto` 业务页。
+- 已将 `frontend-layout-report` 的剩余自动高度页面数量降为 0。
+- 后续将补充更多业务页 Playwright 或组件级验证。
 
 非目标：
 

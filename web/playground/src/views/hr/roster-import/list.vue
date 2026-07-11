@@ -37,6 +37,7 @@ const totalBatchCount = ref(0);
 
 const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions: {
+    autoResize: true,
     columns: [
       ...(useColumns() as any[]),
       {
@@ -48,7 +49,7 @@ const [Grid, gridApi] = useVbenVxeGrid({
         slots: { default: 'action' },
       },
     ],
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -235,7 +236,7 @@ onMounted(async () => {
         </div>
       </Card>
 
-      <div class="min-h-[300px] flex-1">
+      <div class="min-h-0 flex-1">
         <Grid :table-title="$t('hr.rosterImport.list')">
           <template #action="{ row }">
             <VbenTableAction

@@ -48,8 +48,9 @@ const [TypeGrid, typeGridApi] = useVbenVxeGrid({
     submitOnChange: true,
   },
   gridOptions: {
+    autoResize: true,
     columns: useTypeColumns(),
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -94,8 +95,9 @@ const [ItemGrid, itemGridApi] = useVbenVxeGrid({
     submitOnChange: true,
   },
   gridOptions: {
+    autoResize: true,
     columns: useItemColumns(),
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -262,50 +264,52 @@ function onDeleteItem(row: SystemDictApi.DictItem) {
       </div>
 
       <div class="grid min-h-[420px] flex-1 gap-4 xl:grid-cols-[minmax(420px,0.9fr)_1.4fr]">
-        <Card variant="borderless" class="min-w-0">
-          <TypeGrid table-title="字典类型">
-            <template #toolbar-tools>
-              <Button
-                type="primary"
-                v-access:code="['system:dict:type:create']"
-                @click="onCreateType"
-              >
-                <Plus class="size-5" />
-                新增类型
-              </Button>
-            </template>
-            <template #typeAction="{ row }">
-              <VbenTableAction
-                :actions="[
-                  {
-                    text: '选择',
-                    icon: 'lucide:mouse-pointer-click',
-                    onClick: () => onSelectType(row),
-                  },
-                  {
-                    text: '编辑',
-                    icon: 'lucide:edit',
-                    auth: ['system:dict:type:update'],
-                    onClick: () => onEditType(row),
-                  },
-                ]"
-                :dropdown-actions="[
-                  {
-                    text: '删除',
-                    icon: 'lucide:trash-2',
-                    danger: true,
-                    auth: ['system:dict:type:delete'],
-                    disabled: row.itemCount > 0,
-                    onClick: () => onDeleteType(row),
-                  },
-                ]"
-                align="center"
-              />
-            </template>
-          </TypeGrid>
+        <Card variant="borderless" class="system-dict-grid-card min-w-0">
+          <div class="min-h-0 flex-1">
+            <TypeGrid table-title="字典类型">
+              <template #toolbar-tools>
+                <Button
+                  type="primary"
+                  v-access:code="['system:dict:type:create']"
+                  @click="onCreateType"
+                >
+                  <Plus class="size-5" />
+                  新增类型
+                </Button>
+              </template>
+              <template #typeAction="{ row }">
+                <VbenTableAction
+                  :actions="[
+                    {
+                      text: '选择',
+                      icon: 'lucide:mouse-pointer-click',
+                      onClick: () => onSelectType(row),
+                    },
+                    {
+                      text: '编辑',
+                      icon: 'lucide:edit',
+                      auth: ['system:dict:type:update'],
+                      onClick: () => onEditType(row),
+                    },
+                  ]"
+                  :dropdown-actions="[
+                    {
+                      text: '删除',
+                      icon: 'lucide:trash-2',
+                      danger: true,
+                      auth: ['system:dict:type:delete'],
+                      disabled: row.itemCount > 0,
+                      onClick: () => onDeleteType(row),
+                    },
+                  ]"
+                  align="center"
+                />
+              </template>
+            </TypeGrid>
+          </div>
         </Card>
 
-        <Card variant="borderless" class="min-w-0">
+        <Card variant="borderless" class="system-dict-grid-card min-w-0">
           <div class="mb-3 flex items-center justify-between gap-3">
             <div class="min-w-0">
               <div class="truncate text-sm font-medium">
@@ -320,41 +324,58 @@ function onDeleteItem(row: SystemDictApi.DictItem) {
             </Tag>
           </div>
 
-          <ItemGrid :table-title="selectedType ? '字典项' : '字典项'">
-            <template #toolbar-tools>
-              <Button
-                type="primary"
-                :disabled="!selectedType"
-                v-access:code="['system:dict:item:create']"
-                @click="onCreateItem"
-              >
-                <Plus class="size-5" />
-                新增字典项
-              </Button>
-            </template>
-            <template #itemAction="{ row }">
-              <VbenTableAction
-                :actions="[
-                  {
-                    text: '编辑',
-                    icon: 'lucide:edit',
-                    auth: ['system:dict:item:update'],
-                    onClick: () => onEditItem(row),
-                  },
-                  {
-                    text: '删除',
-                    icon: 'lucide:trash-2',
-                    danger: true,
-                    auth: ['system:dict:item:delete'],
-                    onClick: () => onDeleteItem(row),
-                  },
-                ]"
-                align="center"
-              />
-            </template>
-          </ItemGrid>
+          <div class="min-h-0 flex-1">
+            <ItemGrid :table-title="selectedType ? '字典项' : '字典项'">
+              <template #toolbar-tools>
+                <Button
+                  type="primary"
+                  :disabled="!selectedType"
+                  v-access:code="['system:dict:item:create']"
+                  @click="onCreateItem"
+                >
+                  <Plus class="size-5" />
+                  新增字典项
+                </Button>
+              </template>
+              <template #itemAction="{ row }">
+                <VbenTableAction
+                  :actions="[
+                    {
+                      text: '编辑',
+                      icon: 'lucide:edit',
+                      auth: ['system:dict:item:update'],
+                      onClick: () => onEditItem(row),
+                    },
+                    {
+                      text: '删除',
+                      icon: 'lucide:trash-2',
+                      danger: true,
+                      auth: ['system:dict:item:delete'],
+                      onClick: () => onDeleteItem(row),
+                    },
+                  ]"
+                  align="center"
+                />
+              </template>
+            </ItemGrid>
+          </div>
         </Card>
       </div>
     </div>
   </Page>
 </template>
+
+<style scoped>
+.system-dict-grid-card {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.system-dict-grid-card :deep(.ant-card-body) {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+</style>

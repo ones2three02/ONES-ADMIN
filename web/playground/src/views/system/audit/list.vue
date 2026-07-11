@@ -43,8 +43,9 @@ const [LoginGrid, loginGridApi] = useVbenVxeGrid({
     submitOnChange: true,
   },
   gridOptions: {
+    autoResize: true,
     columns: useLoginLogColumns(),
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -78,8 +79,9 @@ const [OperationGrid, operationGridApi] = useVbenVxeGrid({
     submitOnChange: true,
   },
   gridOptions: {
+    autoResize: true,
     columns: useOperationLogColumns(),
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -316,7 +318,7 @@ onMounted(() => {
         </div>
       </Card>
 
-      <Tabs v-model:activeKey="activeTab" class="min-h-[360px] flex-1">
+      <Tabs v-model:activeKey="activeTab" class="audit-log-tabs min-h-0 flex-1">
         <TabPane key="login" tab="登录日志">
           <LoginGrid table-title="登录日志">
             <template #toolbar-tools>
@@ -344,3 +346,21 @@ onMounted(() => {
     </div>
   </Page>
 </template>
+
+<style scoped>
+.audit-log-tabs {
+  display: flex;
+  flex-direction: column;
+}
+
+.audit-log-tabs :deep(.ant-tabs-content-holder),
+.audit-log-tabs :deep(.ant-tabs-content),
+.audit-log-tabs :deep(.ant-tabs-tabpane) {
+  min-height: 0;
+  flex: 1;
+}
+
+.audit-log-tabs :deep(.ant-tabs-content) {
+  height: 100%;
+}
+</style>

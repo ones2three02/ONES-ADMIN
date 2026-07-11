@@ -47,8 +47,9 @@ const [Grid, gridApi] = useVbenVxeGrid({
     submitOnChange: true,
   },
   gridOptions: {
+    autoResize: true,
     columns: useColumns(),
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -912,16 +913,18 @@ onMounted(() => {
 
       <Skeleton v-if="loadingOverview && !governanceReport" active />
 
-      <Grid v-else table-title="接口资源清单">
-        <template #toolbar-tools>
-          <Button @click="onRefresh">
-            <template #icon>
-              <IconifyIcon icon="lucide:refresh-cw" />
-            </template>
-            {{ $t('common.refresh') }}
-          </Button>
-        </template>
-      </Grid>
+      <div v-else class="h-[520px] min-h-0">
+        <Grid table-title="接口资源清单">
+          <template #toolbar-tools>
+            <Button @click="onRefresh">
+              <template #icon>
+                <IconifyIcon icon="lucide:refresh-cw" />
+              </template>
+              {{ $t('common.refresh') }}
+            </Button>
+          </template>
+        </Grid>
+      </div>
     </div>
   </Page>
 </template>
