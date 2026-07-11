@@ -2,20 +2,21 @@
 
 ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
-当前产品版本：`v0.0.147`
+当前产品版本：`v0.0.148`
 
 ## 当前能力
 
-- 后端基座：Spring Boot 3.5.9、Java 21、Maven Enforcer、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、Flyway、统一响应、统一异常、TraceId、登录认证、角色权限、角色数据范围、动态菜单、用户/角色/菜单/部门、数据字典、文件资产、审计日志、防重复提交、接口资源治理、Actuator、Swagger UI。
+- 后端基座：Spring Boot 3.5.9、Java 21、Maven Enforcer、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、Flyway、统一响应、统一异常、TraceId、登录认证、角色权限、角色数据范围、动态菜单、用户/角色/菜单/部门、数据字典、文件资产、审计日志、防重复提交、接口资源治理、受控 Actuator / Swagger、登录账号/IP 限流和安全响应头。
 - HRMS 一期：岗位、职级、员工主数据、员工基础信息编辑、调岗/转正/离职生命周期、任职记录、组织关系、员工资料附件、资料到期预警、合同管理、合同附件、花名册导入导出、人力概览、员工档案抽屉、员工读接口数据范围和敏感字段脱敏第一阶段。
 - 前端基座：Vue3、Vite、TypeScript、Vben / Ant Design Vue、Pinia、Vue Router、Axios 请求拦截、错误提示 TraceId 展示、登录页 ONES/1S 品牌资源、管理布局、工作台、系统管理页、HRMS 一期页面、接口治理页、审计页、文件管理页、存量业务表格稳定高度治理、前端布局治理报告和引导式交互规范。
 - 工程化基座：Jenkins 验证门禁、本地统一验证入口、版本一致性检查、仓库安全扫描、构建元数据、环境配置报告、数据库迁移报告、前端布局报告、接口治理报告、验证摘要和发布证据包。
 - 认证：`Authorization: Bearer <token>`，由 Sa-Token 签发与校验。
-- 演示账号：`admin / admin123`
+- 测试账号：测试配置显式启用初始化时使用 `admin / admin123`；正式运行默认不创建任何演示账号。
 
 ## 当前边界
 
 - 飞书 OAuth、企业 SSO、短信登录和二维码扫码登录尚未完成后端认证闭环；当前前端只保留入口、授权跳转配置和未配置提示。
+- 系统初始化默认关闭，Swagger 默认关闭；Actuator 和启用后的 Swagger 默认要求登录，公开范围必须通过配置显式放开。
 - 前端业务 VXE 表格已完成 `height: auto` 存量清理，复杂分栏页和单栏业务页均进入稳定高度治理口径；后续仍需补充更多视觉回归和业务页 E2E，防止新页面回退。
 - 当前 Jenkins 只执行验证门禁，不执行生产部署；真实测试、预发、生产环境矩阵和发布回滚策略仍需单独设计。
 - 当前项目是企业级 HRMS 起步工程，不应把未完成的规划能力视为生产可用能力。详细状态见 [项目状态与问题闭环审计](docs/architecture/project-status-closure-audit.md)。
@@ -53,7 +54,16 @@ server/config/application-local.yml
 
 本地中间件连接信息记录在 `docs/local/middleware-credentials.md`，该目录已加入 `.gitignore`，不会提交到 Git。
 
-默认 `ones.security.session.storage=redis`、`ones.security.repeat-submit.storage=redis`，正式环境依赖 Redis 保存登录态和防重票据；本地 E2E 或临时 H2 验证可显式设置 `ONES_SECURITY_SESSION_STORAGE=memory`、`ONES_REPEAT_SUBMIT_STORAGE=memory`，避免为了纯页面验证强依赖 Redis。默认 `ones.events.broker=none`、`ones.file.storage-type=local`，本地和测试环境不会强依赖 RabbitMQ 或 MinIO。需要启用开发环境中间件时，在 `server/config/application-local.yml` 或环境变量中改为 `ONES_EVENTS_BROKER=rabbitmq`、`ONES_FILE_STORAGE_TYPE=minio`，并补齐 RabbitMQ、MinIO 等连接信息；RabbitMQ 用户名和密码默认不提供兜底值，避免默认账号进入提交。MinIO 客户端默认对内网对象存储直连，只有明确需要走代理时才设置 `ONES_MINIO_PROXY_ENABLED=true`。
+默认 `ones.security.session.storage=redis`、`ones.security.repeat-submit.storage=redis`、`ones.security.login-rate-limit.storage=redis`，正式环境依赖 Redis 保存登录态、防重票据和登录限流状态；本地 E2E 或临时 H2 验证可显式切换为 `memory`。默认 `ones.events.broker=none`、`ones.file.storage-type=local`，本地和测试环境不会强依赖 RabbitMQ 或 MinIO。需要启用开发环境中间件时，在 ignored 本地配置或环境变量中开启对应能力并补齐连接信息；RabbitMQ、MinIO 和初始化管理员密码均不提供可提交的敏感兜底值。
+
+空数据库首次开发初始化必须显式提供开关与密码，已有正式数据库不得再次开启：
+
+```bash
+export ONES_BOOTSTRAP_ENABLED=true
+export ONES_BOOTSTRAP_ADMIN_PASSWORD='仅用于本地初始化的强密码'
+```
+
+初始化器只在 `ONES_BOOTSTRAP_ENABLED=true` 时装配；开关开启但密码为空会拒绝启动。生产环境应通过受控运维流程创建管理员，并保持该开关关闭。
 
 ```bash
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
@@ -66,8 +76,8 @@ cd server
 常用地址：
 
 - 健康检查：`http://localhost:8080/api/health`
-- Swagger UI：`http://localhost:8080/swagger-ui.html`
-- Actuator：`http://localhost:8080/actuator/health`
+- Swagger UI：设置 `ONES_API_DOCS_ENABLED=true` 后访问 `http://localhost:8080/swagger-ui.html`，默认需要登录
+- Actuator：`http://localhost:8080/actuator/health`，默认需要登录；公开监控端点需显式设置 `ONES_ACTUATOR_PUBLIC=true`
 
 ### 启动前端
 

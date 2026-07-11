@@ -36,6 +36,10 @@ class ApiInfrastructureTest {
                         .header(TraceIdFilter.TRACE_ID_HEADER, "test-trace-123456"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(TraceIdFilter.TRACE_ID_HEADER, "test-trace-123456"))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "DENY"))
+                .andExpect(header().string("Referrer-Policy", "no-referrer"))
+                .andExpect(header().string("Permissions-Policy", "camera=(), microphone=(), geolocation=()"))
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.traceId").value("test-trace-123456"));
     }
@@ -56,10 +60,36 @@ class ApiInfrastructureTest {
     }
 
     @Test
-    void openApiDocsAvailable() throws Exception {
+    void openApiDocsRequireLoginByDefault() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isUnauthorized());
+
+        String loginBody = objectMapper.writeValueAsString(new LoginRequest("admin", "admin123"));
+        String loginResponse = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String token = objectMapper.readTree(loginResponse).at("/data/token/tokenValue").asText();
+
+        mockMvc.perform(get("/v3/api-docs")
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.info.title").value("ONES-ADMIN 后端接口"))
-                .andExpect(jsonPath("$.info.version").value("v0.0.147"));
+                .andExpect(jsonPath("$.info.version").value("v0.0.148"));
+    }
+
+    @Test
+    void corsOnlyAllowsConfiguredOrigins() throws Exception {
+        mockMvc.perform(get("/api/health")
+                        .header("Origin", "http://localhost:5173"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
+
+        mockMvc.perform(get("/api/health")
+                        .header("Origin", "https://untrusted.example"))
+                .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
     }
 }

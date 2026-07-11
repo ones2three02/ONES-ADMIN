@@ -4,7 +4,6 @@ import com.ones.admin.auth.dto.LoginRequest;
 import com.ones.admin.auth.dto.LoginResponse;
 import com.ones.admin.auth.dto.UserProfile;
 import com.ones.admin.auth.model.AdminUser;
-import com.ones.admin.auth.repository.InMemoryUserRepository;
 import com.ones.admin.auth.repository.UserRepository;
 import com.ones.admin.common.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,10 +39,6 @@ public class AuthService {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.securityProperties = securityProperties;
-    }
-
-    public static AuthService createForTest() {
-        return new AuthService(InMemoryUserRepository.forTest(), new BCryptPasswordEncoder());
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -91,11 +86,7 @@ public class AuthService {
     }
 
     private void recordLoginFailure(AdminUser user, LocalDateTime now) {
-        int failedCount = user.failedLoginCount() == null ? 0 : user.failedLoginCount();
-        int nextFailedCount = failedCount + 1;
-        LocalDateTime lockedUntil = nextFailedCount >= securityProperties.getMaxFailedLoginCount()
-                ? now.plus(securityProperties.getLockDuration())
-                : null;
-        userRepository.recordLoginFailure(user.id(), nextFailedCount, lockedUntil);
+        LocalDateTime lockedUntil = now.plus(securityProperties.getLockDuration());
+        userRepository.recordLoginFailure(user.id(), securityProperties.getMaxFailedLoginCount(), lockedUntil);
     }
 }

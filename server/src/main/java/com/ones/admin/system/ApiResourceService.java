@@ -14,7 +14,7 @@ import com.ones.admin.common.web.ApiLifecycleStatus;
 import com.ones.admin.common.web.ApiResourceMetadata;
 import com.ones.admin.common.web.ApiRiskLevel;
 import com.ones.admin.common.web.PageResult;
-import com.ones.admin.config.SaTokenConfig;
+import com.ones.admin.config.PublicEndpointRegistry;
 import com.ones.admin.system.audit.OperationAuditInterceptor;
 import com.ones.admin.system.dto.ApiResourceManifestSnapshotPublishRequest;
 import com.ones.admin.system.dto.ApiResourceManifestSnapshotPublishResponse;
@@ -111,7 +111,7 @@ public class ApiResourceService {
                     "ERROR",
                     "SECURITY",
                     "公开接口未加入运行时白名单",
-                    "将公开接口加入 SaTokenConfig.LOGIN_EXCLUDE_PATH_PATTERNS，或改为 LOGIN/PERMISSION 访问策略，确保接口目录和运行时拦截器一致"
+                    "将公开接口加入 PublicEndpointRegistry，或改为 LOGIN/PERMISSION 访问策略，确保接口目录和运行时拦截器一致"
             ),
             new GovernanceRule(
                     "API_METHOD_NOT_EXPLICIT",
@@ -385,6 +385,7 @@ public class ApiResourceService {
     private final SystemApiManifestSnapshotMapper manifestSnapshotMapper;
     private final ObjectMapper objectMapper;
     private final String applicationVersion;
+    private final PublicEndpointRegistry publicEndpointRegistry;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     public ApiResourceService(
@@ -393,13 +394,15 @@ public class ApiResourceService {
             SystemMenuMapper menuMapper,
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
-            @Value("${ones.version:v0.0.147}") String applicationVersion
+            PublicEndpointRegistry publicEndpointRegistry,
+            @Value("${ones.version:v0.0.148}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;
         this.menuMapper = menuMapper;
         this.manifestSnapshotMapper = manifestSnapshotMapper;
         this.objectMapper = objectMapper;
+        this.publicEndpointRegistry = publicEndpointRegistry;
         this.applicationVersion = applicationVersion;
     }
 
@@ -1857,7 +1860,7 @@ public class ApiResourceService {
     }
 
     private boolean isPublicPath(String path) {
-        return SaTokenConfig.LOGIN_EXCLUDE_PATH_PATTERNS.stream()
+        return publicEndpointRegistry.publicPathPatterns().stream()
                 .anyMatch(pattern -> pathMatcher.match(pattern, path));
     }
 

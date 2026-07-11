@@ -73,4 +73,23 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$..path", hasItem("/system/audit")))
                 .andExpect(jsonPath("$..path", hasItem("/hr/document-warning")));
     }
+
+    @Test
+    void loginRateLimitBlocksRepeatedUnknownAccountAttempts() throws Exception {
+        String loginBody = objectMapper.writeValueAsString(new LoginRequest("rate-limited-user", "wrong-password"));
+
+        for (int attempt = 0; attempt < 5; attempt++) {
+            mockMvc.perform(post("/api/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(loginBody))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(AuthErrorCode.INVALID_CREDENTIALS.code()));
+        }
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value(AuthErrorCode.LOGIN_RATE_LIMITED.code()));
+    }
 }

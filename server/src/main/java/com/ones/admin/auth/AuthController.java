@@ -43,10 +43,16 @@ public class AuthController {
 
     private final AuthService authService;
     private final LoginAuditService loginAuditService;
+    private final LoginRateLimiter loginRateLimiter;
 
-    public AuthController(AuthService authService, LoginAuditService loginAuditService) {
+    public AuthController(
+            AuthService authService,
+            LoginAuditService loginAuditService,
+            LoginRateLimiter loginRateLimiter
+    ) {
         this.authService = authService;
         this.loginAuditService = loginAuditService;
+        this.loginRateLimiter = loginRateLimiter;
     }
 
     @PostMapping("/login")
@@ -57,13 +63,19 @@ public class AuthController {
             HttpServletRequest servletRequest
     ) {
         AuditRequestContext auditContext = AuditRequestContext.from(servletRequest);
+        String clientIp = servletRequest.getRemoteAddr();
         try {
+            loginRateLimiter.checkAllowed(request.username(), clientIp);
             LoginResponse loginResponse = authService.login(request);
             StpUtil.login(loginResponse.user().id());
+            loginRateLimiter.recordSuccess(request.username());
             loginAuditService.recordSuccess(request.username(), loginResponse.user().id(), auditContext);
             TokenInfo tokenInfo = new TokenInfo(StpUtil.getTokenName(), StpUtil.getTokenValue(), "Bearer");
             return ApiResult.ok(loginResponse.withToken(tokenInfo));
         } catch (BusinessException exception) {
+            if (exception.getCode() == AuthErrorCode.INVALID_CREDENTIALS.code()) {
+                loginRateLimiter.recordFailure(request.username(), clientIp);
+            }
             loginAuditService.recordFailure(request.username(), exception.getMessage(), auditContext);
             throw exception;
         }

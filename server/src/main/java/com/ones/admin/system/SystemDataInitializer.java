@@ -21,6 +21,7 @@ import com.ones.admin.system.mapper.SystemUserMapper;
 import com.ones.admin.system.mapper.SystemUserRoleMapper;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,6 +33,7 @@ import java.util.Map;
 
 @Component
 @Order(1)
+@ConditionalOnProperty(prefix = "ones.bootstrap", name = "enabled", havingValue = "true")
 public class SystemDataInitializer implements ApplicationRunner {
 
     private static final PasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
@@ -45,6 +47,7 @@ public class SystemDataInitializer implements ApplicationRunner {
     private final SystemDictTypeMapper dictTypeMapper;
     private final SystemDictItemMapper dictItemMapper;
     private final SystemMenuMapper menuMapper;
+    private final SystemBootstrapProperties bootstrapProperties;
 
     public SystemDataInitializer(
             SystemUserMapper userMapper,
@@ -55,7 +58,8 @@ public class SystemDataInitializer implements ApplicationRunner {
             SystemDeptMapper deptMapper,
             SystemDictTypeMapper dictTypeMapper,
             SystemDictItemMapper dictItemMapper,
-            SystemMenuMapper menuMapper
+            SystemMenuMapper menuMapper,
+            SystemBootstrapProperties bootstrapProperties
     ) {
         this.userMapper = userMapper;
         this.roleMapper = roleMapper;
@@ -66,10 +70,12 @@ public class SystemDataInitializer implements ApplicationRunner {
         this.dictTypeMapper = dictTypeMapper;
         this.dictItemMapper = dictItemMapper;
         this.menuMapper = menuMapper;
+        this.bootstrapProperties = bootstrapProperties;
     }
 
     @Override
     public void run(ApplicationArguments args) {
+        bootstrapProperties.requireAdminPassword();
         SystemRoleEntity superAdminRole = ensureRole("SUPER_ADMIN", "超级管理员", "拥有平台全部管理权限");
         SystemRoleEntity operatorRole = ensureRole("OPERATOR", "运营人员", "负责日常运营查看和基础维护");
 
@@ -198,17 +204,17 @@ public class SystemDataInitializer implements ApplicationRunner {
 
     private SystemUserEntity ensureAdminUser() {
         SystemUserEntity existing = userMapper.selectOne(new LambdaQueryWrapper<SystemUserEntity>()
-                .eq(SystemUserEntity::getUsername, "admin")
+                .eq(SystemUserEntity::getUsername, bootstrapProperties.getAdminUsername())
                 .last("limit 1"));
         if (existing != null) {
             return existing;
         }
         SystemUserEntity user = new SystemUserEntity();
-        user.setUsername("admin");
-        user.setDisplayName("系统管理员");
+        user.setUsername(bootstrapProperties.getAdminUsername());
+        user.setDisplayName(bootstrapProperties.getAdminDisplayName());
         user.setRemark("系统内置管理员账号");
         user.setAvatar("https://api.dicebear.com/9.x/initials/svg?seed=ONES");
-        user.setPasswordHash(PASSWORD_ENCODER.encode("admin123"));
+        user.setPasswordHash(PASSWORD_ENCODER.encode(bootstrapProperties.requireAdminPassword()));
         user.setEnabled(true);
         user.setFailedLoginCount(0);
         userMapper.insert(user);

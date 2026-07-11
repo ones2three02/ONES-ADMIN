@@ -41,7 +41,7 @@ class ApiGovernanceReportArtifactTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.147"))
+                .andExpect(jsonPath("$.data.applicationVersion").value("v0.0.148"))
                 .andExpect(jsonPath("$.data.governance.passed").value(true))
                 .andReturn()
                 .getResponse()
