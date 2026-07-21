@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
@@ -51,6 +51,32 @@ const buttonIds = ref(new Set<string>());
 
 // 保存时间提示
 const lastSavedTime = ref<string>('');
+
+// 监听路由参数变化以切换角色
+watch(
+  () => route.query.roleId,
+  (newRoleId) => {
+    if (newRoleId && newRoleId !== activeRoleId.value) {
+      const role = roles.value.find(r => r.id === newRoleId);
+      if (role) switchRole(role);
+    }
+  }
+);
+
+// 监听过滤菜单树变化，在有搜索词时自动展开匹配目录
+watch(
+  () => filteredMenuTree.value,
+  (newTree) => {
+    if (menuSearchQuery.value.trim() && newTree.length > 0) {
+      newTree.forEach(catalog => {
+        if (!expandedKeys.value.includes(catalog.id)) {
+          expandedKeys.value.push(catalog.id);
+        }
+      });
+    }
+  },
+  { immediate: true }
+);
 
 onMounted(async () => {
   await Promise.all([fetchRoles(), fetchMenus()]);
@@ -175,6 +201,42 @@ function getAllChildIds(node: any, arr: string[]) {
   });
 }
 
+// 调整父子级联选中状态，维护状态一致性
+function adjustParentCheckedStates() {
+  menus.value.forEach(catalog => {
+    const children = catalog.children || [];
+    if (children.length === 0) return;
+    
+    // 自动勾选全选的二级菜单
+    children.forEach(menu => {
+      const buttons = menu.children || [];
+      if (buttons.length > 0) {
+        const buttonIdsList = buttons.map(b => b.id);
+        const allButtonsChecked = buttonIdsList.every(id => checkedKeys.value.includes(id));
+        
+        if (allButtonsChecked) {
+          if (!checkedKeys.value.includes(menu.id)) {
+            checkedKeys.value.push(menu.id);
+          }
+        }
+      }
+    });
+    
+    // 如果一级目录下无任何子孙节点被勾选，自动取消勾选一级目录；否则一级目录必须被勾选
+    const allSubIds: string[] = [];
+    getAllChildIds(catalog, allSubIds);
+    const hasAnySubChecked = allSubIds.some(id => checkedKeys.value.includes(id));
+    
+    if (!hasAnySubChecked) {
+      checkedKeys.value = checkedKeys.value.filter(id => id !== catalog.id);
+    } else {
+      if (!checkedKeys.value.includes(catalog.id)) {
+        checkedKeys.value.push(catalog.id);
+      }
+    }
+  });
+}
+
 // 树状级联勾选逻辑
 function handleCatalogChange(catalog: any, checked: boolean) {
   const allIds: string[] = [catalog.id];
@@ -189,6 +251,7 @@ function handleCatalogChange(catalog: any, checked: boolean) {
   } else {
     checkedKeys.value = checkedKeys.value.filter(id => !allIds.includes(id));
   }
+  adjustParentCheckedStates();
 }
 
 function handleMenuChange(menu: any, checked: boolean, parentCatalog: any) {
@@ -201,13 +264,13 @@ function handleMenuChange(menu: any, checked: boolean, parentCatalog: any) {
         checkedKeys.value.push(id);
       }
     });
-    // 级联勾选父级 catalog
     if (parentCatalog && !checkedKeys.value.includes(parentCatalog.id)) {
       checkedKeys.value.push(parentCatalog.id);
     }
   } else {
     checkedKeys.value = checkedKeys.value.filter(id => !allIds.includes(id));
   }
+  adjustParentCheckedStates();
 }
 
 function handleButtonChange(button: any, checked: boolean, parentMenu: any, grandCatalog: any) {
@@ -215,17 +278,16 @@ function handleButtonChange(button: any, checked: boolean, parentMenu: any, gran
     if (!checkedKeys.value.includes(button.id)) {
       checkedKeys.value.push(button.id);
     }
-    // 级联勾选父级 menu
     if (parentMenu && !checkedKeys.value.includes(parentMenu.id)) {
       checkedKeys.value.push(parentMenu.id);
     }
-    // 级联勾选祖父级 catalog
     if (grandCatalog && !checkedKeys.value.includes(grandCatalog.id)) {
       checkedKeys.value.push(grandCatalog.id);
     }
   } else {
     checkedKeys.value = checkedKeys.value.filter(id => id !== button.id);
   }
+  adjustParentCheckedStates();
 }
 
 // 判断半选状态
