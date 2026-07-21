@@ -52,13 +52,6 @@ export function useFormSchema(): VbenFormSchema[] {
       fieldName: 'remark',
       label: $t('system.role.remark'),
     },
-    {
-      component: 'Input',
-      fieldName: 'permissions',
-      formItemClass: 'items-start',
-      label: $t('system.role.setPermissions'),
-      modelPropName: 'modelValue',
-    },
   ];
 }
 
