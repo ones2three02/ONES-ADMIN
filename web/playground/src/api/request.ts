@@ -80,13 +80,21 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     return `${messageText}（追踪ID：${traceId}）`;
   }
 
-  // 请求头处理
+  // 请求头处理与防缓存时间戳
   client.addRequestInterceptor({
     fulfilled: async (config) => {
       const accessStore = useAccessStore();
 
       config.headers.Authorization = formatToken(accessStore.accessToken);
       config.headers['Accept-Language'] = preferences.app.locale;
+
+      // 如果是 GET 请求，在 params 中追加当前时间戳，彻底断绝浏览器/CDN对数据拉取的缓存
+      if (config.method?.toUpperCase() === 'GET') {
+        config.params = {
+          ...config.params,
+          _t: Date.now(),
+        };
+      }
       return config;
     },
   });
