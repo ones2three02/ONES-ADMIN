@@ -2,7 +2,7 @@
 import type { VbenFormSchema } from '@vben/common-ui';
 import type { Recordable } from '@vben/types';
 
-import { computed, markRaw, useTemplateRef } from 'vue';
+import { computed, markRaw, onMounted, ref, useTemplateRef } from 'vue';
 
 import { AuthenticationLogin, SliderCaptcha, z } from '@vben/common-ui';
 import { useAppConfig } from '@vben/hooks';
@@ -12,6 +12,7 @@ import { usePreferences } from '@vben/preferences';
 
 import { message } from 'antdv-next';
 
+import { getAuthProvidersApi, getOAuthAuthorizeApi } from '#/api';
 import { useAuthStore } from '#/store';
 
 defineOptions({ name: 'Login' });
@@ -19,16 +20,18 @@ defineOptions({ name: 'Login' });
 const authStore = useAuthStore();
 const { isDark } = usePreferences();
 const {
-  auth: { feishu: feishuAuthConfig, sso: ssoAuthConfig },
+  auth: { sso: ssoAuthConfig },
 } = useAppConfig(import.meta.env, import.meta.env.PROD);
+const feishuReady = ref(false);
 const loginBrandLogo = computed(() =>
   isDark.value
     ? '/brand/ones-1s-app-icon-dark.png'
     : '/brand/ones-1s-app-icon-light.png',
 );
 
+
 const formSchema = computed((): VbenFormSchema[] => {
-  return [
+  const schemas: VbenFormSchema[] = [
     {
       component: 'VbenInput',
       componentProps: {
@@ -50,14 +53,19 @@ const formSchema = computed((): VbenFormSchema[] => {
       label: $t('authentication.password'),
       rules: z.string().min(1, { message: $t('authentication.passwordTip') }),
     },
-    {
+  ];
+
+  if (import.meta.env.PROD) {
+    schemas.push({
       component: markRaw(SliderCaptcha),
       fieldName: 'captcha',
       rules: z.boolean().refine((value) => value, {
         message: $t('authentication.verifyRequiredTip'),
       }),
-    },
-  ];
+    });
+  }
+
+  return schemas;
 });
 
 const loginRef =
@@ -84,12 +92,13 @@ function createLoginState(provider: string) {
   return `${provider}_${randomId}`;
 }
 
-function handleFeishuLogin() {
-  if (!feishuAuthConfig?.url) {
+async function handleFeishuLogin() {
+  if (!feishuReady.value) {
     message.info($t('authentication.loginPanel.feishuConfigTip'));
     return;
   }
-  window.location.href = buildLoginUrlWithState(feishuAuthConfig.url, 'feishu');
+  const { authorizationUrl } = await getOAuthAuthorizeApi('feishu');
+  window.location.href = authorizationUrl;
 }
 
 function handleSsoLogin() {
@@ -119,6 +128,17 @@ async function onSubmit(params: Recordable<any>) {
       ?.resume();
   });
 }
+
+onMounted(async () => {
+  try {
+    const providers = await getAuthProvidersApi();
+    feishuReady.value = Boolean(
+      providers.find((provider) => provider.id === 'feishu')?.enabled,
+    );
+  } catch {
+    feishuReady.value = false;
+  }
+});
 </script>
 
 <template>
@@ -177,15 +197,15 @@ async function onSubmit(params: Recordable<any>) {
             :aria-label="
               getLoginMethodTitle(
                 $t('authentication.feishuLogin'),
-                Boolean(feishuAuthConfig?.url),
+                feishuReady,
               )
             "
             class="enterprise-login-icon-button enterprise-login-icon-button-primary"
-            :data-ready="Boolean(feishuAuthConfig?.url)"
+            :data-ready="feishuReady"
             :title="
               getLoginMethodTitle(
                 $t('authentication.feishuLogin'),
-                Boolean(feishuAuthConfig?.url),
+                feishuReady,
               )
             "
             type="button"
