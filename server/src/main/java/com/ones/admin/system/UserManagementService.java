@@ -33,22 +33,40 @@ public class UserManagementService {
     private final SystemDeptMapper deptMapper;
     private final SystemRoleMapper roleMapper;
     private final SystemUserRoleMapper userRoleMapper;
+    private final DataScopeService dataScopeService;
 
     public UserManagementService(
             SystemUserMapper userMapper,
             SystemDeptMapper deptMapper,
             SystemRoleMapper roleMapper,
-            SystemUserRoleMapper userRoleMapper
+            SystemUserRoleMapper userRoleMapper,
+            DataScopeService dataScopeService
     ) {
         this.userMapper = userMapper;
         this.deptMapper = deptMapper;
         this.roleMapper = roleMapper;
         this.userRoleMapper = userRoleMapper;
+        this.dataScopeService = dataScopeService;
     }
 
     public List<UserResponse> listUsers() {
-        return userMapper.selectList(new LambdaQueryWrapper<SystemUserEntity>()
-                        .orderByAsc(SystemUserEntity::getId))
+        DataScopeContext context = dataScopeService.currentContext();
+        LambdaQueryWrapper<SystemUserEntity> wrapper = new LambdaQueryWrapper<SystemUserEntity>()
+                .orderByAsc(SystemUserEntity::getId);
+
+        if (!context.isAll()) {
+            if (context.dataScope() == DataScope.SELF) {
+                wrapper.eq(SystemUserEntity::getId, context.userId());
+            } else if (context.dataScope() == DataScope.DEPT || context.dataScope() == DataScope.DEPT_AND_CHILD) {
+                if (context.deptIds() != null && !context.deptIds().isEmpty()) {
+                    wrapper.in(SystemUserEntity::getDeptId, context.deptIds());
+                } else {
+                    wrapper.eq(SystemUserEntity::getId, -1L); // 无部门权限则查不到任何人
+                }
+            }
+        }
+
+        return userMapper.selectList(wrapper)
                 .stream()
                 .map(this::toResponse)
                 .toList();
