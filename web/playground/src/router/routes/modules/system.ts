@@ -31,6 +31,17 @@ const routes: RouteRecordRaw[] = [
         component: () => import('#/views/system/role/list.vue'),
       },
       {
+        path: '/system/role-permission',
+        name: 'SystemRolePermission',
+        meta: {
+          activePath: '/system/role',
+          icon: 'lucide:shield-alert',
+          title: '角色权限配置',
+          hideInMenu: true,
+        },
+        component: () => import('#/views/system/role-permission/index.vue'),
+      },
+      {
         path: '/system/menu',
         name: 'SystemMenu',
         meta: {

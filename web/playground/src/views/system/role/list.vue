@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import type { Recordable } from '@vben/types';
+import { useRouter } from 'vue-router';
+
 
 import type {
   OnActionClickParams,
@@ -18,6 +20,8 @@ import { $t } from '#/locales';
 
 import { useColumns, useGridFormSchema } from './data';
 import Form from './modules/form.vue';
+
+const router = useRouter();
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   connectedComponent: Form,
@@ -68,6 +72,13 @@ function onActionClick(e: OnActionClickParams<SystemRoleApi.SystemRole>) {
     }
     case 'edit': {
       onEdit(e.row);
+      break;
+    }
+    case 'auth': {
+      router.push({
+        path: '/system/role-permission',
+        query: { roleId: e.row.id },
+      });
       break;
     }
   }

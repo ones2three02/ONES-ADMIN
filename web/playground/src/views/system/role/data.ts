@@ -162,11 +162,16 @@ export function useColumns<T = SystemRoleApi.SystemRole>(
           onClick: onActionClick,
         },
         name: 'CellOperation',
+        options: [
+          { code: 'edit', text: $t('common.edit') },
+          { code: 'auth', text: '分配权限' },
+          { code: 'delete', text: $t('common.delete') },
+        ],
       },
       field: 'operation',
       fixed: 'right',
       title: $t('system.role.operation'),
-      width: 130,
+      width: 200,
     },
   ];
 }
