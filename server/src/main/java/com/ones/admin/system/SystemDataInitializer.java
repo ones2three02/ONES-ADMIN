@@ -294,6 +294,8 @@ public class SystemDataInitializer implements ApplicationRunner {
                 null, null, "system:role:update", "carbon:edit", "button", 22);
         ensureMenu(role.getId(), "SystemRoleDelete", "删除角色", "/system/role#delete",
                 null, null, "system:role:delete", "carbon:trash-can", "button", 23);
+        ensureMenu(role.getId(), "SystemRolePermission", "分配权限", "/system/role-permission",
+                "/system/role-permission/index", null, "system:role:update", "lucide:shield-alert", "menu", 24);
 
         SystemMenuEntity menu = ensureMenu(system.getId(), "SystemMenu", "菜单管理", "/system/menu",
                 "/system/menu/list", null, "system:menu:list", "mdi:menu", "menu", 30);
