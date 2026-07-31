@@ -143,10 +143,10 @@ const logoSrc = computed(() => {
       </div>
     </slot>
 
-    <!-- 系统介绍 (左侧视觉面板) -->
-    <div v-if="!authPanelCenter" class="relative hidden w-0 flex-1 xl:block">
+    <!-- 系统介绍 (左侧 62% 视觉面板) -->
+    <div v-if="!authPanelCenter" class="relative hidden w-0 flex-1 xl:block xl:w-[62%]">
       <div
-        class="absolute inset-0 size-full bg-background-deep dark:bg-[#070709] login-left-bg"
+        class="absolute inset-0 size-full bg-background-deep dark:bg-[#0a1020] login-left-bg"
       >
         <div class="login-background absolute top-0 left-0 size-full"></div>
         <div class="login-grid absolute inset-0"></div>
@@ -159,85 +159,85 @@ const logoSrc = computed(() => {
           }"
         >
           <!-- 头部标题标语与 4 大能力卡片 -->
-          <div class="space-y-6 pt-6">
+          <div class="space-y-6 pt-4 max-w-[760px]">
             <div>
-              <span class="inline-block px-3 py-1 text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-400 rounded-full border border-blue-200/60 dark:border-blue-800/40 mb-3">
+              <span class="inline-block px-3 py-1 text-sm font-extrabold text-[#246bfe] bg-blue-50/90 dark:bg-blue-950/60 dark:text-blue-400 rounded-full border border-blue-200/60 dark:border-blue-800/40 mb-3 tracking-wider">
                 ONES / 1S
               </span>
-              <h1 class="text-3xl xl:text-4xl font-extrabold text-foreground tracking-tight">
+              <h1 class="text-4xl xl:text-5xl font-black text-foreground tracking-tight leading-[1.08]">
                 新一代企业协同管理平台
               </h1>
-              <p class="text-base text-muted-foreground mt-2 font-normal">
+              <p class="text-base xl:text-lg text-muted-foreground mt-3 font-normal">
                 连接人、流程与数据，助力企业高效运营与持续增长
               </p>
             </div>
 
             <!-- 4 大能力卡片 Badge 布局 -->
-            <div class="grid grid-cols-4 gap-3 pt-1">
-              <div class="flex items-center space-x-2.5 p-3 rounded-xl bg-white/75 dark:bg-slate-900/60 border border-blue-100/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
-                <div class="p-2 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
-                  <VbenIcon icon="lucide:sparkles" class="size-4" />
+            <div class="grid grid-cols-4 gap-4 pt-2 max-w-[790px]">
+              <div class="flex items-center space-x-3 p-3 rounded-2xl bg-white/80 dark:bg-slate-900/60 border border-blue-100/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
+                <div class="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#246bfe] dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <VbenIcon icon="lucide:sparkles" class="size-5" />
                 </div>
-                <div>
-                  <div class="text-xs font-bold text-foreground">高效协同</div>
-                  <div class="text-[10px] text-muted-foreground">提升团队效率</div>
-                </div>
-              </div>
-
-              <div class="flex items-center space-x-2.5 p-3 rounded-xl bg-white/75 dark:bg-slate-900/60 border border-blue-100/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
-                <div class="p-2 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
-                  <VbenIcon icon="lucide:workflow" class="size-4" />
-                </div>
-                <div>
-                  <div class="text-xs font-bold text-foreground">流程驱动</div>
-                  <div class="text-[10px] text-muted-foreground">优化业务流程</div>
+                <div class="min-w-0">
+                  <div class="text-sm font-bold text-foreground truncate">高效协同</div>
+                  <div class="text-xs text-muted-foreground truncate mt-0.5">提升团队效率</div>
                 </div>
               </div>
 
-              <div class="flex items-center space-x-2.5 p-3 rounded-xl bg-white/75 dark:bg-slate-900/60 border border-blue-100/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
-                <div class="p-2 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
-                  <VbenIcon icon="lucide:trending-up" class="size-4" />
+              <div class="flex items-center space-x-3 p-3 rounded-2xl bg-white/80 dark:bg-slate-900/60 border border-blue-100/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
+                <div class="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#246bfe] dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <VbenIcon icon="lucide:workflow" class="size-5" />
                 </div>
-                <div>
-                  <div class="text-xs font-bold text-foreground">数据洞察</div>
-                  <div class="text-[10px] text-muted-foreground">辅助决策分析</div>
+                <div class="min-w-0">
+                  <div class="text-sm font-bold text-foreground truncate">流程驱动</div>
+                  <div class="text-xs text-muted-foreground truncate mt-0.5">优化业务流程</div>
                 </div>
               </div>
 
-              <div class="flex items-center space-x-2.5 p-3 rounded-xl bg-white/75 dark:bg-slate-900/60 border border-blue-100/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
-                <div class="p-2 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
-                  <VbenIcon icon="lucide:shield-check" class="size-4" />
+              <div class="flex items-center space-x-3 p-3 rounded-2xl bg-white/80 dark:bg-slate-900/60 border border-blue-100/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
+                <div class="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#246bfe] dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <VbenIcon icon="lucide:trending-up" class="size-5" />
                 </div>
-                <div>
-                  <div class="text-xs font-bold text-foreground">安全可靠</div>
-                  <div class="text-[10px] text-muted-foreground">企业级安全防护</div>
+                <div class="min-w-0">
+                  <div class="text-sm font-bold text-foreground truncate">数据洞察</div>
+                  <div class="text-xs text-muted-foreground truncate mt-0.5">辅助决策分析</div>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-3 p-3 rounded-2xl bg-white/80 dark:bg-slate-900/60 border border-blue-100/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
+                <div class="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#246bfe] dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <VbenIcon icon="lucide:shield-check" class="size-5" />
+                </div>
+                <div class="min-w-0">
+                  <div class="text-sm font-bold text-foreground truncate">安全可靠</div>
+                  <div class="text-xs text-muted-foreground truncate mt-0.5">企业级安全防护</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 中央 3D 核心舞台 -->
-          <div class="my-auto py-2">
+          <!-- 中央 3D 生态 6 大架构图 -->
+          <div class="my-auto py-2 relative w-full h-[380px]">
             <OnesVisualStage />
           </div>
 
           <!-- 底部 4 大数据指标统计栏 -->
-          <div class="grid grid-cols-4 gap-4 p-4 rounded-2xl bg-white/80 dark:bg-slate-900/70 border border-blue-100/80 dark:border-slate-800 shadow-md backdrop-blur-lg">
-            <div class="text-center">
-              <div class="text-xl xl:text-2xl font-black text-blue-600 dark:text-blue-400">20+</div>
-              <div class="text-xs text-muted-foreground font-medium mt-0.5">业务模块</div>
+          <div class="grid grid-cols-4 gap-4 p-4 rounded-2xl bg-white/75 dark:bg-slate-900/70 border border-blue-100/80 dark:border-slate-800 shadow-lg backdrop-blur-xl mb-2">
+            <div class="text-center relative after:content-[''] after:absolute after:right-0 after:top-[24%] after:h-[52%] after:w-[1px] after:bg-blue-100 dark:after:bg-slate-800">
+              <div class="text-2xl xl:text-3xl font-black text-foreground">20+</div>
+              <div class="text-xs text-muted-foreground font-medium mt-1">业务模块</div>
+            </div>
+            <div class="text-center relative after:content-[''] after:absolute after:right-0 after:top-[24%] after:h-[52%] after:w-[1px] after:bg-blue-100 dark:after:bg-slate-800">
+              <div class="text-2xl xl:text-3xl font-black text-foreground">100+</div>
+              <div class="text-xs text-muted-foreground font-medium mt-1">企业服务</div>
+            </div>
+            <div class="text-center relative after:content-[''] after:absolute after:right-0 after:top-[24%] after:h-[52%] after:w-[1px] after:bg-blue-100 dark:after:bg-slate-800">
+              <div class="text-2xl xl:text-3xl font-black text-foreground">10W+</div>
+              <div class="text-xs text-muted-foreground font-medium mt-1">用户信任</div>
             </div>
             <div class="text-center">
-              <div class="text-xl xl:text-2xl font-black text-blue-600 dark:text-blue-400">100+</div>
-              <div class="text-xs text-muted-foreground font-medium mt-0.5">企业服务</div>
-            </div>
-            <div class="text-center">
-              <div class="text-xl xl:text-2xl font-black text-blue-600 dark:text-blue-400">10W+</div>
-              <div class="text-xs text-muted-foreground font-medium mt-0.5">用户信任</div>
-            </div>
-            <div class="text-center">
-              <div class="text-xl xl:text-2xl font-black text-blue-600 dark:text-blue-400">99.9%</div>
-              <div class="text-xs text-muted-foreground font-medium mt-0.5">系统可用性</div>
+              <div class="text-2xl xl:text-3xl font-black text-foreground">99.9%</div>
+              <div class="text-xs text-muted-foreground font-medium mt-1">系统可用性</div>
             </div>
           </div>
         </div>
@@ -262,10 +262,10 @@ const logoSrc = computed(() => {
       </AuthenticationFormView>
     </div>
 
-    <!-- 右侧认证面板 -->
+    <!-- 右侧认证面板 (38% 宽度) -->
     <AuthenticationFormView
       v-if="authPanelRight"
-      class="min-h-full w-full xl:w-2/5"
+      class="min-h-full w-full xl:w-[38%]"
       data-side="right"
     >
       <template v-if="copyright" #copyright>

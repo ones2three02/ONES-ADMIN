@@ -90,19 +90,15 @@ defineProps<{
 .side-content[data-side='left'] {
   position: relative;
   box-sizing: border-box;
-  max-width: 520px;
+  width: min(100%, 486px);
+  max-width: 486px;
   overflow: hidden;
-  border: 1px solid hsl(var(--border) / 72%);
-  border-radius: 24px;
-  padding: 38px;
-  background:
-    linear-gradient(180deg, hsl(var(--background) / 92%), hsl(var(--background) / 78%)),
-    hsl(var(--background));
-  box-shadow:
-    0 28px 76px hsl(var(--primary) / 8%),
-    0 10px 28px hsl(var(--foreground) / 4%),
-    inset 0 1px 0 hsl(var(--foreground) / 4%);
-  backdrop-filter: blur(18px);
+  border: 1px solid rgba(33, 73, 126, 0.11);
+  border-radius: 28px;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 28px 70px rgba(60, 101, 164, 0.18);
+  backdrop-filter: blur(28px);
 }
 
 .side-content[data-side='right']::before,
