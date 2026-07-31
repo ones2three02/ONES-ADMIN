@@ -20,7 +20,7 @@ import java.util.Map;
 @Service
 public class LoginAuditService {
 
-    private static final String CSV_HEADER = "id,username,userId,success,failureReason,ip,userAgent,traceId,createdAt";
+    private static final String CSV_HEADER = "id,username,userId,success,failureReason,ip,userAgent,authMethod,provider,externalIdentityId,traceId,createdAt";
 
     private final SystemLoginLogMapper loginLogMapper;
     private final SystemEventPublisher eventPublisher;
@@ -31,11 +31,25 @@ public class LoginAuditService {
     }
 
     public void recordSuccess(String username, Long userId, AuditRequestContext context) {
-        record(username, userId, true, null, context);
+        record(username, userId, true, null, "PASSWORD", null, null, context);
     }
 
     public void recordFailure(String username, String failureReason, AuditRequestContext context) {
-        record(username, null, false, failureReason, context);
+        record(username, null, false, failureReason, "PASSWORD", null, null, context);
+    }
+
+    public void recordOAuthSuccess(
+            String username,
+            Long userId,
+            String provider,
+            Long externalIdentityId,
+            AuditRequestContext context
+    ) {
+        record(username, userId, true, null, "OAUTH", provider, externalIdentityId, context);
+    }
+
+    public void recordOAuthFailure(String provider, String failureReason, AuditRequestContext context) {
+        record(provider, null, false, failureReason, "OAUTH", provider, null, context);
     }
 
     public PageResult<LoginLogResponse> queryPage(LoginLogQuery query) {
@@ -61,6 +75,9 @@ public class LoginAuditService {
                         log.getFailureReason(),
                         log.getIp(),
                         log.getUserAgent(),
+                        log.getAuthMethod(),
+                        log.getProvider(),
+                        log.getExternalIdentityId(),
                         log.getTraceId(),
                         log.getCreatedAt()
                 )).append('\n'));
@@ -72,6 +89,9 @@ public class LoginAuditService {
             Long userId,
             boolean success,
             String failureReason,
+            String authMethod,
+            String provider,
+            Long externalIdentityId,
             AuditRequestContext context
     ) {
         SystemLoginLogEntity log = new SystemLoginLogEntity();
@@ -81,6 +101,9 @@ public class LoginAuditService {
         log.setFailureReason(AuditRequestContext.truncate(failureReason, 255));
         log.setIp(context.ip());
         log.setUserAgent(context.userAgent());
+        log.setAuthMethod(authMethod);
+        log.setProvider(provider);
+        log.setExternalIdentityId(externalIdentityId);
         log.setTraceId(context.traceId());
         log.setCreatedAt(LocalDateTime.now());
         loginLogMapper.insert(log);
@@ -100,6 +123,9 @@ public class LoginAuditService {
         payload.put("failureReason", log.getFailureReason());
         payload.put("ip", log.getIp());
         payload.put("userAgent", log.getUserAgent());
+        payload.put("authMethod", log.getAuthMethod());
+        payload.put("provider", log.getProvider());
+        payload.put("externalIdentityId", log.getExternalIdentityId());
         return payload;
     }
 
@@ -137,6 +163,9 @@ public class LoginAuditService {
                 log.getFailureReason(),
                 log.getIp(),
                 log.getUserAgent(),
+                log.getAuthMethod(),
+                log.getProvider(),
+                log.getExternalIdentityId(),
                 log.getTraceId(),
                 log.getCreatedAt()
         );

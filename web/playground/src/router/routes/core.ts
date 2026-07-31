@@ -84,6 +84,15 @@ const coreRoutes: RouteRecordRaw[] = [
         },
       },
       {
+        name: 'FeishuOAuthCallback',
+        path: 'oauth/feishu/callback',
+        component: () =>
+          import('#/views/_core/authentication/oauth-callback.vue'),
+        meta: {
+          title: $t('authentication.loginPanel.oauthCallbackTitle'),
+        },
+      },
+      {
         name: 'ForgetPassword',
         path: 'forget-password',
         component: () =>

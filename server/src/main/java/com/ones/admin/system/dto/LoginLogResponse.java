@@ -10,6 +10,9 @@ public record LoginLogResponse(
         String failureReason,
         String ip,
         String userAgent,
+        String authMethod,
+        String provider,
+        Long externalIdentityId,
         String traceId,
         LocalDateTime createdAt
 ) {

@@ -395,7 +395,7 @@ public class ApiResourceService {
             SystemApiManifestSnapshotMapper manifestSnapshotMapper,
             ObjectMapper objectMapper,
             PublicEndpointRegistry publicEndpointRegistry,
-            @Value("${ones.version:v0.0.148}") String applicationVersion
+            @Value("${ones.version:v0.0.149}") String applicationVersion
     ) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.permissionMapper = permissionMapper;

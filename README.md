@@ -2,11 +2,11 @@
 
 ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue3 + Spring Boot + Sa-Token + MyBatis-Plus** 完成前后端登录、权限菜单和用户管理闭环。
 
-当前产品版本：`v0.0.148`
+当前产品版本：`v0.0.149`
 
 ## 当前能力
 
-- 后端基座：Spring Boot 3.5.9、Java 21、Maven Enforcer、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、Flyway、统一响应、统一异常、TraceId、登录认证、角色权限、角色数据范围、动态菜单、用户/角色/菜单/部门、数据字典、文件资产、审计日志、防重复提交、接口资源治理、受控 Actuator / Swagger、登录账号/IP 限流和安全响应头。
+- 后端基座：Spring Boot 3.5.9、Java 21、Maven Enforcer、Sa-Token 1.45.0、MyBatis-Plus 3.5.16、Flyway、统一响应、统一异常、TraceId、账号密码与飞书 OAuth 认证、外部身份预绑定、角色权限、角色数据范围、动态菜单、用户/角色/菜单/部门、数据字典、文件资产、审计日志、防重复提交、接口资源治理、受控 Actuator / Swagger、登录账号/IP 限流和安全响应头。
 - HRMS 一期：岗位、职级、员工主数据、员工基础信息编辑、调岗/转正/离职生命周期、任职记录、组织关系、员工资料附件、资料到期预警、合同管理、合同附件、花名册导入导出、人力概览、员工档案抽屉、员工读接口数据范围和敏感字段脱敏第一阶段。
 - 前端基座：Vue3、Vite、TypeScript、Vben / Ant Design Vue、Pinia、Vue Router、Axios 请求拦截、错误提示 TraceId 展示、登录页 ONES/1S 品牌资源、管理布局、工作台、系统管理页、HRMS 一期页面、接口治理页、审计页、文件管理页、存量业务表格稳定高度治理、前端布局治理报告和引导式交互规范。
 - 工程化基座：Jenkins 验证门禁、本地统一验证入口、版本一致性检查、仓库安全扫描、构建元数据、环境配置报告、数据库迁移报告、前端布局报告、接口治理报告、验证摘要和发布证据包。
@@ -15,7 +15,7 @@ ONES-ADMIN 是一个企业级后台管理系统起步工程，当前采用 **Vue
 
 ## 当前边界
 
-- 飞书 OAuth、企业 SSO、短信登录和二维码扫码登录尚未完成后端认证闭环；当前前端只保留入口、授权跳转配置和未配置提示。
+- 飞书 OAuth 已完成后端 state 防重放、授权码换取身份、管理员预绑定、一次性票据、Sa-Token 签发和登录审计闭环；真实飞书应用参数、回调白名单和 Redis 联调仍需在部署环境配置。企业 SSO、短信登录和通用二维码扫码登录仍未完成后端闭环。
 - 系统初始化默认关闭，Swagger 默认关闭；Actuator 和启用后的 Swagger 默认要求登录，公开范围必须通过配置显式放开。
 - 前端业务 VXE 表格已完成 `height: auto` 存量清理，复杂分栏页和单栏业务页均进入稳定高度治理口径；后续仍需补充更多视觉回归和业务页 E2E，防止新页面回退。
 - 当前 Jenkins 只执行验证门禁，不执行生产部署；真实测试、预发、生产环境矩阵和发布回滚策略仍需单独设计。
@@ -54,7 +54,7 @@ server/config/application-local.yml
 
 本地中间件连接信息记录在 `docs/local/middleware-credentials.md`，该目录已加入 `.gitignore`，不会提交到 Git。
 
-默认 `ones.security.session.storage=redis`、`ones.security.repeat-submit.storage=redis`、`ones.security.login-rate-limit.storage=redis`，正式环境依赖 Redis 保存登录态、防重票据和登录限流状态；本地 E2E 或临时 H2 验证可显式切换为 `memory`。默认 `ones.events.broker=none`、`ones.file.storage-type=local`，本地和测试环境不会强依赖 RabbitMQ 或 MinIO。需要启用开发环境中间件时，在 ignored 本地配置或环境变量中开启对应能力并补齐连接信息；RabbitMQ、MinIO 和初始化管理员密码均不提供可提交的敏感兜底值。
+默认 `ones.security.session.storage=redis`、`ones.security.repeat-submit.storage=redis`、`ones.security.login-rate-limit.storage=redis`、`ones.security.oauth.storage=redis`，正式环境依赖 Redis 保存登录态、防重票据、登录限流状态、OAuth state 和一次性登录票据；本地 E2E 或临时 H2 验证可显式切换为 `memory`。默认 `ones.events.broker=none`、`ones.file.storage-type=local`，本地和测试环境不会强依赖 RabbitMQ 或 MinIO。需要启用开发环境中间件时，在 ignored 本地配置或环境变量中开启对应能力并补齐连接信息；RabbitMQ、MinIO、飞书 App Secret 和初始化管理员密码均不提供可提交的敏感兜底值。
 
 空数据库首次开发初始化必须显式提供开关与密码，已有正式数据库不得再次开启：
 
@@ -95,17 +95,18 @@ pnpm dev
 
 登录页按飞书优先展示企业登录入口。前端只负责发起授权跳转，飞书回调、授权码换取用户信息、账号绑定和 Sa-Token 签发必须由后端完成，避免 App Secret 暴露到浏览器。
 
-可在 `web/playground/.env.development` 或生产注入配置中设置：
+飞书配置只进入后端环境变量或 Jenkins Credentials，不进入前端构建产物：
 
 ```text
-VITE_GLOB_AUTH_FEISHU_APP_ID=
-VITE_GLOB_AUTH_FEISHU_REDIRECT_URI=
-VITE_GLOB_AUTH_FEISHU_AUTH_URL=
+ONES_AUTH_FEISHU_ENABLED=true
+ONES_AUTH_FEISHU_APP_ID=
+ONES_AUTH_FEISHU_APP_SECRET=
+ONES_AUTH_FEISHU_CALLBACK_URL=https://admin.example.com/auth/oauth/feishu/callback
 VITE_GLOB_AUTH_SSO_NAME=
 VITE_GLOB_AUTH_SSO_URL=
 ```
 
-优先级：如果配置了 `VITE_GLOB_AUTH_FEISHU_AUTH_URL`，前端直接使用该授权地址；否则在同时配置 `VITE_GLOB_AUTH_FEISHU_APP_ID` 和 `VITE_GLOB_AUTH_FEISHU_REDIRECT_URI` 时，按飞书开放平台 OAuth 授权入口生成跳转地址。企业 SSO 只有配置 `VITE_GLOB_AUTH_SSO_URL` 后才展示入口。
+登录页通过 `/api/auth/providers` 读取启用状态，通过后端生成授权地址；飞书应用回调地址指向前端 `/auth/oauth/feishu/callback`，前端再调用后端校验 state、兑换一次性票据。默认不按邮箱自动创建或绑定账号，必须先由具备 `system:user:update` 权限的管理员预绑定外部身份。企业 SSO 只有配置 `VITE_GLOB_AUTH_SSO_URL` 后才启用入口。
 
 ## 验证命令
 
@@ -120,6 +121,10 @@ bash scripts/ci/verify.sh all
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | `POST` | `/api/auth/login` | 登录并返回 Sa-Token |
+| `GET` | `/api/auth/providers` | 查询第三方登录能力，不返回 Secret |
+| `GET` | `/api/auth/oauth/feishu/authorize` | 生成飞书授权地址和一次性 state |
+| `GET` | `/api/auth/oauth/feishu/callback` | 校验飞书回调并生成短期一次性票据 |
+| `POST` | `/api/auth/oauth/exchange` | 使用一次性票据换取 Sa-Token |
 | `GET` | `/api/auth/me` | 获取当前用户 |
 | `POST` | `/api/auth/logout` | 退出登录 |
 | `GET` | `/api/system/menus` | 获取当前用户菜单 |
@@ -127,6 +132,9 @@ bash scripts/ci/verify.sh all
 | `POST` | `/api/system/users` | 新增用户 |
 | `PUT` | `/api/system/users/{id}` | 编辑用户 |
 | `DELETE` | `/api/system/users/{id}` | 删除用户 |
+| `GET` | `/api/system/users/{id}/external-identities` | 查询用户外部身份绑定 |
+| `POST` | `/api/system/users/{id}/external-identities` | 管理员预绑定用户外部身份 |
+| `DELETE` | `/api/system/users/{id}/external-identities/{identityId}` | 停用用户外部身份绑定 |
 | `GET` | `/api/system/roles` | 查询角色列表 |
 | `GET` | `/api/system/dicts/types` | 查询系统字典类型 |
 | `POST` | `/api/system/dicts/types` | 新增系统字典类型 |

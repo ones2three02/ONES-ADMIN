@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 @MapperScan({
+        "com.ones.admin.auth.oauth.mapper",
         "com.ones.admin.system.mapper",
         "com.ones.admin.hr.mapper"
 })

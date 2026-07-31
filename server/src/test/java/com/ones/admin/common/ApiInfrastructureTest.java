@@ -78,7 +78,7 @@ class ApiInfrastructureTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.info.title").value("ONES-ADMIN 后端接口"))
-                .andExpect(jsonPath("$.info.version").value("v0.0.148"));
+                .andExpect(jsonPath("$.info.version").value("v0.0.149"));
     }
 
     @Test
