@@ -11,10 +11,13 @@ interface PageResult<T> {
 
 export namespace SystemAuditApi {
   export interface LoginLog {
+    authMethod: string;
     createdAt: string;
+    externalIdentityId?: string;
     failureReason?: string;
     id: string;
     ip?: string;
+    provider?: string;
     success: boolean;
     traceId?: string;
     userAgent?: string;

@@ -10,6 +10,10 @@ public class PublicEndpointRegistry {
 
     public static final List<String> CORE_PUBLIC_PATH_PATTERNS = List.of(
             "/api/auth/login",
+            "/api/auth/providers",
+            "/api/auth/oauth/*/authorize",
+            "/api/auth/oauth/*/callback",
+            "/api/auth/oauth/exchange",
             "/api/health"
     );
     public static final List<String> API_DOC_PATH_PATTERNS = List.of(

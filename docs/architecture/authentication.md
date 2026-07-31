@@ -62,7 +62,7 @@ SaPermissionProvider 提供角色与权限
 
 ## 飞书扫码登录与 SSO 接入建议
 
-飞书扫码登录本质是平台 OAuth 授权流程。推荐接入方式：
+飞书扫码登录本质是平台 OAuth 授权流程。v0.0.149 已落地以下链路：
 
 ```text
 飞书扫码 / 飞书工作台免登
@@ -71,7 +71,7 @@ SaPermissionProvider 提供角色与权限
   ↓
 ONES-ADMIN ThirdPartyAuthProvider 换取飞书用户身份
   ↓
-ExternalIdentityService 绑定或创建本地用户
+ExternalIdentityService 只解析管理员预绑定的本地用户
   ↓
 AuthService 加载本地角色、菜单、数据权限
   ↓
@@ -80,27 +80,41 @@ Sa-Token 签发 ONES-ADMIN Token
 
 这样可以避免让外部平台直接决定系统内权限，便于后续支持多个平台。
 
-## 后续模块建议
+## v0.0.149 飞书 OAuth 闭环
 
-建议新增 `auth-provider` 模块或包：
+- `GET /api/auth/providers` 只返回 Provider 名称和启用状态，不返回 App ID 或 Secret。
+- `GET /api/auth/oauth/feishu/authorize` 由后端生成 256 bit 随机 state，默认在 Redis 保留 5 分钟。
+- `GET /api/auth/oauth/feishu/callback` 原子消费 state，调用飞书应用访问令牌、用户访问令牌和用户信息接口，以 `tenant_key + union_id` 解析外部身份。
+- `POST /api/auth/oauth/exchange` 原子消费 60 秒短期票据，加载本地账号角色与权限后签发 Sa-Token；state 和票据均不可重放。
+- `sys_external_identity` 保存 Provider、租户键、外部主体、本地用户、状态和最后登录时间；不保存飞书 access token。
+- 登录日志增加 `auth_method`、`provider` 和 `external_identity_id`，账号密码与飞书登录使用同一审计查询和导出链路。
+- 默认不按邮箱自动创建或绑定账号。管理员使用 `/api/system/users/{userId}/external-identities` 预绑定，未绑定身份返回错误码 `4213`。
+- 飞书 App Secret 只允许通过后端环境变量或 Jenkins Credentials 注入，前端只读取 Provider 启用状态和后端生成的授权地址。
+
+### 数据库迁移影响与回滚
+
+V9 是纯新增迁移：新增 `sys_external_identity` 表，为 `sys_login_log` 增加三个可兼容审计字段和索引，不删除或重命名旧字段。真实 MySQL 执行前必须完成备份、表结构检查和回调配置确认。本项目不对已执行迁移做降级 SQL；需要停用时先关闭 `ONES_AUTH_FEISHU_ENABLED`，保留数据，结构调整通过后续前向补偿迁移完成。
+
+## 后续 Provider 扩展
+
+当前 `auth.oauth` 包已经形成以下边界：
 
 ```text
-auth-provider
+auth.oauth
 ├── ThirdPartyAuthProvider
-├── ThirdPartyAuthRequest
-├── ThirdPartyIdentity
-├── FeishuAuthProvider
-├── WeComAuthProvider
-└── DingTalkAuthProvider
+├── ThirdPartyAuthProviderRegistry
+├── OAuthFlowService / OAuthFlowStore
+├── ExternalIdentityService
+└── feishu/FeishuThirdPartyAuthProvider
 ```
 
-统一接口示例：
+新增企业微信、钉钉或 OIDC 时继续实现统一接口，不得绕过 state、一次性票据、本地身份绑定和登录审计：
 
 ```java
 public interface ThirdPartyAuthProvider {
-    String platform();
+    String id();
 
-    ThirdPartyIdentity authenticate(ThirdPartyAuthRequest request);
+    ExternalIdentityProfile authenticate(String authorizationCode);
 }
 ```
 

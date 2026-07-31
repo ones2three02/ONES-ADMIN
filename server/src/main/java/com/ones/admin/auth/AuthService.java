@@ -62,6 +62,17 @@ public class AuthService {
         return new LoginResponse(null, toProfile(user), user.roles(), user.permissions());
     }
 
+    public LoginResponse loginByUserId(Long userId) {
+        AdminUser user = userRepository.findById(userId)
+                .filter(AdminUser::enabled)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_AVAILABLE));
+        if (user.lockedUntil() != null && user.lockedUntil().isAfter(LocalDateTime.now())) {
+            throw new BusinessException(AuthErrorCode.ACCOUNT_LOCKED);
+        }
+        userRepository.recordLoginSuccess(user.id());
+        return new LoginResponse(null, toProfile(user), user.roles(), user.permissions());
+    }
+
     public UserProfile getRequiredProfile(Long userId) {
         return userRepository.findById(userId)
                 .filter(AdminUser::enabled)

@@ -149,6 +149,19 @@ export function useLoginLogColumns(): VxeTableGridColumns {
       width: 90,
     },
     {
+      field: 'authMethod',
+      formatter: ({ cellValue }) =>
+        cellValue === 'OAUTH' ? '第三方登录' : '账号密码',
+      title: '认证方式',
+      width: 120,
+    },
+    {
+      field: 'provider',
+      formatter: ({ cellValue }) => formatEmpty(cellValue),
+      title: 'Provider',
+      width: 110,
+    },
+    {
       field: 'failureReason',
       formatter: ({ cellValue }) => formatEmpty(cellValue),
       minWidth: 200,

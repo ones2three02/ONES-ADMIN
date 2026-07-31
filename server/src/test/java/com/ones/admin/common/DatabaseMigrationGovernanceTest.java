@@ -44,6 +44,21 @@ class DatabaseMigrationGovernanceTest {
     }
 
     @Test
+    void externalIdentityAndLoginAuthenticationAuditSchemaExist() {
+        Integer identityTableCount = jdbcTemplate.queryForObject(
+                "select count(*) from information_schema.tables where table_name = 'sys_external_identity'",
+                Integer.class
+        );
+        List<String> loginLogColumns = jdbcTemplate.queryForList(
+                "select column_name from information_schema.columns where table_name = 'sys_login_log'",
+                String.class
+        );
+
+        assertThat(identityTableCount).isEqualTo(1);
+        assertThat(loginLogColumns).contains("auth_method", "provider", "external_identity_id");
+    }
+
+    @Test
     void legacySchemaSqlIsNotUsed() {
         assertThat(LEGACY_SCHEMA_FILE).doesNotExist();
     }

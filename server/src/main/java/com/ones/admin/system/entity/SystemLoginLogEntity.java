@@ -17,6 +17,9 @@ public class SystemLoginLogEntity {
     private String failureReason;
     private String ip;
     private String userAgent;
+    private String authMethod;
+    private String provider;
+    private Long externalIdentityId;
     private String traceId;
     private LocalDateTime createdAt;
 
@@ -75,6 +78,13 @@ public class SystemLoginLogEntity {
     public void setUserAgent(String userAgent) {
         this.userAgent = userAgent;
     }
+
+    public String getAuthMethod() { return authMethod; }
+    public void setAuthMethod(String authMethod) { this.authMethod = authMethod; }
+    public String getProvider() { return provider; }
+    public void setProvider(String provider) { this.provider = provider; }
+    public Long getExternalIdentityId() { return externalIdentityId; }
+    public void setExternalIdentityId(Long externalIdentityId) { this.externalIdentityId = externalIdentityId; }
 
     public String getTraceId() {
         return traceId;

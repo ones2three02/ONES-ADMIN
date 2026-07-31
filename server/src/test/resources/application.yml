@@ -57,6 +57,10 @@ ones:
       ip-max-attempts: 50
       window: 5m
       block-duration: 15m
+    oauth:
+      storage: memory
+      state-ttl: 5m
+      ticket-ttl: 60s
     repeat-submit:
       storage: memory
   file:
@@ -64,3 +68,6 @@ ones:
     upload-root: ${java.io.tmpdir}/ones-admin-test-uploads
   events:
     broker: none
+  auth:
+    feishu:
+      enabled: false

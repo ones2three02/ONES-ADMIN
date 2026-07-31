@@ -192,62 +192,50 @@ onMounted(async () => {
           <span></span>
         </div>
 
-        <div class="enterprise-login-icon-row">
+        <div class="flex items-center justify-center gap-6 mt-4 mb-2">
+          <!-- 飞书 -->
           <button
-            :aria-label="
-              getLoginMethodTitle(
-                $t('authentication.feishuLogin'),
-                feishuReady,
-              )
-            "
-            class="enterprise-login-icon-button enterprise-login-icon-button-primary"
-            :data-ready="feishuReady"
-            :title="
-              getLoginMethodTitle(
-                $t('authentication.feishuLogin'),
-                feishuReady,
-              )
-            "
+            class="flex flex-col items-center gap-1.5 group cursor-pointer border-0 bg-transparent"
+            :title="getLoginMethodTitle('飞书', Boolean(feishuAuthConfig?.url))"
             type="button"
             @click="handleFeishuLogin"
           >
-            <IconifyIcon icon="lucide:message-square-more" />
+            <div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-slate-800 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform shadow-sm">
+              <IconifyIcon icon="lucide:message-square" class="size-5" />
+            </div>
+            <span class="text-xs text-muted-foreground group-hover:text-foreground">飞书</span>
           </button>
 
+          <!-- 企业微信 -->
           <button
-            :aria-label="
-              getLoginMethodTitle(
-                $t('authentication.loginPanel.enterpriseSsoShort'),
-                Boolean(ssoAuthConfig?.url),
-              )
-            "
-            class="enterprise-login-icon-button"
-            :data-ready="Boolean(ssoAuthConfig?.url)"
-            :title="
-              getLoginMethodTitle(
-                $t('authentication.loginPanel.enterpriseSsoShort'),
-                Boolean(ssoAuthConfig?.url),
-              )
-            "
+            class="flex flex-col items-center gap-1.5 group cursor-pointer border-0 bg-transparent"
+            :title="getLoginMethodTitle('企业微信', Boolean(ssoAuthConfig?.url))"
             type="button"
             @click="handleSsoLogin"
           >
-            <IconifyIcon icon="lucide:building-2" />
+            <div class="w-10 h-10 rounded-full bg-emerald-50 dark:bg-slate-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform shadow-sm">
+              <IconifyIcon icon="lucide:message-circle" class="size-5" />
+            </div>
+            <span class="text-xs text-muted-foreground group-hover:text-foreground">企业微信</span>
           </button>
 
-          <RouterLink
-            :aria-label="
-              getLoginMethodTitle($t('authentication.mobileLogin'), false)
-            "
-            class="enterprise-login-icon-button"
-            data-ready="false"
-            :title="
-              getLoginMethodTitle($t('authentication.mobileLogin'), false)
-            "
-            to="/auth/code-login"
+          <!-- Google -->
+          <button
+            class="flex flex-col items-center gap-1.5 group cursor-pointer border-0 bg-transparent"
+            :title="getLoginMethodTitle('Google', true)"
+            type="button"
           >
-            <IconifyIcon icon="lucide:smartphone" />
-          </RouterLink>
+            <div class="w-10 h-10 rounded-full bg-rose-50 dark:bg-slate-800 flex items-center justify-center text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform shadow-sm">
+              <IconifyIcon icon="lucide:globe" class="size-5" />
+            </div>
+            <span class="text-xs text-muted-foreground group-hover:text-foreground">Google</span>
+          </button>
+        </div>
+
+        <!-- 底部安全加密提示 -->
+        <div class="mt-6 flex items-center justify-center gap-1.5 text-xs text-muted-foreground/80 font-medium">
+          <IconifyIcon icon="lucide:shield-check" class="size-4 text-blue-600 dark:text-blue-400" />
+          <span>安全加密登录，保障数据安全</span>
         </div>
       </div>
     </template>

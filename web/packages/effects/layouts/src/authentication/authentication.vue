@@ -9,7 +9,7 @@ import { VbenIcon } from '@vben-core/shadcn-ui';
 
 import { Copyright } from '../basic/copyright';
 import AuthenticationFormView from './form.vue';
-import SloganIcon from './icons/slogan.vue';
+import OnesVisualStage from './ones-visual-stage.vue';
 import Toolbar from './toolbar.vue';
 
 type BrandFeaturePlacement =
@@ -79,35 +79,6 @@ const props = withDefaults(defineProps<Props>(), {
 const { authPanelCenter, authPanelLeft, authPanelRight, isDark } =
   usePreferences();
 
-const featurePlacementMap: Record<BrandFeaturePlacement, string> = {
-  bottom: 'login-node-bottom',
-  leftBottom: 'login-node-left-bottom',
-  leftMiddle: 'login-node-left-middle',
-  leftTop: 'login-node-left-top',
-  rightBottom: 'login-node-right-bottom',
-  rightMiddle: 'login-node-right-middle',
-  rightTop: 'login-node-right-top',
-  top: 'login-node-top',
-};
-
-const visualFeatures = computed(() => props.brandFeatures);
-const visualPrinciples = computed(() => props.brandPrinciples);
-const modeLabel = computed(() =>
-  isDark.value ? props.darkModeLabel : props.lightModeLabel,
-);
-const modeText = computed(() =>
-  isDark.value ? props.darkModeText : props.lightModeText,
-);
-const sloganImageSrc = computed(() =>
-  isDark.value && props.sloganImageDark
-    ? props.sloganImageDark
-    : props.sloganImage,
-);
-
-function getFeaturePlacementClass(placement: BrandFeaturePlacement = 'top') {
-  return featurePlacementMap[placement];
-}
-
 /**
  * @zh_CN 根据主题选择合适的 logo 图标
  */
@@ -165,14 +136,14 @@ const logoSrc = computed(() => {
             class="mr-2"
             width="42"
           />
-          <p v-if="appName" class="m-0 text-xl font-medium">
+          <p v-if="appName" class="m-0 text-xl font-bold tracking-tight">
             {{ appName }}
           </p>
         </div>
       </div>
     </slot>
 
-    <!-- 系统介绍 -->
+    <!-- 系统介绍 (左侧视觉面板) -->
     <div v-if="!authPanelCenter" class="relative hidden w-0 flex-1 xl:block">
       <div
         class="absolute inset-0 size-full bg-background-deep dark:bg-[#070709] login-left-bg"
@@ -181,89 +152,92 @@ const logoSrc = computed(() => {
         <div class="login-grid absolute inset-0"></div>
         <div
           :key="authPanelLeft ? 'left' : authPanelRight ? 'right' : 'center'"
-          class="login-visual-content flex-col-center h-full"
+          class="login-visual-content flex flex-col justify-between h-full p-10 z-10 relative"
           :class="{
             'enter-x': authPanelLeft,
             '-enter-x': authPanelRight,
           }"
         >
-          <div class="login-visual-inner">
-            <div class="login-visual-header">
-              <div class="login-mode-pill">
-                <VbenIcon
-                  :icon="isDark ? 'lucide:moon-star' : 'lucide:sun'"
-                  class="size-4"
-                />
-                <span>{{ modeText }}</span>
-              </div>
-              <span class="login-mode-label">{{ modeLabel }}</span>
-              <div class="login-visual-brand">
-                <strong>ONES / 1S</strong>
-                <small>SYSTEM CORE VISUAL</small>
-              </div>
+          <!-- 头部标题标语与 4 大能力卡片 -->
+          <div class="space-y-6 pt-6">
+            <div>
+              <span class="inline-block px-3 py-1 text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-400 rounded-full border border-blue-200/60 dark:border-blue-800/40 mb-3">
+                ONES / 1S
+              </span>
+              <h1 class="text-3xl xl:text-4xl font-extrabold text-foreground tracking-tight">
+                新一代企业协同管理平台
+              </h1>
+              <p class="text-base text-muted-foreground mt-2 font-normal">
+                连接人、流程与数据，助力企业高效运营与持续增长
+              </p>
             </div>
 
-            <div class="login-visual-stage">
-              <div class="login-axis login-axis-x"></div>
-              <div class="login-axis login-axis-y"></div>
-              <div class="login-orbit login-orbit-outer"></div>
-              <div class="login-orbit login-orbit-middle"></div>
-              <div class="login-orbit login-orbit-inner"></div>
-              <div class="login-scan-line"></div>
-
-              <div
-                v-for="feature in visualFeatures"
-                :key="feature.title"
-                class="login-capability-node"
-                :class="getFeaturePlacementClass(feature.placement)"
-              >
-                <span class="login-node-icon">
-                  <VbenIcon
-                    v-if="feature.icon"
-                    :icon="feature.icon"
-                    class="size-5"
-                  />
-                </span>
-                <span class="login-node-copy">
-                  <strong>{{ feature.title }}</strong>
-                  <small v-if="feature.subtitle">{{ feature.subtitle }}</small>
-                  <em v-if="feature.description">{{ feature.description }}</em>
-                </span>
-              </div>
-
-              <div class="login-core-visual">
-                <template v-if="sloganImageSrc">
-                  <img :alt="appName" :src="sloganImageSrc" />
-                </template>
-                <SloganIcon v-else :alt="appName" />
-              </div>
-            </div>
-
-            <div class="login-visual-title">
-              <div>{{ pageTitle }}</div>
-              <p>{{ pageDescription }}</p>
-            </div>
-
-            <div class="login-principles" v-if="visualPrinciples.length > 0">
-              <div
-                v-for="principle in visualPrinciples"
-                :key="principle.title"
-                class="login-principle-item"
-              >
-                <span>
-                  <VbenIcon
-                    v-if="principle.icon"
-                    :icon="principle.icon"
-                    class="size-4"
-                  />
-                </span>
+            <!-- 4 大能力卡片 Badge 布局 -->
+            <div class="grid grid-cols-4 gap-3 pt-1">
+              <div class="flex items-center space-x-2.5 p-3 rounded-xl bg-white/75 dark:bg-slate-900/60 border border-blue-100/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
+                <div class="p-2 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
+                  <VbenIcon icon="lucide:sparkles" class="size-4" />
+                </div>
                 <div>
-                  <strong>{{ principle.title }}</strong>
-                  <small v-if="principle.description">
-                    {{ principle.description }}
-                  </small>
+                  <div class="text-xs font-bold text-foreground">高效协同</div>
+                  <div class="text-[10px] text-muted-foreground">提升团队效率</div>
                 </div>
               </div>
+
+              <div class="flex items-center space-x-2.5 p-3 rounded-xl bg-white/75 dark:bg-slate-900/60 border border-blue-100/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
+                <div class="p-2 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
+                  <VbenIcon icon="lucide:workflow" class="size-4" />
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-foreground">流程驱动</div>
+                  <div class="text-[10px] text-muted-foreground">优化业务流程</div>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-2.5 p-3 rounded-xl bg-white/75 dark:bg-slate-900/60 border border-blue-100/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
+                <div class="p-2 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
+                  <VbenIcon icon="lucide:trending-up" class="size-4" />
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-foreground">数据洞察</div>
+                  <div class="text-[10px] text-muted-foreground">辅助决策分析</div>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-2.5 p-3 rounded-xl bg-white/75 dark:bg-slate-900/60 border border-blue-100/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
+                <div class="p-2 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
+                  <VbenIcon icon="lucide:shield-check" class="size-4" />
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-foreground">安全可靠</div>
+                  <div class="text-[10px] text-muted-foreground">企业级安全防护</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 中央 3D 核心舞台 -->
+          <div class="my-auto py-2">
+            <OnesVisualStage />
+          </div>
+
+          <!-- 底部 4 大数据指标统计栏 -->
+          <div class="grid grid-cols-4 gap-4 p-4 rounded-2xl bg-white/80 dark:bg-slate-900/70 border border-blue-100/80 dark:border-slate-800 shadow-md backdrop-blur-lg">
+            <div class="text-center">
+              <div class="text-xl xl:text-2xl font-black text-blue-600 dark:text-blue-400">20+</div>
+              <div class="text-xs text-muted-foreground font-medium mt-0.5">业务模块</div>
+            </div>
+            <div class="text-center">
+              <div class="text-xl xl:text-2xl font-black text-blue-600 dark:text-blue-400">100+</div>
+              <div class="text-xs text-muted-foreground font-medium mt-0.5">企业服务</div>
+            </div>
+            <div class="text-center">
+              <div class="text-xl xl:text-2xl font-black text-blue-600 dark:text-blue-400">10W+</div>
+              <div class="text-xs text-muted-foreground font-medium mt-0.5">用户信任</div>
+            </div>
+            <div class="text-center">
+              <div class="text-xl xl:text-2xl font-black text-blue-600 dark:text-blue-400">99.9%</div>
+              <div class="text-xs text-muted-foreground font-medium mt-0.5">系统可用性</div>
             </div>
           </div>
         </div>

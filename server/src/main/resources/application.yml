@@ -66,7 +66,7 @@ sa-token:
   is-print: false
 
 ones:
-  version: ${ONES_ADMIN_VERSION:v0.0.148}
+  version: ${ONES_ADMIN_VERSION:v0.0.149}
   bootstrap:
     enabled: ${ONES_BOOTSTRAP_ENABLED:false}
     admin-username: ${ONES_BOOTSTRAP_ADMIN_USERNAME:admin}
@@ -90,6 +90,11 @@ ones:
       window: ${ONES_LOGIN_RATE_LIMIT_WINDOW:5m}
       block-duration: ${ONES_LOGIN_RATE_LIMIT_BLOCK_DURATION:15m}
       key-prefix: ${ONES_LOGIN_RATE_LIMIT_KEY_PREFIX:ones:security:login}
+    oauth:
+      storage: ${ONES_OAUTH_STORAGE:redis}
+      state-ttl: ${ONES_OAUTH_STATE_TTL:5m}
+      ticket-ttl: ${ONES_OAUTH_TICKET_TTL:60s}
+      key-prefix: ${ONES_OAUTH_KEY_PREFIX:ones:security:oauth}
     public-endpoints:
       api-docs-public: ${ONES_API_DOCS_PUBLIC:false}
       actuator-public: ${ONES_ACTUATOR_PUBLIC:false}
@@ -130,6 +135,13 @@ ones:
     exchange: ${ONES_EVENTS_EXCHANGE:ones.admin.events}
     operation-audit-queue: ${ONES_OPERATION_AUDIT_QUEUE:ones.admin.audit.operation}
     login-audit-queue: ${ONES_LOGIN_AUDIT_QUEUE:ones.admin.audit.login}
+  auth:
+    feishu:
+      enabled: ${ONES_AUTH_FEISHU_ENABLED:false}
+      base-url: ${ONES_AUTH_FEISHU_BASE_URL:https://open.feishu.cn}
+      app-id: ${ONES_AUTH_FEISHU_APP_ID:}
+      app-secret: ${ONES_AUTH_FEISHU_APP_SECRET:}
+      callback-url: ${ONES_AUTH_FEISHU_CALLBACK_URL:}
 
 management:
   endpoints:
