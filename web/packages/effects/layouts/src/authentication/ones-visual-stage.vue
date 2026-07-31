@@ -2,59 +2,58 @@
 defineOptions({
   name: 'OnesVisualStage',
 });
+
+const nodes = [
+  { id: 'hrms', icon: 'lucide:users', label: 'HRMS', title: '组织与人才管理', pos: 'node-pos-1' },
+  { id: 'workflow', icon: 'lucide:workflow', label: 'Workflow', title: '流程自动化驱动', pos: 'node-pos-2' },
+  { id: 'ai', icon: 'lucide:sparkles', label: 'AI Engine', title: '智能协同引擎', pos: 'node-pos-3' },
+  { id: 'bi', icon: 'lucide:bar-chart-3', label: 'BI Dashboard', title: '经营数据深度洞察', pos: 'node-pos-4' },
+  { id: 'rpa', icon: 'lucide:bot', label: 'RPA', title: 'RPA 机器人自动化', pos: 'node-pos-5' },
+  { id: 'iam', icon: 'lucide:shield-check', label: 'IAM', title: '企业级统一身份认证', pos: 'node-pos-6' },
+  { id: 'data', icon: 'lucide:database', label: 'Data Asset', title: '数据沉淀与全局资产', pos: 'node-pos-7' },
+];
 </script>
 
 <template>
-  <div class="ecosystem-stage" aria-hidden="true">
-    <!-- 城市底纹图案 -->
-    <div class="city-skyline"></div>
-    <!-- 连线轨道 -->
-    <div class="connector-rings"></div>
+  <div class="hero-master-stage" aria-hidden="true">
+    <!-- 背景淡雅天际线与大气渐变纹理 -->
+    <div class="master-skyline"></div>
+    <div class="master-orbit-rings"></div>
+    <div class="center-aura"></div>
 
-    <!-- 6 大生态模块卡片 -->
-    <div class="ecosystem-module m1">
-      <div>
-        <strong>HRMS</strong>
-        <span>组织与人才管理</span>
+    <!-- 纯 Icon 玻璃微悬浮节点卡片 (无文字，带有动态 HTML Tooltip) -->
+    <div
+      v-for="item in nodes"
+      :key="item.id"
+      class="glass-icon-node"
+      :class="[item.pos]"
+    >
+      <div class="glass-icon-box">
+        <span class="icon-glyph">
+          <template v-if="item.id === 'hrms'">👥</template>
+          <template v-else-if="item.id === 'workflow'">🌿</template>
+          <template v-else-if="item.id === 'ai'">✨</template>
+          <template v-else-if="item.id === 'bi'">📊</template>
+          <template v-else-if="item.id === 'rpa'">🤖</template>
+          <template v-else-if="item.id === 'iam'">🛡️</template>
+          <template v-else-if="item.id === 'data'">🗄️</template>
+        </span>
       </div>
-    </div>
-    <div class="ecosystem-module m2">
-      <div>
-        <strong>WORKFLOW</strong>
-        <span>流程自动化</span>
-      </div>
-    </div>
-    <div class="ecosystem-module m3">
-      <div>
-        <strong>BI DASHBOARD</strong>
-        <span>经营数据洞察</span>
-      </div>
-    </div>
-    <div class="ecosystem-module m4">
-      <div>
-        <strong>FINANCE</strong>
-        <span>财务协同管理</span>
-      </div>
-    </div>
-    <div class="ecosystem-module m5">
-      <div>
-        <strong>RPA</strong>
-        <span>自动化执行</span>
-      </div>
-    </div>
-    <div class="ecosystem-module m6">
-      <div>
-        <strong>IAM</strong>
-        <span>统一身份认证</span>
+
+      <!-- HTML 动态 Hover 浮层 Tooltip -->
+      <div class="node-tooltip-pop">
+        <strong class="text-xs font-bold text-blue-600 dark:text-blue-400 block">{{ item.label }}</strong>
+        <span class="text-[11px] text-slate-600 dark:text-slate-300 block whitespace-nowrap">{{ item.title }}</span>
       </div>
     </div>
 
-    <!-- 中央双层 3D 核心基座与 1S 立方体 -->
-    <div class="core-platform-stage">
-      <div class="core-cube-box">
-        <div class="cube-inner">
-          1S
-          <small>ONES</small>
+    <!-- 中央无字高质感晶体玻璃核心 (Glass Central Core) -->
+    <div class="glass-master-core">
+      <div class="glass-slab slab-bottom"></div>
+      <div class="glass-slab slab-middle"></div>
+      <div class="glass-slab slab-top">
+        <div class="core-crystal-cube">
+          <div class="crystal-light-ring"></div>
         </div>
       </div>
     </div>
@@ -62,42 +61,30 @@ defineOptions({
 </template>
 
 <style scoped>
-.ecosystem-stage {
+.hero-master-stage {
   position: absolute;
-  left: 3%;
-  right: 5%;
-  bottom: 72px;
-  height: 52%;
-  z-index: 1;
-  pointer-events: none;
-  animation: heroFloat 7s cubic-bezier(0.2, 0.8, 0.2, 1) infinite alternate;
+  left: 4%;
+  right: 6%;
+  top: 36%;
+  bottom: 80px;
+  z-index: 2;
+  pointer-events: auto;
 }
 
-.ecosystem-stage::before {
-  content: "";
+.master-skyline {
   position: absolute;
-  inset: 6% 6% 4%;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 48%, rgba(41, 117, 255, 0.22), transparent 20%),
-    radial-gradient(circle at 50% 60%, rgba(94, 164, 255, 0.16), transparent 48%);
-  filter: blur(20px);
-}
-
-.city-skyline {
-  position: absolute;
-  inset: 16% 3% 2%;
-  opacity: 0.34;
+  inset: 10% 0 0;
+  opacity: 0.28;
   background: linear-gradient(
     90deg,
     transparent 0 4%,
-    rgba(155, 195, 255, 0.34) 4% 8%,
+    rgba(147, 197, 253, 0.3) 4% 8%,
     transparent 8% 15%,
-    rgba(155, 195, 255, 0.22) 15% 20%,
+    rgba(147, 197, 253, 0.2) 15% 20%,
     transparent 20% 75%,
-    rgba(155, 195, 255, 0.24) 75% 81%,
+    rgba(147, 197, 253, 0.25) 75% 81%,
     transparent 81% 88%,
-    rgba(155, 195, 255, 0.3) 88% 94%,
+    rgba(147, 197, 253, 0.28) 88% 94%,
     transparent 94%
   );
   clip-path: polygon(
@@ -108,174 +95,204 @@ defineOptions({
   );
 }
 
-.connector-rings {
+.master-orbit-rings {
   position: absolute;
   left: 50%;
-  top: 53%;
-  width: 72%;
-  height: 44%;
+  top: 54%;
+  width: 76%;
+  height: 52%;
   transform: translate(-50%, -50%);
-  border: 1px solid rgba(58, 141, 255, 0.28);
+  border: 1px dashed rgba(59, 130, 246, 0.25);
   border-radius: 50%;
-  box-shadow: 0 0 18px rgba(39, 126, 255, 0.08);
+  box-shadow: 0 0 30px rgba(37, 99, 235, 0.06);
 }
 
-.connector-rings::before,
-.connector-rings::after {
+.master-orbit-rings::after {
   content: "";
   position: absolute;
-  inset: 20%;
-  border: 1px dashed rgba(55, 137, 255, 0.28);
+  inset: 22%;
+  border: 1px stroke rgba(96, 165, 250, 0.3);
   border-radius: 50%;
 }
 
-.connector-rings::after {
-  inset: 38%;
-}
-
-/* 核心 3D 平台基座 */
-.core-platform-stage {
+.center-aura {
   position: absolute;
   left: 50%;
-  top: 48%;
-  width: 280px;
-  height: 150px;
+  top: 54%;
+  width: 240px;
+  height: 160px;
   transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.28) 0%, rgba(96, 165, 250, 0.1) 50%, transparent 75%);
+  filter: blur(30px);
 }
 
-.core-platform-stage::before,
-.core-platform-stage::after {
-  content: "";
+/* 纯 Icon 玻璃微悬浮节点 */
+.glass-icon-node {
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%) rotateX(58deg) rotateZ(-1deg);
-  border-radius: 34px;
+  z-index: 10;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.core-platform-stage::before {
-  bottom: 4px;
-  width: 250px;
-  height: 120px;
-  background: linear-gradient(180deg, #fefeff, #dceaff);
+.glass-icon-box {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   box-shadow:
-    0 30px 50px rgba(44, 111, 218, 0.2),
-    inset 0 -10px 18px rgba(58, 132, 255, 0.15);
-  border: 1px solid rgba(52, 118, 226, 0.15);
+    0 16px 36px rgba(59, 130, 246, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.core-platform-stage::after {
-  bottom: 28px;
-  width: 190px;
-  height: 92px;
-  background: linear-gradient(180deg, #ffffff, #e7f1ff);
-  box-shadow:
-    0 14px 28px rgba(32, 105, 227, 0.22),
-    inset 0 -8px 15px rgba(58, 132, 255, 0.2);
+:deep(.dark) .glass-icon-box {
+  background: rgba(30, 41, 59, 0.75);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
 }
 
-.core-cube-box {
-  position: absolute;
-  left: 50%;
-  top: 4px;
-  transform: translateX(-50%);
-  width: 112px;
-  height: 112px;
-  border-radius: 24px;
-  display: grid;
-  place-items: center;
-  color: white;
-  background: linear-gradient(145deg, #2265ee, #3d96ff);
-  box-shadow:
-    0 24px 44px rgba(32, 105, 227, 0.34),
-    inset 0 1px 12px rgba(255, 255, 255, 0.3);
-  z-index: 5;
-}
-
-.cube-inner {
-  font-weight: 850;
-  font-size: 34px;
+.icon-glyph {
+  font-size: 24px;
   line-height: 1;
-  text-align: center;
+  filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.2));
 }
 
-.cube-inner small {
-  display: block;
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  text-align: center;
-  margin-top: 3px;
-  font-weight: 700;
+.glass-icon-node:hover .glass-icon-box {
+  transform: translateY(-6px) scale(1.08);
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(37, 99, 235, 0.4);
+  box-shadow: 0 20px 42px rgba(37, 99, 235, 0.24);
 }
 
-/* 6 大模块面板 (m1 ~ m6) */
-.ecosystem-module {
+/* Tooltip 悬浮提示框 */
+.node-tooltip-pop {
   position: absolute;
-  width: 156px;
-  height: 110px;
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(232, 242, 255, 0.92));
-  border: 1px solid rgba(59, 118, 211, 0.14);
-  box-shadow:
-    0 20px 38px rgba(69, 114, 180, 0.15),
-    inset 0 -9px 18px rgba(73, 137, 237, 0.08);
-  display: grid;
-  place-items: center;
-  text-align: center;
-  color: #20416f;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  margin-bottom: 8px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(219, 234, 254, 0.9);
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.15);
   backdrop-filter: blur(12px);
-  z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
 }
 
-:deep(.dark) .ecosystem-module {
-  background: linear-gradient(180deg, rgba(20, 32, 58, 0.92), rgba(15, 24, 45, 0.9));
-  border-color: rgba(59, 118, 211, 0.3);
-  color: #e2edff;
+:deep(.dark) .node-tooltip-pop {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
-.ecosystem-module::after {
-  content: "";
+.glass-icon-node:hover .node-tooltip-pop {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-2px);
+}
+
+/* 7 个 Icon 节点的环形分布 (无文字遮挡) */
+.node-pos-1 { left: 8%; top: 32%; animation: floatNode 6s ease-in-out infinite; }
+.node-pos-2 { left: 28%; top: 8%; animation: floatNode 7s ease-in-out 1s infinite; }
+.node-pos-3 { left: 50%; top: 0%; transform: translateX(-50%); animation: floatNode 6.5s ease-in-out 2s infinite; }
+.node-pos-4 { right: 28%; top: 8%; animation: floatNode 7s ease-in-out 0.5s infinite; }
+.node-pos-5 { right: 8%; top: 32%; animation: floatNode 6s ease-in-out 1.5s infinite; }
+.node-pos-6 { left: 20%; bottom: 6%; animation: floatNode 6.8s ease-in-out 2.5s infinite; }
+.node-pos-7 { right: 20%; bottom: 6%; animation: floatNode 7.2s ease-in-out 1.2s infinite; }
+
+/* 中央无字高质感晶体玻璃核心 */
+.glass-master-core {
   position: absolute;
-  left: 12%;
-  right: 12%;
-  bottom: -14px;
-  height: 22px;
-  border-radius: 50%;
-  background: rgba(75, 139, 239, 0.16);
-  filter: blur(8px);
+  left: 50%;
+  top: 54%;
+  width: 240px;
+  height: 140px;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.ecosystem-module strong {
-  display: block;
-  font-size: 13px;
-  letter-spacing: 0.03em;
-  color: #1e3a8a;
+.glass-slab {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) rotateX(58deg);
+  border-radius: 28px;
+  backdrop-filter: blur(16px);
 }
 
-:deep(.dark) .ecosystem-module strong {
-  color: #60a5fa;
+.slab-bottom {
+  bottom: 0px;
+  width: 230px;
+  height: 110px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(220, 235, 255, 0.85));
+  box-shadow:
+    0 24px 44px rgba(37, 99, 235, 0.18),
+    inset 0 -8px 16px rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
-.ecosystem-module span {
-  display: block;
-  margin-top: 5px;
-  font-size: 11px;
-  color: #7b8ba5;
+.slab-middle {
+  bottom: 20px;
+  width: 170px;
+  height: 80px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(230, 240, 255, 0.9));
+  box-shadow:
+    0 14px 28px rgba(37, 99, 235, 0.22),
+    inset 0 -6px 12px rgba(59, 130, 246, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.9);
 }
 
-/* 位置网格分布 */
-.m1 { left: 6%; top: 32%; }
-.m2 { left: 24%; top: 2%; }
-.m3 { right: 24%; top: 2%; }
-.m4 { right: 6%; top: 32%; }
-.m5 { left: 18%; bottom: 2px; }
-.m6 { right: 18%; bottom: 2px; }
-
-@keyframes heroFloat {
-  from { transform: translateY(4px); }
-  to { transform: translateY(-8px); }
+.slab-top {
+  bottom: 38px;
+  width: 110px;
+  height: 56px;
+  background: linear-gradient(145deg, rgba(59, 130, 246, 0.85), rgba(37, 99, 235, 0.95));
+  box-shadow:
+    0 18px 36px rgba(37, 99, 235, 0.32),
+    inset 0 2px 8px rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-@media (max-width: 1200px) {
-  .ecosystem-stage { height: 46%; }
+.core-crystal-cube {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff, #93c5fd);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.9);
+  animation: crystalGlow 3s ease-in-out infinite alternate;
+}
+
+.crystal-light-ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  animation: ringPulse 2s linear infinite;
+}
+
+@keyframes floatNode {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes crystalGlow {
+  from { transform: scale(0.95); opacity: 0.85; }
+  to { transform: scale(1.05); opacity: 1; }
+}
+
+@keyframes ringPulse {
+  0% { transform: scale(0.9); opacity: 0.3; }
+  100% { transform: scale(1.3); opacity: 0; }
 }
 </style>
