@@ -283,7 +283,9 @@ const logoSrc = computed(() => {
 <style scoped>
 .login-left-bg {
   overflow: hidden;
-  background: url('/brand/hero-master-bg.jpg') no-repeat center bottom / cover;
+  background:
+    radial-gradient(circle at 50% 70%, rgba(59, 130, 246, 0.12), transparent 60%),
+    linear-gradient(180deg, #f8fafc 0%, #eef5ff 100%);
   border-right: 1px solid rgba(37, 99, 235, 10%);
   color: #0b1536;
 }
