@@ -44,8 +44,12 @@ export function migrateBrandPreferences() {
     !preferences.logo.sourceDark ||
     preferences.logo.sourceDark === LEGACY_VBEN_LOGO ||
     preferences.logo.sourceDark === LEGACY_ONES_BRAND_LOGO;
+  const shouldReplaceCopyright =
+    !preferences.copyright.icp ||
+    preferences.copyright.icp.includes('19024351') ||
+    (preferences.copyright.companyName && preferences.copyright.companyName.includes('Vben'));
 
-  if (!shouldReplaceSource && !shouldReplaceDarkSource) {
+  if (!shouldReplaceSource && !shouldReplaceDarkSource && !shouldReplaceCopyright) {
     return;
   }
 
@@ -55,5 +59,6 @@ export function migrateBrandPreferences() {
       ...(shouldReplaceSource ? { source: ONES_BRAND_LOGO_LIGHT } : {}),
       ...(shouldReplaceDarkSource ? { sourceDark: ONES_BRAND_LOGO_DARK } : {}),
     },
+    ...(shouldReplaceCopyright ? { copyright: appCopyrightPreferences } : {}),
   });
 }
