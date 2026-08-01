@@ -57,13 +57,77 @@ test.describe('Auth Login Page Tests', () => {
       'current-password',
     );
 
-    const cardRadius = await page
-      .getByTestId('login-card')
-      .evaluate((element) => Number.parseFloat(getComputedStyle(element).borderRadius));
+    const visualState = await page.evaluate(() => {
+      const readRgb = (
+        element: Element,
+        property: 'backgroundColor' | 'color',
+      ) => {
+        return (getComputedStyle(element)[property].match(/\d+(?:\.\d+)?/g) ?? [])
+          .slice(0, 3)
+          .map(Number);
+      };
+      const shell = document.querySelector('[data-testid="login-shell"]');
+      const card = document.querySelector('[data-testid="login-card"]');
+      const heading = Array.from(document.querySelectorAll('h1')).find(
+        (element) => element.textContent === '新一代企业协同管理平台',
+      );
+      if (!shell || !card || !heading) {
+        throw new Error('登录页浅色视觉结构缺失');
+      }
+      return {
+        cardBackground: readRgb(card, 'backgroundColor'),
+        headingColor: readRgb(heading, 'color'),
+        isDark:
+          document.documentElement.classList.contains('dark') ||
+          document.documentElement.getAttribute('data-theme') === 'dark',
+        shellBackground: readRgb(shell, 'backgroundColor'),
+      };
+    });
+    expect(visualState.isDark).toBe(false);
+    expect(visualState.shellBackground).toHaveLength(3);
+    expect(
+      visualState.shellBackground.every((channel) => channel >= 180),
+    ).toBe(true);
+    expect(visualState.cardBackground).toHaveLength(3);
+    expect(
+      visualState.cardBackground.every((channel) => channel >= 180),
+    ).toBe(true);
+    expect(visualState.headingColor).toHaveLength(3);
+    expect(
+      visualState.headingColor.every((channel) => channel <= 120),
+    ).toBe(true);
+
+    const cardRadius = await page.getByTestId('login-card').evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).borderRadius),
+    );
     expect(cardRadius).toBeGreaterThanOrEqual(20);
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(1536);
+  });
+
+  test('should remember only the username without automatically submitting', async ({
+    page,
+  }) => {
+    let loginRequests = 0;
+    await page.route('**/api/auth/login', async (route) => {
+      loginRequests += 1;
+      await route.abort('failed');
+    });
+
+    await page.locator(`input[name='username']`).fill('remembered-user');
+    await page.locator(`input[name='password']`).fill('remember-password');
+    await page.getByRole('checkbox', { name: '记住账号' }).check();
+    await page.getByRole('button', { name: 'login' }).click();
+    await expect.poll(() => loginRequests).toBe(1);
+
+    await page.reload();
+
+    await expect(page.locator(`input[name='username']`)).toHaveValue(
+      'remembered-user',
+    );
+    await expect(page.locator(`input[name='password']`)).toHaveValue('');
+    await expect.poll(() => loginRequests, { timeout: 1000 }).toBe(1);
   });
 
   // 测试用例: 成功登录
