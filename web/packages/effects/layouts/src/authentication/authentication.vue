@@ -329,23 +329,20 @@ const metrics = computed(() => {
 }
 
 .authentication-capabilities strong {
-  overflow: hidden;
   color: #2b3445;
   font-size: 15px;
   font-weight: 700;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .authentication-capabilities small {
   margin-top: 4px;
-  overflow: hidden;
   color: #8290a5;
   font-size: 12px;
   font-weight: 500;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .authentication-visual {

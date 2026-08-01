@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { computed, onBeforeMount } from 'vue';
+import { computed } from 'vue';
 
 import { AuthPageLayout } from '@vben/layouts';
-import { preferences, updatePreferences } from '@vben/preferences';
+import { preferences } from '@vben/preferences';
 
 const appName = computed(() => preferences.app.name);
 const isChinese = computed(() => preferences.app.locale === 'zh-CN');
@@ -18,12 +18,6 @@ const pageDescription = computed(() =>
 );
 const logo = '/brand/ones-brand-mark.png';
 const clickLogo = () => {};
-
-onBeforeMount(() => {
-  if (preferences.theme.mode !== 'light') {
-    updatePreferences({ theme: { mode: 'light' } });
-  }
-});
 </script>
 
 <template>
