@@ -50,8 +50,8 @@ const languageLabel = computed(() =>
 <style scoped>
 .authentication-toolbar {
   position: absolute;
-  top: 27px;
-  right: 27px;
+  top: 26px;
+  right: 32px;
   z-index: 30;
   display: flex;
   align-items: center;

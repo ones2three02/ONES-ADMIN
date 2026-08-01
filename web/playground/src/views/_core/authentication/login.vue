@@ -6,7 +6,7 @@ import { computed } from 'vue';
 
 import { AuthenticationLogin, z } from '@vben/common-ui';
 import { useAppConfig } from '@vben/hooks';
-import { IconifyIcon, SvgGoogleIcon, SvgWeChatIcon } from '@vben/icons';
+import { IconifyIcon, SvgGoogleIcon } from '@vben/icons';
 import { $t } from '@vben/locales';
 
 import { message } from 'antdv-next';
@@ -138,6 +138,16 @@ async function onSubmit(params: Recordable<any>) {
         </div>
         <h2>{{ $t('authentication.loginPanel.title') }}</h2>
         <p>{{ $t('authentication.loginPanel.subtitle') }}</p>
+        <IconifyIcon
+          aria-hidden="true"
+          class="login-field-icon login-field-icon--username"
+          icon="lucide:user-round"
+        />
+        <IconifyIcon
+          aria-hidden="true"
+          class="login-field-icon login-field-icon--password"
+          icon="lucide:lock-keyhole"
+        />
       </header>
     </template>
 
@@ -165,7 +175,11 @@ async function onSubmit(params: Recordable<any>) {
             @click="handleFeishuLogin"
           >
             <span class="social-login-icon social-login-icon--feishu">
-              <IconifyIcon icon="ri:feishu-fill" />
+              <img
+                alt=""
+                aria-hidden="true"
+                src="/brand/feishu-login-icon.png"
+              />
             </span>
             <span>{{ $t('authentication.loginPanel.feishuShort') }}</span>
           </button>
@@ -183,7 +197,11 @@ async function onSubmit(params: Recordable<any>) {
             @click="handleSsoLogin"
           >
             <span class="social-login-icon social-login-icon--wechat">
-              <SvgWeChatIcon />
+              <img
+                alt=""
+                aria-hidden="true"
+                src="/brand/wecom-login-icon.png"
+              />
             </span>
             <span>{{ $t('authentication.loginPanel.enterpriseSsoShort') }}</span>
           </button>
@@ -260,7 +278,7 @@ async function onSubmit(params: Recordable<any>) {
 }
 
 .login-card-heading h2 {
-  margin: 28px 0 6px;
+  margin: 31px 0 6px;
   color: #172134;
   font-size: 29px;
   font-weight: 800;
@@ -276,13 +294,35 @@ async function onSubmit(params: Recordable<any>) {
   line-height: 1.6;
 }
 
+.login-field-icon {
+  position: absolute;
+  left: 44px;
+  z-index: 2;
+  width: 17px;
+  height: 17px;
+  color: #b5bfce;
+  pointer-events: none;
+}
+
+.login-field-icon--username {
+  top: 241px;
+}
+
+.login-field-icon--password {
+  top: 336px;
+}
+
 .ones-auth-login :deep([data-slot='form-item']) {
   align-items: stretch;
-  padding-bottom: 14px;
+  flex-direction: column;
+  padding-bottom: 19px;
 }
 
 .ones-auth-login :deep([data-slot='form-label']) {
-  margin: 0 0 7px;
+  width: auto !important;
+  align-self: stretch;
+  justify-content: flex-start;
+  margin: 0 0 12px;
   color: #3d485a;
   font-size: 14px;
   font-weight: 600;
@@ -302,6 +342,7 @@ async function onSubmit(params: Recordable<any>) {
   background: #fff;
   color: #253044;
   font-size: 14px;
+  padding-left: 47px;
   box-shadow: 0 1px 2px rgba(37, 48, 68, 0.02);
 }
 
@@ -312,7 +353,7 @@ async function onSubmit(params: Recordable<any>) {
 }
 
 .ones-auth-login :deep(form + div) {
-  margin: 0 0 24px;
+  margin: 0 0 32px;
   color: #3f4b5d;
   font-size: 13px;
 }
@@ -408,6 +449,12 @@ async function onSubmit(params: Recordable<any>) {
   height: 21px;
 }
 
+.social-login-icon img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
 .social-login-icon--feishu {
   color: #3370ff;
 }
@@ -432,7 +479,7 @@ async function onSubmit(params: Recordable<any>) {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 33px;
+  margin-top: 37px;
   color: #a0aaba;
   font-size: 12px;
   font-weight: 500;
@@ -455,8 +502,16 @@ async function onSubmit(params: Recordable<any>) {
     margin-top: 18px;
   }
 
+  .login-field-icon--username {
+    top: 220px;
+  }
+
+  .login-field-icon--password {
+    top: 308px;
+  }
+
   .ones-auth-login :deep([data-slot='form-item']) {
-    padding-bottom: 10px;
+    padding-bottom: 12px;
   }
 
   .login-methods {
@@ -465,6 +520,24 @@ async function onSubmit(params: Recordable<any>) {
 
   .login-security-tip {
     margin-top: 20px;
+  }
+}
+
+@media (max-height: 800px) and (min-width: 1280px) {
+  .login-field-icon--username {
+    top: 214px;
+  }
+
+  .login-field-icon--password {
+    top: 302px;
+  }
+
+  .ones-auth-login :deep([data-slot='form-item']) {
+    padding-bottom: 10px;
+  }
+
+  .ones-auth-login :deep(form + div) {
+    margin-bottom: 24px;
   }
 }
 

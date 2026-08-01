@@ -38,7 +38,7 @@ defineProps<{
   align-items: flex-start;
   justify-content: center;
   overflow: hidden;
-  padding: min(18vh, 184px) clamp(38px, 5vw, 78px) 106px;
+  padding: min(17.7vh, 181px) clamp(38px, 5vw, 78px) 106px;
 }
 
 .side-content {
@@ -50,10 +50,11 @@ defineProps<{
   overflow: hidden;
   border: 1px solid rgba(222, 228, 238, 0.72);
   border-radius: 20px;
-  padding: 40px;
+  padding: 30px;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 22px 54px rgba(70, 91, 126, 0.16);
   backdrop-filter: blur(24px);
+  transform: translateX(-18px);
 }
 
 .auth-form-copyright {
@@ -80,6 +81,12 @@ defineProps<{
   }
 }
 
+@media (max-height: 800px) and (min-width: 1280px) {
+  .side-content {
+    padding: 24px 30px;
+  }
+}
+
 @media (max-width: 1279px) {
   .auth-form-view {
     align-items: center;
@@ -88,6 +95,7 @@ defineProps<{
 
   .side-content {
     min-height: 0;
+    transform: none;
   }
 }
 

@@ -264,7 +264,7 @@ const metrics = computed(() => {
 
 .authentication-hero-copy {
   position: absolute;
-  top: 114px;
+  top: 112px;
   right: 80px;
   left: 79px;
   z-index: 3;
@@ -347,9 +347,9 @@ const metrics = computed(() => {
 
 .authentication-visual {
   top: 322px !important;
-  right: 25px !important;
+  right: 4px !important;
   bottom: auto !important;
-  left: 12px !important;
+  left: -8px !important;
   height: 500px !important;
   min-height: 0 !important;
 }
