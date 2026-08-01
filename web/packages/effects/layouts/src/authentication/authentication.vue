@@ -217,7 +217,7 @@ const logoSrc = computed(() => {
           </div>
 
           <!-- 中央 3D 生态 6 大架构图 -->
-          <div class="my-auto py-2 relative w-full h-[380px]">
+          <div class="relative w-full h-[440px] my-auto">
             <OnesVisualStage />
           </div>
 
@@ -284,9 +284,9 @@ const logoSrc = computed(() => {
 .login-left-bg {
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 70%, rgba(59, 130, 246, 0.12), transparent 60%),
-    linear-gradient(180deg, #f8fafc 0%, #eef5ff 100%);
-  border-right: 1px solid rgba(37, 99, 235, 10%);
+    radial-gradient(circle at 30% 78%, rgba(73, 141, 255, 0.18), transparent 34%),
+    linear-gradient(180deg, #f7faff 0%, #eef5ff 100%);
+  border-right: 1px solid rgba(80, 131, 210, 0.12);
   color: #0b1536;
 }
 
