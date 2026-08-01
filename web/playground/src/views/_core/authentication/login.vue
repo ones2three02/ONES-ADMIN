@@ -2,13 +2,12 @@
 import type { VbenFormSchema } from '@vben/common-ui';
 import type { Recordable } from '@vben/types';
 
-import { computed, markRaw, useTemplateRef } from 'vue';
+import { computed } from 'vue';
 
-import { AuthenticationLogin, SliderCaptcha, z } from '@vben/common-ui';
+import { AuthenticationLogin, z } from '@vben/common-ui';
 import { useAppConfig } from '@vben/hooks';
-import { IconifyIcon } from '@vben/icons';
+import { IconifyIcon, SvgGoogleIcon, SvgWeChatIcon } from '@vben/icons';
 import { $t } from '@vben/locales';
-import { usePreferences } from '@vben/preferences';
 
 import { message } from 'antdv-next';
 
@@ -16,52 +15,52 @@ import { useAuthStore } from '#/store';
 
 defineOptions({ name: 'Login' });
 
+interface OAuthUrlConfig {
+  url: string;
+}
+
 const authStore = useAuthStore();
-const { isDark } = usePreferences();
-const {
-  auth: { feishu: feishuAuthConfig, sso: ssoAuthConfig },
-} = useAppConfig(import.meta.env, import.meta.env.PROD);
-const loginBrandLogo = computed(() =>
-  isDark.value
-    ? '/brand/ones-1s-app-icon-dark.png'
-    : '/brand/ones-1s-app-icon-light.png',
-);
+const { auth } = useAppConfig(import.meta.env, import.meta.env.PROD);
+const providerConfig = auth as typeof auth & {
+  feishu?: OAuthUrlConfig;
+};
+const feishuAuthConfig = providerConfig.feishu;
+const ssoAuthConfig = auth.sso;
 
-const formSchema = computed((): VbenFormSchema[] => {
-  return [
-    {
-      component: 'VbenInput',
-      componentProps: {
-        autocomplete: 'username',
-        autofocus: true,
-        placeholder: $t('authentication.usernameTip'),
-      },
-      fieldName: 'username',
-      label: $t('authentication.username'),
-      rules: z.string().min(1, { message: $t('authentication.usernameTip') }),
+const formSchema = computed((): VbenFormSchema[] => [
+  {
+    component: 'VbenInput',
+    componentProps: {
+      'aria-label': $t('authentication.username'),
+      autocomplete: 'username',
+      autofocus: true,
+      placeholder: $t('authentication.usernameTip'),
     },
-    {
-      component: 'VbenInputPassword',
-      componentProps: {
-        autocomplete: 'current-password',
-        placeholder: $t('authentication.password'),
-      },
-      fieldName: 'password',
-      label: $t('authentication.password'),
-      rules: z.string().min(1, { message: $t('authentication.passwordTip') }),
+    fieldName: 'username',
+    hideLabel: false,
+    label: $t('authentication.username'),
+    rules: z.string().min(1, { message: $t('authentication.usernameTip') }),
+  },
+  {
+    component: 'VbenInputPassword',
+    componentProps: {
+      'aria-label': $t('authentication.password'),
+      autocomplete: 'current-password',
+      placeholder: $t('authentication.passwordTip'),
     },
-    {
-      component: markRaw(SliderCaptcha),
-      fieldName: 'captcha',
-      rules: z.boolean().refine((value) => value, {
-        message: $t('authentication.verifyRequiredTip'),
-      }),
-    },
-  ];
-});
+    fieldName: 'password',
+    hideLabel: false,
+    label: $t('authentication.password'),
+    rules: z.string().min(1, { message: $t('authentication.passwordTip') }),
+  },
+]);
 
-const loginRef =
-  useTemplateRef<InstanceType<typeof AuthenticationLogin>>('loginRef');
+function createLoginState(provider: string) {
+  const randomId =
+    globalThis.crypto?.randomUUID?.() ??
+    `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `${provider}_${randomId}`;
+}
 
 function buildLoginUrlWithState(rawUrl: string, provider: string) {
   try {
@@ -75,13 +74,6 @@ function buildLoginUrlWithState(rawUrl: string, provider: string) {
   } catch {
     return rawUrl;
   }
-}
-
-function createLoginState(provider: string) {
-  const randomId =
-    globalThis.crypto?.randomUUID?.() ??
-    `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  return `${provider}_${randomId}`;
 }
 
 function handleFeishuLogin() {
@@ -100,6 +92,10 @@ function handleSsoLogin() {
   window.location.href = buildLoginUrlWithState(ssoAuthConfig.url, 'sso');
 }
 
+function handleGoogleLogin() {
+  message.info($t('authentication.loginPanel.googleConfigTip'));
+}
+
 function getLoginMethodTitle(label: string, ready: boolean) {
   const status = ready
     ? $t('authentication.loginPanel.methodReadyTip')
@@ -108,23 +104,14 @@ function getLoginMethodTitle(label: string, ready: boolean) {
 }
 
 async function onSubmit(params: Recordable<any>) {
-  authStore.authLogin(params).catch(() => {
-    // 登陆失败后刷新验证码
-    const formApi = loginRef.value?.getFormApi();
-    // 重置验证码组件的值
-    formApi?.setFieldValue('captcha', false, false);
-    // 使用表单API获取验证码组件实例，并调用其resume方法来重置验证码
-    formApi
-      ?.getFieldComponentRef<InstanceType<typeof SliderCaptcha>>('captcha')
-      ?.resume();
-  });
+  await authStore.authLogin(params);
 }
 </script>
 
 <template>
   <AuthenticationLogin
-    ref="loginRef"
     class="ones-auth-login"
+    data-testid="login-card"
     :form-schema="formSchema"
     :loading="authStore.loginLoading"
     :show-code-login="false"
@@ -135,89 +122,96 @@ async function onSubmit(params: Recordable<any>) {
     @submit="onSubmit"
   >
     <template #title>
-      <RouterLink
-        :aria-label="$t('authentication.loginPanel.qrcodeSwitchTip')"
-        class="enterprise-login-qrcode-corner"
-        :title="$t('authentication.loginPanel.qrcodeSwitchTip')"
-        to="/auth/qrcode-login"
-      >
-        <IconifyIcon icon="lucide:qr-code" />
-      </RouterLink>
-
-      <div class="enterprise-login-heading">
-        <div class="enterprise-login-brand">
-          <span class="enterprise-login-logo-frame">
+      <header class="login-card-heading">
+        <div class="login-card-brand">
+          <span class="login-card-logo-frame">
             <img
-              alt="ONES SYSTEM"
+              alt="ONES-ADMIN"
               decoding="async"
               fetchpriority="high"
-              height="46"
-              :src="loginBrandLogo"
-              width="46"
+              height="38"
+              src="/brand/ones-brand-mark.png"
+              width="38"
             />
           </span>
-          <div>
-            <strong>ONES-ADMIN</strong>
-          </div>
+          <strong>ONES-ADMIN</strong>
         </div>
         <h2>{{ $t('authentication.loginPanel.title') }}</h2>
-      </div>
+        <p>{{ $t('authentication.loginPanel.subtitle') }}</p>
+      </header>
     </template>
 
     <template #third-party-login>
-      <div class="enterprise-login-methods">
-        <div class="enterprise-login-method-title">
+      <section class="login-methods" aria-labelledby="other-login-methods">
+        <div class="login-method-title">
           <span></span>
-          <em>{{ $t('authentication.loginPanel.otherMethods') }}</em>
+          <em id="other-login-methods">
+            {{ $t('authentication.loginPanel.otherMethods') }}
+          </em>
           <span></span>
         </div>
 
-        <div class="flex items-center justify-center gap-6 mt-4 mb-2">
-          <!-- 飞书 -->
+        <div class="social-login-list" data-testid="social-login-list">
           <button
-            class="flex flex-col items-center gap-1.5 group cursor-pointer border-0 bg-transparent"
-            :title="getLoginMethodTitle('飞书', Boolean(feishuAuthConfig?.url))"
+            :aria-label="$t('authentication.loginPanel.feishuShort')"
+            class="social-login-button"
+            :title="
+              getLoginMethodTitle(
+                $t('authentication.loginPanel.feishuShort'),
+                Boolean(feishuAuthConfig?.url),
+              )
+            "
             type="button"
             @click="handleFeishuLogin"
           >
-            <div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-slate-800 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform shadow-sm">
-              <IconifyIcon icon="lucide:message-square" class="size-5" />
-            </div>
-            <span class="text-xs text-muted-foreground group-hover:text-foreground">飞书</span>
+            <span class="social-login-icon social-login-icon--feishu">
+              <IconifyIcon icon="ri:feishu-fill" />
+            </span>
+            <span>{{ $t('authentication.loginPanel.feishuShort') }}</span>
           </button>
 
-          <!-- 企业微信 -->
           <button
-            class="flex flex-col items-center gap-1.5 group cursor-pointer border-0 bg-transparent"
-            :title="getLoginMethodTitle('企业微信', Boolean(ssoAuthConfig?.url))"
+            :aria-label="$t('authentication.loginPanel.enterpriseSsoShort')"
+            class="social-login-button"
+            :title="
+              getLoginMethodTitle(
+                $t('authentication.loginPanel.enterpriseSsoShort'),
+                Boolean(ssoAuthConfig?.url),
+              )
+            "
             type="button"
             @click="handleSsoLogin"
           >
-            <div class="w-10 h-10 rounded-full bg-emerald-50 dark:bg-slate-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform shadow-sm">
-              <IconifyIcon icon="lucide:message-circle" class="size-5" />
-            </div>
-            <span class="text-xs text-muted-foreground group-hover:text-foreground">企业微信</span>
+            <span class="social-login-icon social-login-icon--wechat">
+              <SvgWeChatIcon />
+            </span>
+            <span>{{ $t('authentication.loginPanel.enterpriseSsoShort') }}</span>
           </button>
 
-          <!-- Google -->
           <button
-            class="flex flex-col items-center gap-1.5 group cursor-pointer border-0 bg-transparent"
-            :title="getLoginMethodTitle('Google', true)"
+            :aria-label="$t('authentication.loginPanel.googleShort')"
+            class="social-login-button"
+            :title="
+              getLoginMethodTitle(
+                $t('authentication.loginPanel.googleShort'),
+                false,
+              )
+            "
             type="button"
+            @click="handleGoogleLogin"
           >
-            <div class="w-10 h-10 rounded-full bg-rose-50 dark:bg-slate-800 flex items-center justify-center text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform shadow-sm">
-              <IconifyIcon icon="lucide:globe" class="size-5" />
-            </div>
-            <span class="text-xs text-muted-foreground group-hover:text-foreground">Google</span>
+            <span class="social-login-icon social-login-icon--google">
+              <SvgGoogleIcon />
+            </span>
+            <span>{{ $t('authentication.loginPanel.googleShort') }}</span>
           </button>
         </div>
 
-        <!-- 底部安全加密提示 -->
-        <div class="mt-6 flex items-center justify-center gap-1.5 text-xs text-muted-foreground/80 font-medium">
-          <IconifyIcon icon="lucide:shield-check" class="size-4 text-blue-600 dark:text-blue-400" />
-          <span>安全加密登录，保障数据安全</span>
+        <div class="login-security-tip">
+          <IconifyIcon aria-hidden="true" icon="lucide:shield-check" />
+          <span>{{ $t('authentication.loginPanel.securityTip') }}</span>
         </div>
-      </div>
+      </section>
     </template>
   </AuthenticationLogin>
 </template>
@@ -225,296 +219,266 @@ async function onSubmit(params: Recordable<any>) {
 <style scoped>
 .ones-auth-login {
   position: relative;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #1d2738;
 }
 
-.enterprise-login-qrcode-corner {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 2;
-  display: inline-flex;
-  width: 62px;
-  height: 62px;
-  align-items: flex-end;
-  justify-content: flex-start;
-  border-radius: 0 22px 0 18px;
-  padding: 0 0 13px 13px;
-  background:
-    linear-gradient(
-      135deg,
-      hsl(var(--primary) / 14%),
-      hsl(var(--background) / 84%)
-    ),
-    hsl(var(--background));
-  color: hsl(var(--primary));
-  box-shadow:
-    inset 1px -1px 0 hsl(var(--border) / 72%),
-    0 12px 28px hsl(var(--primary) / 10%);
-  cursor: pointer;
-  transition:
-    background 0.18s ease,
-    color 0.18s ease,
-    transform 0.18s ease;
+.login-card-heading {
+  margin-bottom: 26px;
 }
 
-.enterprise-login-qrcode-corner::after {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(
-    135deg,
-    transparent 48%,
-    hsl(var(--border) / 68%) 49%,
-    transparent 51%
-  );
-  pointer-events: none;
-  content: '';
-}
-
-.enterprise-login-qrcode-corner:hover {
-  color: hsl(var(--primary));
-  transform: translate(-1px, 1px);
-}
-
-.enterprise-login-qrcode-corner:focus-visible {
-  outline: 2px solid hsl(var(--primary));
-  outline-offset: 3px;
-}
-
-.enterprise-login-qrcode-corner svg {
-  width: 20px;
-  height: 20px;
-}
-
-.enterprise-login-heading {
-  margin-bottom: 24px;
-}
-
-.enterprise-login-brand {
+.login-card-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
+  gap: 13px;
 }
 
-.enterprise-login-logo-frame {
+.login-card-logo-frame {
   display: inline-flex;
-  width: 46px;
-  height: 46px;
-  flex: 0 0 46px;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(222, 231, 246, 0.7);
   border-radius: 12px;
-  background: hsl(var(--background));
-  box-shadow:
-    0 16px 36px hsl(var(--primary) / 18%),
-    0 0 0 1px hsl(var(--border));
-  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(67, 113, 188, 0.1);
 }
 
-.enterprise-login-logo-frame img {
-  width: 46px;
-  height: 46px;
-  object-fit: cover;
-  transform: translateZ(0);
+.login-card-logo-frame img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
-.enterprise-login-brand div {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-}
-
-.enterprise-login-brand strong {
-  color: hsl(var(--foreground));
-  font-size: 18px;
-  font-weight: 900;
-  letter-spacing: 0;
-  line-height: 1.1;
-}
-
-.enterprise-login-heading h2 {
-  margin: 0;
-  color: hsl(var(--foreground));
-  font-size: 34px;
-  font-weight: 900;
-  letter-spacing: 0;
-  line-height: 1.08;
-}
-
-.ones-auth-login :deep(form) {
-  margin-top: 4px;
-}
-
-.ones-auth-login :deep(input) {
-  height: 46px;
-  border-color: hsl(var(--border) / 82%);
-  border-radius: 10px;
-  background:
-    linear-gradient(
-      180deg,
-      hsl(var(--background) / 78%),
-      hsl(var(--background) / 58%)
-    ),
-    hsl(var(--background));
-  box-shadow:
-    inset 0 1px 0 hsl(var(--foreground) / 4%),
-    0 10px 24px hsl(var(--foreground) / 3%);
-}
-
-.ones-auth-login :deep(input:focus) {
-  border-color: hsl(var(--primary) / 52%);
-  box-shadow:
-    0 0 0 3px hsl(var(--primary) / 12%),
-    inset 0 1px 0 hsl(var(--foreground) / 4%);
-}
-
-.ones-auth-login :deep(button[aria-label='login']) {
-  height: 46px;
-  border-radius: 10px;
-  background:
-    linear-gradient(135deg, #2563eb 0%, #3656f1 48%, #00a6ff 100%),
-    hsl(var(--primary));
-  color: white;
+.login-card-brand strong {
+  color: #1b2537;
+  font-size: 20px;
   font-weight: 800;
-  box-shadow:
-    0 16px 34px hsl(var(--primary) / 28%),
-    inset 0 1px 0 rgba(255, 255, 255, 24%);
+  letter-spacing: 0.01em;
 }
 
-.ones-auth-login :deep(button[aria-label='login']:hover) {
-  filter: brightness(1.04);
+.login-card-heading h2 {
+  margin: 28px 0 6px;
+  color: #172134;
+  font-size: 29px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
 }
 
-.ones-auth-login :deep(button:not([aria-label='login'])) {
+.login-card-heading p {
+  margin: 0;
+  color: #8a96a8;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.ones-auth-login :deep([data-slot='form-item']) {
+  align-items: stretch;
+  padding-bottom: 14px;
+}
+
+.ones-auth-login :deep([data-slot='form-label']) {
+  margin: 0 0 7px;
+  color: #3d485a;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.ones-auth-login :deep([data-slot='form-item'] > div) {
+  overflow: visible;
+  padding: 0;
+}
+
+.ones-auth-login :deep(input[name='username']),
+.ones-auth-login :deep(input[name='password']) {
+  height: 46px;
+  border-color: #dbe2ed;
   border-radius: 10px;
+  background: #fff;
+  color: #253044;
+  font-size: 14px;
+  box-shadow: 0 1px 2px rgba(37, 48, 68, 0.02);
 }
 
-.enterprise-login-methods {
-  margin-top: 20px;
+.ones-auth-login :deep(input[name='username']:focus-visible),
+.ones-auth-login :deep(input[name='password']:focus-visible) {
+  border-color: #4d83ff;
+  box-shadow: 0 0 0 3px rgba(37, 103, 255, 0.11);
 }
 
-.enterprise-login-method-title {
+.ones-auth-login :deep(form + div) {
+  margin: 0 0 24px;
+  color: #3f4b5d;
+  font-size: 13px;
+}
+
+.ones-auth-login :deep(form + div .vben-link) {
+  color: #2d73ff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ones-auth-login :deep([aria-label='login']) {
+  height: 46px;
+  border: 0;
+  border-radius: 9px;
+  background: linear-gradient(90deg, #2468f5 0%, #2c74fa 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 10px 20px rgba(40, 108, 247, 0.2);
+}
+
+.ones-auth-login :deep([aria-label='login']:hover) {
+  background: linear-gradient(90deg, #1e60eb 0%, #246af0 100%);
+}
+
+.ones-auth-login :deep([aria-label='login']:focus-visible) {
+  outline: 3px solid rgba(45, 115, 255, 0.25);
+  outline-offset: 2px;
+}
+
+.login-methods {
+  margin-top: 26px;
+}
+
+.login-method-title {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.enterprise-login-method-title span {
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    hsl(var(--border)),
-    transparent
-  );
-}
-
-.enterprise-login-method-title em {
-  color: hsl(var(--muted-foreground));
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 700;
-  letter-spacing: 0;
-}
-
-.enterprise-login-icon-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   gap: 14px;
 }
 
-.enterprise-login-icon-button {
-  position: relative;
+.login-method-title span {
+  height: 1px;
+  background: #e8edf4;
+}
+
+.login-method-title em {
+  color: #8b96a7;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 500;
+}
+
+.social-login-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 17px;
+}
+
+.social-login-button {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #455164;
+  cursor: pointer;
+  flex-direction: column;
+  font-size: 12px;
+  gap: 7px;
+  line-height: 1.2;
+}
+
+.social-login-icon {
   display: inline-flex;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   align-items: center;
   justify-content: center;
-  border: 1px solid hsl(var(--border) / 82%);
-  border-radius: 999px;
-  background:
-    linear-gradient(
-      180deg,
-      hsl(var(--background) / 84%),
-      hsl(var(--background) / 66%)
-    ),
-    hsl(var(--background));
-  color: hsl(var(--foreground) / 82%);
-  cursor: pointer;
-  outline: none;
-  text-decoration: none;
-  box-shadow:
-    inset 0 1px 0 hsl(var(--foreground) / 4%),
-    0 10px 22px hsl(var(--foreground) / 3%);
+  border: 1px solid #e7ecf4;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(64, 84, 117, 0.08);
   transition:
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    color 0.18s ease,
-    transform 0.18s ease;
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
-.enterprise-login-icon-button:hover {
-  border-color: hsl(var(--primary) / 42%);
-  color: hsl(var(--primary));
-  box-shadow:
-    0 0 0 3px hsl(var(--primary) / 9%),
-    0 12px 24px hsl(var(--primary) / 10%);
-  transform: translateY(-1px);
+.social-login-icon :deep(svg) {
+  width: 21px;
+  height: 21px;
 }
 
-.enterprise-login-icon-button:focus-visible {
-  outline: 2px solid hsl(var(--primary));
-  outline-offset: 3px;
+.social-login-icon--feishu {
+  color: #3370ff;
 }
 
-.ones-auth-login .enterprise-login-methods .enterprise-login-icon-button {
-  border-radius: 999px;
+.social-login-icon--wechat {
+  color: #16b15f;
 }
 
-.enterprise-login-icon-button-primary {
-  color: hsl(var(--primary));
+.social-login-button:hover .social-login-icon {
+  border-color: #cad8f4;
+  box-shadow: 0 8px 18px rgba(65, 104, 176, 0.14);
+  transform: translateY(-2px);
 }
 
-.enterprise-login-icon-button[data-ready='false'] {
-  color: hsl(var(--foreground) / 58%);
+.social-login-button:focus-visible {
+  border-radius: 10px;
+  outline: 3px solid rgba(45, 115, 255, 0.22);
+  outline-offset: 4px;
 }
 
-.enterprise-login-icon-button[data-ready='false']::after {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 7px;
-  height: 7px;
-  border: 2px solid hsl(var(--background));
-  border-radius: 999px;
-  background: hsl(var(--warning));
-  box-shadow: 0 0 0 2px hsl(var(--warning) / 16%);
-  content: '';
+.login-security-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 33px;
+  color: #a0aaba;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 6px;
+  white-space: nowrap;
 }
 
-.enterprise-login-icon-button[data-ready='false']:hover {
-  border-color: hsl(var(--warning) / 52%);
-  color: hsl(var(--foreground) / 76%);
-  box-shadow:
-    0 0 0 3px hsl(var(--warning) / 10%),
-    0 12px 24px hsl(var(--warning) / 10%);
+.login-security-tip :deep(svg) {
+  width: 15px;
+  height: 15px;
+  color: #aab4c3;
 }
 
-.enterprise-login-icon-button svg {
-  width: 18px;
-  height: 18px;
-}
-
-@media (max-width: 480px) {
-  .enterprise-login-heading h2 {
-    font-size: 30px;
+@media (max-height: 900px) and (min-width: 1280px) {
+  .login-card-heading {
+    margin-bottom: 18px;
   }
 
-  .enterprise-login-qrcode-corner {
-    top: 0;
-    right: 0;
+  .login-card-heading h2 {
+    margin-top: 18px;
+  }
+
+  .ones-auth-login :deep([data-slot='form-item']) {
+    padding-bottom: 10px;
+  }
+
+  .login-methods {
+    margin-top: 18px;
+  }
+
+  .login-security-tip {
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .login-card-brand strong {
+    font-size: 18px;
+  }
+
+  .login-card-heading h2 {
+    font-size: 26px;
+  }
+
+  .login-security-tip {
+    white-space: normal;
   }
 }
 </style>
