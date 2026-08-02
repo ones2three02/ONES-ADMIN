@@ -64,6 +64,7 @@ public class RoleManagementService {
         SystemRoleEntity role = new SystemRoleEntity();
         role.setCode(code);
         role.setName(name);
+        role.setDataScope(normalizeDataScope(request.dataScope(), DataScope.DEPT_AND_CHILD).name());
         role.setRemark(normalizeNullable(request.remark()));
         role.setEnabled(toEnabled(request.status()));
         roleMapper.insert(role);
@@ -78,7 +79,7 @@ public class RoleManagementService {
         if (request.code() != null && !request.code().trim().isBlank()) {
             String code = normalizeCode(request.code());
             if (superAdmin && !"SUPER_ADMIN".equals(code)) {
-                throw new BusinessException("超级管理员角色编码不能修改");
+                throw new BusinessException(SystemErrorCode.SUPER_ADMIN_CODE_LOCKED);
             }
             assertCodeAvailable(code, id);
             role.setCode(code);
@@ -86,12 +87,19 @@ public class RoleManagementService {
         if (request.name() != null && !request.name().trim().isBlank()) {
             role.setName(request.name().trim());
         }
+        if (request.dataScope() != null && !request.dataScope().trim().isBlank()) {
+            DataScope dataScope = normalizeDataScope(request.dataScope(), DataScope.DEPT_AND_CHILD);
+            if (superAdmin && dataScope != DataScope.ALL) {
+                throw new BusinessException(SystemErrorCode.SUPER_ADMIN_PERMISSION_LOCKED);
+            }
+            role.setDataScope(dataScope.name());
+        }
         if (request.remark() != null) {
             role.setRemark(normalizeNullable(request.remark()));
         }
         if (request.status() != null) {
             if ("SUPER_ADMIN".equals(role.getCode()) && request.status() == 0) {
-                throw new BusinessException("超级管理员角色不能停用");
+                throw new BusinessException(SystemErrorCode.SUPER_ADMIN_CANNOT_DISABLE);
             }
             role.setEnabled(request.status() == 1);
         }
@@ -99,7 +107,7 @@ public class RoleManagementService {
         roleMapper.updateById(role);
         if (request.permissions() != null) {
             if (superAdmin) {
-                throw new BusinessException("超级管理员权限不能修改");
+                throw new BusinessException(SystemErrorCode.SUPER_ADMIN_PERMISSION_LOCKED);
             }
             syncRolePermissions(role.getId(), request.permissions());
         }
@@ -110,12 +118,12 @@ public class RoleManagementService {
     public void delete(Long id) {
         SystemRoleEntity role = getRequiredRole(id);
         if ("SUPER_ADMIN".equals(role.getCode())) {
-            throw new BusinessException("超级管理员角色不能删除");
+            throw new BusinessException(SystemErrorCode.SUPER_ADMIN_CANNOT_DELETE);
         }
         Long userCount = userRoleMapper.selectCount(new LambdaQueryWrapper<SystemUserRoleEntity>()
                 .eq(SystemUserRoleEntity::getRoleId, id));
         if (userCount > 0) {
-            throw new BusinessException("角色已分配给用户，不能删除");
+            throw new BusinessException(SystemErrorCode.ROLE_ASSIGNED_TO_USER);
         }
         rolePermissionMapper.delete(new LambdaQueryWrapper<SystemRolePermissionEntity>()
                 .eq(SystemRolePermissionEntity::getRoleId, id));
@@ -141,7 +149,7 @@ public class RoleManagementService {
         List<SystemMenuEntity> menus = menuMapper.selectList(new LambdaQueryWrapper<SystemMenuEntity>()
                 .in(SystemMenuEntity::getId, normalizedMenuIds));
         if (menus.size() != normalizedMenuIds.size()) {
-            throw new BusinessException("菜单权限不存在");
+            throw new BusinessException(SystemErrorCode.ROLE_MENU_PERMISSION_NOT_FOUND);
         }
         Set<String> insertedCodes = new HashSet<>();
         for (SystemMenuEntity menu : menus) {
@@ -176,7 +184,7 @@ public class RoleManagementService {
     private SystemRoleEntity getRequiredRole(Long id) {
         SystemRoleEntity role = roleMapper.selectById(id);
         if (role == null) {
-            throw new BusinessException(404, "角色不存在");
+            throw new BusinessException(SystemErrorCode.ROLE_NOT_FOUND);
         }
         return role;
     }
@@ -189,20 +197,20 @@ public class RoleManagementService {
         }
         Long count = roleMapper.selectCount(wrapper);
         if (count > 0) {
-            throw new BusinessException("角色编码已存在");
+            throw new BusinessException(SystemErrorCode.ROLE_CODE_EXISTS);
         }
     }
 
     private String requireCode(String code) {
         if (code == null || code.trim().isBlank()) {
-            throw new BusinessException("角色编码不能为空");
+            throw new BusinessException(SystemErrorCode.ROLE_CODE_REQUIRED);
         }
         return normalizeCode(code);
     }
 
     private String requireName(String name) {
         if (name == null || name.trim().isBlank()) {
-            throw new BusinessException("角色名称不能为空");
+            throw new BusinessException(SystemErrorCode.ROLE_NAME_REQUIRED);
         }
         return name.trim();
     }
@@ -227,6 +235,7 @@ public class RoleManagementService {
                 String.valueOf(role.getId()),
                 role.getCode(),
                 role.getName(),
+                normalizeDataScope(role.getDataScope(), defaultDataScope(role)).name(),
                 role.getRemark(),
                 Boolean.TRUE.equals(role.getEnabled()) ? 1 : 0,
                 role.getCreatedAt(),
@@ -234,5 +243,19 @@ public class RoleManagementService {
                         .map(String::valueOf)
                         .toList()
         );
+    }
+
+    private DataScope defaultDataScope(SystemRoleEntity role) {
+        return "SUPER_ADMIN".equals(role.getCode()) ? DataScope.ALL : DataScope.DEPT_AND_CHILD;
+    }
+
+    private DataScope normalizeDataScope(String dataScope, DataScope defaultScope) {
+        try {
+            return dataScope == null || dataScope.trim().isBlank()
+                    ? defaultScope
+                    : DataScope.from(dataScope);
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException(SystemErrorCode.ROLE_DATA_SCOPE_INVALID);
+        }
     }
 }

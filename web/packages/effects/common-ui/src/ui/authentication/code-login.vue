@@ -89,10 +89,10 @@ defineExpose({
 </script>
 
 <template>
-  <div>
+  <div @keydown.enter.prevent="handleSubmit">
     <Title>
       <slot name="title">
-        {{ title || $t('authentication.welcomeBack') }} 📲
+        {{ title || $t('authentication.welcomeBack') }}
       </slot>
       <template #desc>
         <span class="text-muted-foreground">

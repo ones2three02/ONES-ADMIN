@@ -4,37 +4,47 @@ import { loadScript } from '../resources';
 
 describe('loadScript', () => {
   beforeEach(() => {
-    // 每个测试前清空 head，保证环境干净
     document.head.innerHTML = '';
+    vi.restoreAllMocks();
   });
 
   it('should resolve when the script loads successfully', async () => {
-    // happy-dom v20+ auto-fires 'load' via handleDisabledFileLoadingAsSuccess
+    let capturedScript: HTMLScriptElement | null = null;
+    const appendSpy = vi
+      .spyOn(document.head, 'append')
+      .mockImplementation((...nodes) => {
+        for (const node of nodes) {
+          if (node instanceof HTMLScriptElement) {
+            capturedScript = node;
+          }
+        }
+      });
+
     const promise = loadScript('/test-script.js');
 
-    const script = document.querySelector(
-      'script[src="/test-script.js"]',
-    ) as HTMLScriptElement;
-    expect(script).toBeTruthy();
+    expect(capturedScript).toBeTruthy();
+    if (!capturedScript) {
+      throw new Error('Expected the captured script element to exist');
+    }
+    capturedScript.dispatchEvent(new Event('load'));
 
     await expect(promise).resolves.toBeUndefined();
+    appendSpy.mockRestore();
   });
 
   it('should not insert duplicate script and resolve immediately if already loaded', async () => {
-    // 先手动插入一个相同 src 的 script
     const existing = document.createElement('script');
-    existing.src = 'bar.js';
-    document.head.append(existing);
+    existing.setAttribute('src', 'bar.js');
+    const appendSpy = vi.spyOn(document.head, 'append');
+    const querySelectorSpy = vi
+      .spyOn(document, 'querySelector')
+      .mockReturnValue(existing);
 
-    // 再次调用
     const promise = loadScript('bar.js');
 
-    // 立即 resolve
     await expect(promise).resolves.toBeUndefined();
-
-    // head 中只保留一个
-    const scripts = document.head.querySelectorAll('script[src="bar.js"]');
-    expect(scripts).toHaveLength(1);
+    expect(querySelectorSpy).toHaveBeenCalledWith('script[src="bar.js"]');
+    expect(appendSpy).not.toHaveBeenCalled();
   });
 
   it('should reject when the script fails to load', async () => {
@@ -54,8 +64,6 @@ describe('loadScript', () => {
 
     const promise = loadScript('error.js');
 
-    appendSpy.mockRestore();
-
     expect(capturedScript).toBeTruthy();
     if (!capturedScript) {
       throw new Error('Expected the captured script element to exist');
@@ -63,20 +71,40 @@ describe('loadScript', () => {
     capturedScript.dispatchEvent(new Event('error'));
 
     await expect(promise).rejects.toThrow('Failed to load script: error.js');
+    appendSpy.mockRestore();
   });
 
   it('should handle multiple concurrent calls and only insert one script tag', async () => {
+    let capturedScript: HTMLScriptElement | null = null;
+    let existingScript: HTMLScriptElement | null = null;
+    const querySelectorSpy = vi
+      .spyOn(document, 'querySelector')
+      .mockImplementation(() => existingScript);
+    const appendSpy = vi
+      .spyOn(document.head, 'append')
+      .mockImplementation((...nodes) => {
+        for (const node of nodes) {
+          if (node instanceof HTMLScriptElement) {
+            capturedScript = node;
+            existingScript = node;
+          }
+        }
+      });
+
     const p1 = loadScript('/test-script.js');
     const p2 = loadScript('/test-script.js');
 
-    // happy-dom v20+ auto-fires 'load'，两个 promise 都应该 resolve
+    expect(capturedScript).toBeTruthy();
+    if (!capturedScript) {
+      throw new Error('Expected the captured script element to exist');
+    }
+    capturedScript.dispatchEvent(new Event('load'));
+
     await expect(p1).resolves.toBeUndefined();
     await expect(p2).resolves.toBeUndefined();
 
-    // 只插入一次
-    const scripts = document.head.querySelectorAll(
-      'script[src="/test-script.js"]',
-    );
-    expect(scripts).toHaveLength(1);
+    expect(querySelectorSpy).toHaveBeenCalledTimes(2);
+    expect(appendSpy).toHaveBeenCalledTimes(1);
+    appendSpy.mockRestore();
   });
 });

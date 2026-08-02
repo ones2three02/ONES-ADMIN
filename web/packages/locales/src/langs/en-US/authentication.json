@@ -1,10 +1,115 @@
 {
   "welcomeBack": "Welcome Back",
-  "pageTitle": "Plug-and-play Admin system",
-  "pageDesc": "Efficient, versatile frontend template",
+  "pageTitle": "ONE SYSTEM · ONE SERVICE · ONE SAFE · ONE SECOND",
+  "pageDesc": "One system, one service, one safety baseline, every second creating value",
+  "visual": {
+    "mode": {
+      "lightText": "Light Mode",
+      "lightLabel": "LIGHT MODE",
+      "darkText": "Dark Mode",
+      "darkLabel": "DARK MODE"
+    },
+    "features": {
+      "execution": {
+        "title": "1S Execution Core",
+        "subtitle": "Execution Core",
+        "description": "Use one second as the execution baseline"
+      },
+      "sensing": {
+        "title": "Sensing",
+        "subtitle": "Sensing",
+        "description": "Monitor signals and respond to change in real time"
+      },
+      "security": {
+        "title": "Security",
+        "subtitle": "Security",
+        "description": "Protect the system with layered safeguards"
+      },
+      "service": {
+        "title": "Service Delivery",
+        "subtitle": "Service",
+        "description": "Deliver reliable services for business value"
+      },
+      "asset": {
+        "title": "Data Asset",
+        "subtitle": "Data Asset",
+        "description": "Turn operational data into reusable assets"
+      },
+      "evolution": {
+        "title": "Continuous Evolution",
+        "subtitle": "Evolution",
+        "description": "Keep learning and optimizing the platform"
+      },
+      "connection": {
+        "title": "Connection",
+        "subtitle": "Connection",
+        "description": "Connect teams and systems for collaboration"
+      },
+      "intelligence": {
+        "title": "Intelligence",
+        "subtitle": "Intelligence",
+        "description": "Use data to support better decisions"
+      }
+    },
+    "principles": {
+      "second": {
+        "title": "ONE SECOND",
+        "description": "Value by second"
+      },
+      "system": {
+        "title": "ONE SYSTEM",
+        "description": "Unified platform"
+      },
+      "service": {
+        "title": "ONE SERVICE",
+        "description": "Service experience"
+      },
+      "goal": {
+        "title": "ONE GOAL",
+        "description": "Customer value"
+      }
+    }
+  },
+  "loginPanel": {
+    "title": "Welcome Back",
+    "subtitle": "Sign in to your account and keep working efficiently",
+    "authTitle": "Unified Auth",
+    "authDescription": "Account and access",
+    "lockTitle": "Lock Guard",
+    "lockDescription": "Failure protection",
+    "auditTitle": "Audit Trace",
+    "auditDescription": "Trace ID ready",
+    "guardTip": "Repeated failures trigger temporary lockout and every sign-in is audited.",
+    "submitText": "Enter System",
+    "otherMethods": "Sign-in methods",
+    "feishuShort": "Feishu",
+    "enterpriseSsoShort": "WeCom",
+    "googleShort": "Google",
+    "qrcodeShort": "QR",
+    "mobileShort": "Mobile",
+    "methodReadyTip": "Click to sign in",
+    "methodPendingTip": "Enabled after admin configuration",
+    "qrcodeSwitchTip": "Switch to QR code login",
+    "feishuConfigTip": "Please configure Feishu sign-in first",
+    "oauthCallbackTitle": "Feishu Sign-in",
+    "oauthCallbackProcessing": "Verifying your Feishu identity...",
+    "oauthCallbackFailedTitle": "Feishu sign-in was not completed",
+    "oauthCallbackFailedTip": "The authorization expired, the identity is not bound, or the ticket was already used. Please try again.",
+    "oauthCallbackReturn": "Back to sign-in",
+    "ssoConfigTip": "Please configure enterprise SSO first",
+    "googleConfigTip": "Google sign-in is not configured yet",
+    "securityTip": "Encrypted sign-in keeps your data secure",
+    "smsConfigTip": "SMS authentication is not configured. Use password sign-in first.",
+    "mobileTitle": "Mobile Login",
+    "mobileSubtitle": "SMS authentication requires backend SMS integration. Use password sign-in in this environment.",
+    "mobileSubmitText": "Verify and Login",
+    "qrcodeTitle": "QR Code Login",
+    "qrcodeSubtitle": "Scan with your enterprise authentication app. This QR code identifies the login entry.",
+    "qrcodeDescription": "QR login is enabled after Feishu or enterprise SSO callback integration is complete."
+  },
   "loginSuccess": "Login Successful",
   "loginSuccessDesc": "Welcome Back",
-  "loginSubtitle": "Enter your account details to manage your projects",
+  "loginSubtitle": "Enter your account details to access the ONES-ADMIN enterprise platform",
   "selectAccount": "Quick Select Account",
   "username": "Username",
   "password": "Password",
@@ -40,6 +145,7 @@
   "qqLogin": "QQ Login",
   "githubLogin": "Github Login",
   "googleLogin": "Google Login",
+  "feishuLogin": "Feishu Login",
   "dingdingLogin": "Dingding Login",
   "codeSubtitle": "Enter your phone number to start managing your project",
   "code": "Security code",

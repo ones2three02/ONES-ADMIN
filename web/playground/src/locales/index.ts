@@ -20,8 +20,10 @@ import dayjs from 'dayjs';
 const antdLocale = ref<Locale>(antdDefaultLocale);
 
 const modules = {
+  './langs/en-US/hr.json': () => import('./langs/en-US/hr.json'),
   './langs/en-US/page.json': () => import('./langs/en-US/page.json'),
   './langs/en-US/system.json': () => import('./langs/en-US/system.json'),
+  './langs/zh-CN/hr.json': () => import('./langs/zh-CN/hr.json'),
   './langs/zh-CN/page.json': () => import('./langs/zh-CN/page.json'),
   './langs/zh-CN/system.json': () => import('./langs/zh-CN/system.json'),
 };

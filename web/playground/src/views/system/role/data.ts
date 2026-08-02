@@ -33,16 +33,24 @@ export function useFormSchema(): VbenFormSchema[] {
       label: $t('system.role.status'),
     },
     {
+      component: 'Select',
+      componentProps: {
+        options: [
+          { label: '全部数据', value: 'ALL' },
+          { label: '本部门及下级', value: 'DEPT_AND_CHILD' },
+          { label: '本部门', value: 'DEPT' },
+          { label: '仅本人', value: 'SELF' },
+        ],
+      },
+      defaultValue: 'DEPT_AND_CHILD',
+      fieldName: 'dataScope',
+      label: '数据范围',
+      rules: 'required',
+    },
+    {
       component: 'Textarea',
       fieldName: 'remark',
       label: $t('system.role.remark'),
-    },
-    {
-      component: 'Input',
-      fieldName: 'permissions',
-      formItemClass: 'items-start',
-      label: $t('system.role.setPermissions'),
-      modelPropName: 'modelValue',
     },
   ];
 }
@@ -101,6 +109,20 @@ export function useColumns<T = SystemRoleApi.SystemRole>(
       width: 180,
     },
     {
+      field: 'dataScope',
+      formatter: ({ cellValue }) => {
+        const labels: Record<string, string> = {
+          ALL: '全部数据',
+          DEPT: '本部门',
+          DEPT_AND_CHILD: '本部门及下级',
+          SELF: '仅本人',
+        };
+        return labels[cellValue] ?? cellValue;
+      },
+      title: '数据范围',
+      width: 140,
+    },
+    {
       field: 'id',
       title: $t('system.role.id'),
       width: 200,
@@ -133,11 +155,16 @@ export function useColumns<T = SystemRoleApi.SystemRole>(
           onClick: onActionClick,
         },
         name: 'CellOperation',
+        options: [
+          { code: 'edit', text: $t('common.edit') },
+          { code: 'auth', text: '分配权限' },
+          { code: 'delete', text: $t('common.delete') },
+        ],
       },
       field: 'operation',
       fixed: 'right',
       title: $t('system.role.operation'),
-      width: 130,
+      width: 200,
     },
   ];
 }

@@ -4,24 +4,29 @@ import type { Recordable } from '@vben/types';
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 import type { SystemDeptApi, SystemUserApi } from '#/api';
 
-import { onMounted, ref, watch } from 'vue';
+import { useDebounceFn } from '@vueuse/core';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import { Page, Tree, useVbenDrawer } from '@vben/common-ui';
 import { Plus } from '@vben/icons';
 
-import { Button, Card, InputSearch, message, Modal } from 'antdv-next';
+import { Button, Empty, InputSearch, message, Modal, Spin } from 'antdv-next';
 
 import { useVbenVxeGrid, VbenTableAction } from '#/adapter/vxe-table';
 import { deleteUser, getDeptList, getUserList, updateUser } from '#/api';
 import { $t } from '#/locales';
 
+import GuidedWorkbenchBar from '../../shared/guided-workbench-bar.vue';
+import SplitListLayout from '../../shared/split-list-layout.vue';
 import { useColumns, useGridFormSchema } from './data';
 import Detail from './modules/detail.vue';
 import Form from './modules/form.vue';
 
 const deptList = ref<SystemDeptApi.SystemDept[]>([]);
+const fullDeptList = ref<SystemDeptApi.SystemDept[]>([]);
 const inputSearchValue = ref('');
 const selectedDeptId = ref<string>('');
+const deptLoading = ref(false);
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   connectedComponent: Form,
@@ -35,13 +40,18 @@ const [DetailDrawer, detailDrawerApi] = useVbenDrawer({
 
 const [Grid, gridApi] = useVbenVxeGrid({
   formOptions: {
+    commonConfig: {
+      labelWidth: 96,
+    },
     fieldMappingTime: [['createTime', ['startTime', 'endTime']]],
     schema: useGridFormSchema(),
     submitOnChange: true,
+    wrapperClass: 'grid-cols-1 xl:grid-cols-2',
   },
   gridOptions: {
     columns: useColumns(onStatusChange),
-    height: 'auto',
+    autoResize: true,
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -50,7 +60,7 @@ const [Grid, gridApi] = useVbenVxeGrid({
             page: page.currentPage,
             pageSize: page.pageSize,
             ...formValues,
-            deptId: selectedDeptId.value,
+            deptId: selectedDeptId.value || undefined,
           });
         },
       },
@@ -68,6 +78,29 @@ const [Grid, gridApi] = useVbenVxeGrid({
     },
   } as VxeTableGridOptions<SystemUserApi.SystemUser>,
 });
+
+const selectedDeptName = computed(() => {
+  if (!selectedDeptId.value) return '';
+  return findDeptName(fullDeptList.value, selectedDeptId.value) ?? '';
+});
+
+const userTableTitle = computed(() =>
+  selectedDeptName.value
+    ? $t('system.user.departmentUserList', { name: selectedDeptName.value })
+    : $t('system.user.list'),
+);
+
+const userScopeTitle = computed(() =>
+  selectedDeptName.value
+    ? $t('system.user.currentDepartment', { name: selectedDeptName.value })
+    : $t('system.user.allDepartmentScope'),
+);
+
+const userScopeDescription = computed(() =>
+  selectedDeptName.value
+    ? $t('system.user.currentDepartmentTip')
+    : $t('system.user.allDepartmentTip'),
+);
 
 /**
  * 将Antd的Modal.confirm封装为promise，方便在异步函数中调用。
@@ -151,96 +184,229 @@ function onCreate() {
 }
 
 async function loadDeptList() {
+  deptLoading.value = true;
   try {
     const res = await getDeptList();
-    deptList.value = res;
+    fullDeptList.value = res;
+    deptList.value = filterDeptTree(res, inputSearchValue.value);
+    if (
+      selectedDeptId.value &&
+      !findDeptName(fullDeptList.value, selectedDeptId.value)
+    ) {
+      selectedDeptId.value = '';
+      onRefresh();
+    }
   } catch (error) {
     console.error('Failed to load department list:', error);
+    message.error($t('system.user.deptLoadError'));
+  } finally {
+    deptLoading.value = false;
   }
 }
 
-function selectDept(v: string) {
-  selectedDeptId.value = v;
+function selectDept(item: { value?: SystemDeptApi.SystemDept }) {
+  selectedDeptId.value = item.value?.id || '';
   gridApi.query();
 }
 
-function searchDept(value: string) {
-  if (!value) {
-    loadDeptList();
+function clearDeptSelection() {
+  if (!selectedDeptId.value) {
     return;
   }
-  const filtered = deptList.value.filter((dept) =>
-    dept.name.toLowerCase().includes(value.toLowerCase()),
-  );
-  deptList.value = filtered;
+  selectedDeptId.value = '';
+  gridApi.query();
 }
+
+function clearDeptSearch() {
+  inputSearchValue.value = '';
+}
+
+function searchDept(value: string) {
+  deptList.value = filterDeptTree(fullDeptList.value, value);
+}
+
+function filterDeptTree(
+  depts: SystemDeptApi.SystemDept[],
+  keyword: string,
+): SystemDeptApi.SystemDept[] {
+  const normalizedKeyword = keyword.trim().toLowerCase();
+  if (!normalizedKeyword) return depts;
+
+  const filtered: SystemDeptApi.SystemDept[] = [];
+  for (const dept of depts) {
+    const children = filterDeptTree(dept.children ?? [], keyword);
+    const matched = dept.name.toLowerCase().includes(normalizedKeyword);
+    if (!matched && children.length === 0) continue;
+    filtered.push({
+      ...dept,
+      children,
+    });
+  }
+  return filtered;
+}
+
+function findDeptName(
+  depts: SystemDeptApi.SystemDept[],
+  deptId: string,
+): string | undefined {
+  for (const dept of depts) {
+    if (dept.id === deptId) return dept.name;
+    const childName = findDeptName(dept.children ?? [], deptId);
+    if (childName) return childName;
+  }
+  return undefined;
+}
+
+const debouncedSearchDept = useDebounceFn(searchDept, 200);
 
 onMounted(() => {
   loadDeptList();
 });
 
 watch(inputSearchValue, (value) => {
-  searchDept(value);
+  debouncedSearchDept(value);
 });
 </script>
 <template>
   <Page auto-content-height>
     <FormDrawer @success="onRefresh" />
     <DetailDrawer @success="onRefresh" />
-    <div class="flex size-full">
-      <Card class="w-1/6">
+    <SplitListLayout :side-title="$t('system.dept.title')">
+      <template #aside>
         <InputSearch
           v-model:value="inputSearchValue"
+          allow-clear
           :placeholder="$t('system.user.placeholder')"
+          class="system-user-dept-search"
         />
-        <Tree
-          label-field="name"
-          value-field="id"
-          :tree-data="deptList"
-          :default-expanded-level="2"
-          @select="selectDept"
-        />
-      </Card>
+        <Button
+          block
+          :disabled="!selectedDeptId"
+          size="small"
+          type="link"
+          @click="clearDeptSelection"
+        >
+          {{ $t('system.user.allDepartments') }}
+        </Button>
+        <Spin :spinning="deptLoading" class="system-user-dept-spin">
+          <div v-if="deptList.length > 0" class="system-user-dept-tree">
+            <Tree
+              v-model="selectedDeptId"
+              label-field="name"
+              value-field="id"
+              :tree-data="deptList"
+              :default-expanded-level="2"
+              @select="selectDept"
+            />
+          </div>
+          <Empty
+            v-else
+            :description="$t('system.user.deptEmptyDescription')"
+            image="simple"
+          >
+            <Button v-if="inputSearchValue" type="link" @click="clearDeptSearch">
+              {{ $t('system.user.clearDeptSearch') }}
+            </Button>
+          </Empty>
+        </Spin>
+      </template>
 
-      <div class="w-5/6 ml-4">
-        <Grid :table-title="$t('system.user.list')">
-          <template #toolbar-tools>
+      <GuidedWorkbenchBar
+        icon="lucide:users-round"
+        :title="userScopeTitle"
+        :description="userScopeDescription"
+        :status-text="
+          selectedDeptName
+            ? $t('system.user.departmentScoped')
+            : $t('system.user.allDepartmentStatus')
+        "
+        :action-text="$t('system.user.allDepartments')"
+        :action-disabled="!selectedDeptId"
+        @action="clearDeptSelection"
+      />
+
+      <Grid :table-title="userTableTitle">
+        <template #empty>
+          <Empty :description="$t('system.user.emptyDescription')" image="simple">
             <Button type="primary" @click="onCreate">
               <Plus class="size-5" />
               {{ $t('ui.actionTitle.create', [$t('system.user.name')]) }}
             </Button>
-          </template>
-          <template #action="{ row }">
-            <VbenTableAction
-              :actions="[
-                {
-                  text: $t('common.detail'),
-                  icon: 'lucide:eye',
-                  onClick: () => onDetail(row),
+          </Empty>
+        </template>
+        <template #toolbar-tools>
+          <Button type="primary" @click="onCreate">
+            <Plus class="size-5" />
+            {{ $t('ui.actionTitle.create', [$t('system.user.name')]) }}
+          </Button>
+        </template>
+        <template #action="{ row }">
+          <VbenTableAction
+            :actions="[
+              {
+                text: $t('common.detail'),
+                icon: 'lucide:eye',
+                onClick: () => onDetail(row),
+              },
+              {
+                text: $t('common.edit'),
+                icon: 'lucide:edit',
+                onClick: () => onEdit(row),
+              },
+            ]"
+            :dropdown-actions="[
+              {
+                text: $t('common.delete'),
+                icon: 'lucide:trash-2',
+                danger: true,
+                popConfirm: {
+                  title: $t('ui.actionMessage.deleteConfirm', [row.name]),
+                  confirm: () => onDelete(row),
                 },
-                {
-                  text: $t('common.edit'),
-                  icon: 'lucide:edit',
-                  onClick: () => onEdit(row),
-                },
-              ]"
-              :dropdown-actions="[
-                {
-                  text: $t('common.delete'),
-                  icon: 'lucide:trash-2',
-                  danger: true,
-                  popConfirm: {
-                    title: $t('ui.actionMessage.deleteConfirm', [row.name]),
-                    confirm: () => onDelete(row),
-                  },
-                  auth: ['AC_100100'],
-                },
-              ]"
-              align="center"
-            />
-          </template>
-        </Grid>
-      </div>
-    </div>
+                auth: ['AC_100100'],
+              },
+            ]"
+            align="center"
+          />
+        </template>
+      </Grid>
+    </SplitListLayout>
   </Page>
 </template>
+
+<style scoped>
+.system-user-dept-search {
+  flex: 0 0 auto;
+  margin-bottom: 12px;
+}
+
+.system-user-dept-spin,
+.system-user-dept-spin :deep(.ant-spin-container) {
+  min-height: 0;
+  flex: 1;
+}
+
+.system-user-dept-spin :deep(.ant-spin-container) {
+  display: flex;
+  flex-direction: column;
+}
+
+.system-user-dept-tree {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+.system-user-dept-tree :deep(.ant-tree-node-content-wrapper) {
+  min-width: 0;
+}
+
+.system-user-dept-tree :deep(.ant-tree-title) {
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+</style>

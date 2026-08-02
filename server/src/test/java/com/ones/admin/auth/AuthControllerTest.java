@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -66,6 +67,29 @@ class AuthControllerTest {
 
         mockMvc.perform(get("/api/system/menus/routes").header("Authorization", "Bearer " + tokenValue))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].component").value("BasicLayout"));
+                .andExpect(jsonPath("$.data[0].component").value("BasicLayout"))
+                .andExpect(jsonPath("$..path", hasItem("/system/api-resources")))
+                .andExpect(jsonPath("$..path", hasItem("/system/dict")))
+                .andExpect(jsonPath("$..path", hasItem("/system/audit")))
+                .andExpect(jsonPath("$..path", hasItem("/hr/document-warning")));
+    }
+
+    @Test
+    void loginRateLimitBlocksRepeatedUnknownAccountAttempts() throws Exception {
+        String loginBody = objectMapper.writeValueAsString(new LoginRequest("rate-limited-user", "wrong-password"));
+
+        for (int attempt = 0; attempt < 5; attempt++) {
+            mockMvc.perform(post("/api/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(loginBody))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(AuthErrorCode.INVALID_CREDENTIALS.code()));
+        }
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value(AuthErrorCode.LOGIN_RATE_LIMITED.code()));
     }
 }

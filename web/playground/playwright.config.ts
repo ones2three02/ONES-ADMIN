@@ -96,7 +96,9 @@ const config: PlaywrightTestConfig = {
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: process.env.CI ? 'pnpm preview --port 5555' : 'pnpm dev',
+    command: process.env.CI
+      ? 'pnpm preview --port 5555'
+      : 'pnpm vite --mode development --host 127.0.0.1 --port 5555',
     port: 5555,
     reuseExistingServer: !process.env.CI,
   },

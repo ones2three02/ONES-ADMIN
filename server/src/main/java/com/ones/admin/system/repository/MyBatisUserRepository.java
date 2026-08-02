@@ -45,28 +45,12 @@ public class MyBatisUserRepository implements UserRepository {
 
     @Override
     public void recordLoginSuccess(Long userId) {
-        SystemUserEntity user = userMapper.selectById(userId);
-        if (user == null) {
-            return;
-        }
-        LocalDateTime now = LocalDateTime.now();
-        user.setFailedLoginCount(0);
-        user.setLockedUntil(null);
-        user.setLastLoginAt(now);
-        user.setUpdatedAt(now);
-        userMapper.updateById(user);
+        userMapper.recordLoginSuccess(userId, LocalDateTime.now());
     }
 
     @Override
-    public void recordLoginFailure(Long userId, int failedLoginCount, LocalDateTime lockedUntil) {
-        SystemUserEntity user = userMapper.selectById(userId);
-        if (user == null) {
-            return;
-        }
-        user.setFailedLoginCount(failedLoginCount);
-        user.setLockedUntil(lockedUntil);
-        user.setUpdatedAt(LocalDateTime.now());
-        userMapper.updateById(user);
+    public void recordLoginFailure(Long userId, int maxFailedLoginCount, LocalDateTime lockedUntil) {
+        userMapper.incrementLoginFailure(userId, maxFailedLoginCount, lockedUntil);
     }
 
     private AdminUser toAdminUser(SystemUserEntity user) {

@@ -13,10 +13,12 @@ coverage/
 # Java
 target/
 *.class
+server/data/
 server/uploads/
 
 # Logs and local env
 *.log
+.ci-artifacts/
 .env
 .env.*
 !.env.example

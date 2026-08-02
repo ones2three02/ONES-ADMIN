@@ -15,7 +15,16 @@ spring:
     password: ${ONES_DB_PASSWORD:}
   sql:
     init:
-      mode: always
+      mode: never
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: ${ONES_FLYWAY_BASELINE_ON_MIGRATE:false}
+    baseline-version: 1
+    baseline-description: ONES-ADMIN existing schema baseline
+    validate-on-migrate: true
+    clean-disabled: true
+    out-of-order: false
   data:
     redis:
       host: ${ONES_REDIS_HOST:localhost}
@@ -31,10 +40,14 @@ spring:
   rabbitmq:
     host: ${ONES_RABBITMQ_HOST:localhost}
     port: ${ONES_RABBITMQ_PORT:5672}
-    username: ${ONES_RABBITMQ_USERNAME:guest}
-    password: ${ONES_RABBITMQ_PASSWORD:guest}
+    username: ${ONES_RABBITMQ_USERNAME:}
+    password: ${ONES_RABBITMQ_PASSWORD:}
     virtual-host: ${ONES_RABBITMQ_VHOST:/}
     connection-timeout: 3s
+  servlet:
+    multipart:
+      max-file-size: ${ONES_FILE_MAX_SIZE:20MB}
+      max-request-size: ${ONES_FILE_MAX_SIZE:20MB}
 
 mybatis-plus:
   configuration:
@@ -53,10 +66,82 @@ sa-token:
   is-print: false
 
 ones:
+  version: ${ONES_ADMIN_VERSION:v0.0.149}
+  bootstrap:
+    enabled: ${ONES_BOOTSTRAP_ENABLED:false}
+    admin-username: ${ONES_BOOTSTRAP_ADMIN_USERNAME:admin}
+    admin-display-name: ${ONES_BOOTSTRAP_ADMIN_DISPLAY_NAME:系统管理员}
+    admin-password: ${ONES_BOOTSTRAP_ADMIN_PASSWORD:}
+  audit:
+    retention:
+      login-log-days: ${ONES_AUDIT_LOGIN_LOG_RETENTION_DAYS:180}
+      operation-log-days: ${ONES_AUDIT_OPERATION_LOG_RETENTION_DAYS:180}
   security:
+    session:
+      storage: ${ONES_SECURITY_SESSION_STORAGE:redis}
     login:
       max-failed-login-count: ${ONES_LOGIN_MAX_FAILED_COUNT:5}
       lock-duration: ${ONES_LOGIN_LOCK_DURATION:15m}
+    login-rate-limit:
+      enabled: ${ONES_LOGIN_RATE_LIMIT_ENABLED:true}
+      storage: ${ONES_LOGIN_RATE_LIMIT_STORAGE:redis}
+      account-max-attempts: ${ONES_LOGIN_ACCOUNT_MAX_ATTEMPTS:10}
+      ip-max-attempts: ${ONES_LOGIN_IP_MAX_ATTEMPTS:30}
+      window: ${ONES_LOGIN_RATE_LIMIT_WINDOW:5m}
+      block-duration: ${ONES_LOGIN_RATE_LIMIT_BLOCK_DURATION:15m}
+      key-prefix: ${ONES_LOGIN_RATE_LIMIT_KEY_PREFIX:ones:security:login}
+    oauth:
+      storage: ${ONES_OAUTH_STORAGE:redis}
+      state-ttl: ${ONES_OAUTH_STATE_TTL:5m}
+      ticket-ttl: ${ONES_OAUTH_TICKET_TTL:60s}
+      key-prefix: ${ONES_OAUTH_KEY_PREFIX:ones:security:oauth}
+    public-endpoints:
+      api-docs-public: ${ONES_API_DOCS_PUBLIC:false}
+      actuator-public: ${ONES_ACTUATOR_PUBLIC:false}
+    web:
+      allowed-origins: ${ONES_CORS_ALLOWED_ORIGINS:}
+    repeat-submit:
+      enabled: ${ONES_REPEAT_SUBMIT_ENABLED:true}
+      storage: ${ONES_REPEAT_SUBMIT_STORAGE:redis}
+  file:
+    storage-type: ${ONES_FILE_STORAGE_TYPE:local}
+    upload-root: ${ONES_FILE_UPLOAD_ROOT:uploads}
+    public-url-prefix: ${ONES_FILE_PUBLIC_URL_PREFIX:/api/system/files}
+    max-size: ${ONES_FILE_MAX_SIZE:20MB}
+    retention:
+      deleted-file-days: ${ONES_FILE_DELETED_RETENTION_DAYS:30}
+    minio:
+      endpoint: ${ONES_MINIO_ENDPOINT:http://localhost:9000}
+      access-key: ${ONES_MINIO_ACCESS_KEY:}
+      secret-key: ${ONES_MINIO_SECRET_KEY:}
+      bucket: ${ONES_MINIO_BUCKET:ones-admin}
+      proxy-enabled: ${ONES_MINIO_PROXY_ENABLED:false}
+    allowed-extensions:
+      - jpg
+      - jpeg
+      - png
+      - gif
+      - webp
+      - pdf
+      - doc
+      - docx
+      - xls
+      - xlsx
+      - txt
+      - csv
+      - zip
+  events:
+    broker: ${ONES_EVENTS_BROKER:none}
+    exchange: ${ONES_EVENTS_EXCHANGE:ones.admin.events}
+    operation-audit-queue: ${ONES_OPERATION_AUDIT_QUEUE:ones.admin.audit.operation}
+    login-audit-queue: ${ONES_LOGIN_AUDIT_QUEUE:ones.admin.audit.login}
+  auth:
+    feishu:
+      enabled: ${ONES_AUTH_FEISHU_ENABLED:false}
+      base-url: ${ONES_AUTH_FEISHU_BASE_URL:https://open.feishu.cn}
+      app-id: ${ONES_AUTH_FEISHU_APP_ID:}
+      app-secret: ${ONES_AUTH_FEISHU_APP_SECRET:}
+      callback-url: ${ONES_AUTH_FEISHU_CALLBACK_URL:}
 
 management:
   endpoints:
@@ -64,6 +149,13 @@ management:
       exposure:
         include: health,info
 
+logging:
+  pattern:
+    level: "%5p [%X{traceId}]"
+
 springdoc:
+  api-docs:
+    enabled: ${ONES_API_DOCS_ENABLED:false}
   swagger-ui:
+    enabled: ${ONES_API_DOCS_ENABLED:false}
     path: /swagger-ui.html

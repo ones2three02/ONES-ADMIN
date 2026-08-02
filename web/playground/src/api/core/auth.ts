@@ -28,6 +28,28 @@ export namespace AuthApi {
     };
   }
 
+  export interface AuthProviderCapability {
+    displayName: string;
+    enabled: boolean;
+    id: string;
+  }
+
+  export interface OAuthAuthorizeResult {
+    authorizationUrl: string;
+    expiresInSeconds: number;
+  }
+
+  export interface OAuthCallbackResult {
+    expiresInSeconds: number;
+    ticket: string;
+  }
+
+}
+
+function normalizeLoginResult(result: AuthApi.OnesLoginResult) {
+  return {
+    accessToken: result.token.tokenValue,
+  };
 }
 
 /**
@@ -41,9 +63,36 @@ export async function loginApi(data: AuthApi.LoginParams) {
       withCredentials: true,
     },
   );
-  return {
-    accessToken: result.token.tokenValue,
-  };
+  return normalizeLoginResult(result);
+}
+
+export async function getAuthProvidersApi() {
+  return requestClient.get<AuthApi.AuthProviderCapability[]>('/auth/providers');
+}
+
+export async function getOAuthAuthorizeApi(provider: string) {
+  return requestClient.get<AuthApi.OAuthAuthorizeResult>(
+    `/auth/oauth/${provider}/authorize`,
+  );
+}
+
+export async function completeOAuthCallbackApi(
+  provider: string,
+  code: string,
+  state: string,
+) {
+  return requestClient.get<AuthApi.OAuthCallbackResult>(
+    `/auth/oauth/${provider}/callback`,
+    { params: { code, state } },
+  );
+}
+
+export async function exchangeOAuthTicketApi(ticket: string) {
+  const result = await requestClient.post<AuthApi.OnesLoginResult>(
+    '/auth/oauth/exchange',
+    { ticket },
+  );
+  return normalizeLoginResult(result);
 }
 
 /**

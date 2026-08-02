@@ -4,6 +4,7 @@ import { mergeRouteModules, traverseTreeValues } from '@vben/utils';
 
 import { coreRoutes, fallbackNotFoundRoute } from './core';
 import dashboardRoutes from './modules/dashboard';
+import hrRoutes from './modules/hr';
 import systemRoutes from './modules/system';
 
 // 有需要可以自行打开注释，并创建文件夹
@@ -13,6 +14,7 @@ import systemRoutes from './modules/system';
 /** 动态路由 */
 const dynamicRoutes: RouteRecordRaw[] = mergeRouteModules({
   dashboard: { default: dashboardRoutes },
+  hr: { default: hrRoutes },
   system: { default: systemRoutes },
 });
 
@@ -40,6 +42,7 @@ const componentKeys: string[] = Object.keys(
   {
     ...import.meta.glob('../../views/_core/**/*.vue'),
     ...import.meta.glob('../../views/dashboard/overview/**/*.vue'),
+    ...import.meta.glob('../../views/hr/**/*.vue'),
     ...import.meta.glob('../../views/system/**/*.vue'),
   },
 )

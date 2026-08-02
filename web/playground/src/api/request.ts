@@ -73,13 +73,28 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     return token ? `Bearer ${token}` : null;
   }
 
-  // 请求头处理
+  function formatErrorMessage(messageText: string, traceId?: string) {
+    if (!traceId) {
+      return messageText;
+    }
+    return `${messageText}（追踪ID：${traceId}）`;
+  }
+
+  // 请求头处理与防缓存时间戳
   client.addRequestInterceptor({
     fulfilled: async (config) => {
       const accessStore = useAccessStore();
 
       config.headers.Authorization = formatToken(accessStore.accessToken);
       config.headers['Accept-Language'] = preferences.app.locale;
+
+      // 如果是 GET 请求，在 params 中追加当前时间戳，彻底断绝浏览器/CDN对数据拉取的缓存
+      if (config.method?.toUpperCase() === 'GET') {
+        config.params = {
+          ...config.params,
+          _t: Date.now(),
+        };
+      }
       return config;
     },
   });
@@ -111,8 +126,9 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       // 兼容后端常见错误字段 error/message
       const responseData = error?.response?.data ?? {};
       const errorMessage = responseData?.error ?? responseData?.message ?? '';
+      const traceId = responseData?.traceId;
       // 如果没有错误信息，则会根据状态码进行提示
-      message.error(errorMessage || msg);
+      message.error(formatErrorMessage(errorMessage || msg, traceId));
     }),
   );
 

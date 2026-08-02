@@ -1,12 +1,117 @@
 {
   "welcomeBack": "欢迎回来",
-  "pageTitle": "开箱即用的大型中后台管理系统",
-  "pageDesc": "工程化、高性能、跨组件库的前端模版",
+  "pageTitle": "ONE SYSTEM · ONE SERVICE · ONE SAFE · ONE SECOND",
+  "pageDesc": "一个系统、一个服务、一份安全、每一秒都在创造价值",
+  "visual": {
+    "mode": {
+      "lightText": "白天模式",
+      "lightLabel": "LIGHT MODE",
+      "darkText": "夜间模式",
+      "darkLabel": "DARK MODE"
+    },
+    "features": {
+      "execution": {
+        "title": "1S 执行核心",
+        "subtitle": "Execution Core",
+        "description": "以 1 秒为基准驱动系统高效执行"
+      },
+      "sensing": {
+        "title": "实时感知",
+        "subtitle": "Sensing",
+        "description": "实时监控与感知，快速响应变化"
+      },
+      "security": {
+        "title": "安全守护",
+        "subtitle": "Security",
+        "description": "多层安全防护，保障系统稳定"
+      },
+      "service": {
+        "title": "服务交付",
+        "subtitle": "Service",
+        "description": "高效交付服务，创造业务价值"
+      },
+      "asset": {
+        "title": "数据沉淀",
+        "subtitle": "Data Asset",
+        "description": "沉淀信息资产，支撑持续优化"
+      },
+      "evolution": {
+        "title": "持续进化",
+        "subtitle": "Evolution",
+        "description": "自我学习与优化，系统持续成长"
+      },
+      "connection": {
+        "title": "连接协同",
+        "subtitle": "Connection",
+        "description": "打通组织生态，实现协同共赢"
+      },
+      "intelligence": {
+        "title": "智能决策",
+        "subtitle": "Intelligence",
+        "description": "数据驱动决策，让系统更智能"
+      }
+    },
+    "principles": {
+      "second": {
+        "title": "ONE SECOND",
+        "description": "以秒为单位"
+      },
+      "system": {
+        "title": "ONE SYSTEM",
+        "description": "统一系统平台"
+      },
+      "service": {
+        "title": "ONE SERVICE",
+        "description": "极致服务体验"
+      },
+      "goal": {
+        "title": "ONE GOAL",
+        "description": "创造客户价值"
+      }
+    }
+  },
+  "loginPanel": {
+    "title": "欢迎回来",
+    "subtitle": "登录您的账号，继续高效工作",
+    "authTitle": "统一认证",
+    "authDescription": "账号与权限联动",
+    "lockTitle": "锁定保护",
+    "lockDescription": "失败自动防护",
+    "auditTitle": "审计追踪",
+    "auditDescription": "追踪ID可定位",
+    "guardTip": "连续失败将触发临时锁定，登录行为进入安全审计。",
+    "submitText": "登录进入工作台",
+    "otherMethods": "其他登录方式",
+    "feishuShort": "飞书",
+    "enterpriseSsoShort": "企业微信",
+    "googleShort": "Google",
+    "qrcodeShort": "扫码",
+    "mobileShort": "手机",
+    "methodReadyTip": "点击登录",
+    "methodPendingTip": "管理员配置后启用",
+    "qrcodeSwitchTip": "切换到扫码登录",
+    "feishuConfigTip": "请先配置飞书登录应用信息",
+    "oauthCallbackTitle": "飞书登录",
+    "oauthCallbackProcessing": "正在验证飞书身份...",
+    "oauthCallbackFailedTitle": "飞书登录未完成",
+    "oauthCallbackFailedTip": "授权已失效、身份未绑定或登录票据已被使用，请重新发起登录。",
+    "oauthCallbackReturn": "返回登录页",
+    "ssoConfigTip": "请先配置企业 SSO 登录地址",
+    "googleConfigTip": "Google 登录尚未配置",
+    "securityTip": "安全加密登录，保障数据安全",
+    "smsConfigTip": "短信认证尚未配置，请先使用账号密码登录",
+    "mobileTitle": "手机号登录",
+    "mobileSubtitle": "短信认证需后端短信服务接入后启用，当前环境请使用账号密码登录。",
+    "mobileSubmitText": "验证并登录",
+    "qrcodeTitle": "二维码登录",
+    "qrcodeSubtitle": "请使用企业认证 App 扫码，当前二维码用于识别登录入口。",
+    "qrcodeDescription": "扫码能力需飞书或企业 SSO 回调完成后启用。"
+  },
   "loginSuccess": "登录成功",
   "loginSuccessDesc": "欢迎回来",
-  "loginSubtitle": "请输入您的账户信息以开始管理您的项目",
+  "loginSubtitle": "登录您的账号，继续高效工作",
   "selectAccount": "快速选择账号",
-  "username": "账号",
+  "username": "用户名",
   "password": "密码",
   "usernameTip": "请输入用户名",
   "passwordTip": "请输入密码",
@@ -40,6 +145,7 @@
   "qqLogin": "QQ登录",
   "githubLogin": "Github登录",
   "googleLogin": "Google登录",
+  "feishuLogin": "飞书登录",
   "dingdingLogin": "钉钉登录",
   "codeSubtitle": "请输入您的手机号码以开始管理您的项目",
   "code": "验证码",

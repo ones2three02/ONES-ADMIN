@@ -111,7 +111,7 @@ public class MenuManagementService {
         Long childCount = menuMapper.selectCount(new LambdaQueryWrapper<SystemMenuEntity>()
                 .eq(SystemMenuEntity::getParentId, id));
         if (childCount > 0) {
-            throw new BusinessException("存在下级菜单，不能删除");
+            throw new BusinessException(SystemErrorCode.MENU_CHILD_EXISTS);
         }
         menuMapper.deleteById(id);
     }
@@ -141,10 +141,10 @@ public class MenuManagementService {
         }
         SystemMenuEntity parent = menuMapper.selectById(parentId);
         if (parent == null) {
-            throw new BusinessException("上级菜单不存在");
+            throw new BusinessException(SystemErrorCode.MENU_PARENT_NOT_FOUND);
         }
         if ("button".equals(parent.getType())) {
-            throw new BusinessException("按钮不能作为上级菜单");
+            throw new BusinessException(SystemErrorCode.MENU_PARENT_CANNOT_BE_BUTTON);
         }
     }
 
@@ -152,11 +152,11 @@ public class MenuManagementService {
         Long cursor = parentId;
         while (cursor != null) {
             if (Objects.equals(cursor, currentId)) {
-                throw new BusinessException("上级菜单不能选择自己或自己的下级");
+                throw new BusinessException(SystemErrorCode.MENU_PARENT_CANNOT_BE_DESCENDANT);
             }
             SystemMenuEntity parent = menuMapper.selectById(cursor);
             if (parent == null) {
-                throw new BusinessException("上级菜单不存在");
+                throw new BusinessException(SystemErrorCode.MENU_PARENT_NOT_FOUND);
             }
             cursor = parent.getParentId();
         }
@@ -185,20 +185,20 @@ public class MenuManagementService {
 
     private void assertUnique(String name, String path, Long exceptId) {
         if (isNameExists(name, exceptId)) {
-            throw new BusinessException("菜单名称已存在");
+            throw new BusinessException(SystemErrorCode.MENU_NAME_EXISTS);
         }
         if (isPathExists(path, exceptId)) {
-            throw new BusinessException("菜单路径已存在");
+            throw new BusinessException(SystemErrorCode.MENU_PATH_EXISTS);
         }
     }
 
     private String normalizeType(String type) {
         if (type == null || type.trim().isBlank()) {
-            throw new BusinessException("菜单类型不能为空");
+            throw new BusinessException(SystemErrorCode.MENU_TYPE_REQUIRED);
         }
         String normalized = type.trim();
         if (!Set.of("catalog", "menu", "embedded", "link", "button").contains(normalized)) {
-            throw new BusinessException("菜单类型不正确");
+            throw new BusinessException(SystemErrorCode.MENU_TYPE_INVALID);
         }
         return normalized;
     }
@@ -215,7 +215,7 @@ public class MenuManagementService {
             return path.trim();
         }
         if (!"button".equals(type)) {
-            throw new BusinessException("菜单路径不能为空");
+            throw new BusinessException(SystemErrorCode.MENU_PATH_REQUIRED);
         }
         String parentPath = parentId == null ? "/button" : getRequiredMenu(parentId).getPath();
         String suffix = authCode == null || authCode.trim().isBlank() ? "button" : authCode.trim();
@@ -225,7 +225,7 @@ public class MenuManagementService {
     private SystemMenuEntity getRequiredMenu(Long id) {
         SystemMenuEntity menu = menuMapper.selectById(id);
         if (menu == null) {
-            throw new BusinessException(404, "菜单不存在");
+            throw new BusinessException(SystemErrorCode.MENU_NOT_FOUND);
         }
         return menu;
     }

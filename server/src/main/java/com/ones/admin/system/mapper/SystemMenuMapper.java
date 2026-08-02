@@ -9,6 +9,15 @@ import java.util.List;
 public interface SystemMenuMapper extends BaseMapper<SystemMenuEntity> {
 
     @Select("""
+            select distinct m.auth_code
+            from sys_menu m
+            where m.auth_code is not null
+              and m.auth_code <> ''
+            order by m.auth_code asc
+            """)
+    List<String> selectAssignablePermissionCodes();
+
+    @Select("""
             select m.id
             from sys_menu m
             inner join sys_permission p on p.code = m.auth_code

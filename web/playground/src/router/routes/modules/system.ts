@@ -31,6 +31,17 @@ const routes: RouteRecordRaw[] = [
         component: () => import('#/views/system/role/list.vue'),
       },
       {
+        path: '/system/role-permission',
+        name: 'SystemRolePermission',
+        meta: {
+          activePath: '/system/role',
+          icon: 'lucide:shield-alert',
+          title: '角色权限配置',
+          hideInMenu: true,
+        },
+        component: () => import('#/views/system/role-permission/index.vue'),
+      },
+      {
         path: '/system/menu',
         name: 'SystemMenu',
         meta: {
@@ -47,6 +58,42 @@ const routes: RouteRecordRaw[] = [
           title: $t('system.dept.title'),
         },
         component: () => import('#/views/system/dept/list.vue'),
+      },
+      {
+        path: '/system/api-resources',
+        name: 'SystemApiResources',
+        meta: {
+          icon: 'lucide:network',
+          title: $t('system.apiResource.title'),
+        },
+        component: () => import('#/views/system/api-resource/list.vue'),
+      },
+      {
+        path: '/system/dict',
+        name: 'SystemDict',
+        meta: {
+          icon: 'lucide:book-open-text',
+          title: $t('system.dict.title'),
+        },
+        component: () => import('#/views/system/dict/list.vue'),
+      },
+      {
+        path: '/system/file',
+        name: 'SystemFile',
+        meta: {
+          icon: 'lucide:folder-open',
+          title: $t('system.file.title'),
+        },
+        component: () => import('#/views/system/file/list.vue'),
+      },
+      {
+        path: '/system/audit',
+        name: 'SystemAudit',
+        meta: {
+          icon: 'lucide:shield-check',
+          title: $t('system.audit.title'),
+        },
+        component: () => import('#/views/system/audit/list.vue'),
       },
     ],
   },

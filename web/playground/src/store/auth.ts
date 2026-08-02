@@ -10,7 +10,14 @@ import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 import { notification } from 'antdv-next';
 import { defineStore } from 'pinia';
 
-import { getAccessCodesApi, getUserInfoApi, loginApi, logoutApi } from '#/api';
+import {
+  completeOAuthCallbackApi,
+  exchangeOAuthTicketApi,
+  getAccessCodesApi,
+  getUserInfoApi,
+  loginApi,
+  logoutApi,
+} from '#/api';
 import { $t } from '#/locales';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -36,39 +43,7 @@ export const useAuthStore = defineStore('auth', () => {
       loginLoading.value = true;
       const { accessToken } = await loginApi(params);
 
-      // 如果成功获取到 accessToken
-      if (accessToken) {
-        accessStore.setAccessToken(accessToken);
-
-        // 获取用户信息并存储到 accessStore 中
-        const [fetchUserInfoResult, accessCodes] = await Promise.all([
-          fetchUserInfo(),
-          getAccessCodesApi(),
-        ]);
-
-        userInfo = fetchUserInfoResult;
-
-        userStore.setUserInfo(userInfo);
-        accessStore.setAccessCodes(accessCodes);
-
-        if (accessStore.loginExpired) {
-          accessStore.setLoginExpired(false);
-        } else {
-          onSuccess
-            ? await onSuccess?.()
-            : await router.push(
-                userInfo.homePath || preferences.app.defaultHomePath,
-              );
-        }
-
-        if (userInfo?.realName) {
-          notification.success({
-            description: `${$t('authentication.loginSuccessDesc')}:${userInfo?.realName}`,
-            duration: 3,
-            title: $t('authentication.loginSuccess'),
-          });
-        }
-      }
+      userInfo = await completeLogin(accessToken, onSuccess);
     } finally {
       loginLoading.value = false;
     }
@@ -76,6 +51,52 @@ export const useAuthStore = defineStore('auth', () => {
     return {
       userInfo,
     };
+  }
+
+  async function authLoginByOAuth(
+    provider: string,
+    code: string,
+    state: string,
+  ) {
+    try {
+      loginLoading.value = true;
+      const callback = await completeOAuthCallbackApi(provider, code, state);
+      const { accessToken } = await exchangeOAuthTicketApi(callback.ticket);
+      return await completeLogin(accessToken);
+    } finally {
+      loginLoading.value = false;
+    }
+  }
+
+  async function completeLogin(
+    accessToken: null | string | undefined,
+    onSuccess?: () => Promise<void> | void,
+  ) {
+    if (!accessToken) return null;
+    accessStore.setAccessToken(accessToken);
+    const [userInfo, accessCodes] = await Promise.all([
+      fetchUserInfo(),
+      getAccessCodesApi(),
+    ]);
+    userStore.setUserInfo(userInfo);
+    accessStore.setAccessCodes(accessCodes);
+
+    if (accessStore.loginExpired) {
+      accessStore.setLoginExpired(false);
+    } else {
+      onSuccess
+        ? await onSuccess()
+        : await router.push(userInfo.homePath || preferences.app.defaultHomePath);
+    }
+
+    if (userInfo?.realName) {
+      notification.success({
+        description: `${$t('authentication.loginSuccessDesc')}:${userInfo.realName}`,
+        duration: 3,
+        title: $t('authentication.loginSuccess'),
+      });
+    }
+    return userInfo;
   }
 
   const isLoggingOut = ref(false); // 正在 logout 标识, 防止 /logout 死循环.
@@ -119,6 +140,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     $reset,
     authLogin,
+    authLoginByOAuth,
     fetchUserInfo,
     loginLoading,
     logout,

@@ -19,18 +19,44 @@ export function useAppConfig(
     VITE_GLOB_API_URL,
     VITE_GLOB_AUTH_DINGDING_CORP_ID,
     VITE_GLOB_AUTH_DINGDING_CLIENT_ID,
+    VITE_GLOB_AUTH_SSO_NAME,
+    VITE_GLOB_AUTH_SSO_URL,
   } = config;
 
   const applicationConfig: ApplicationConfig = {
     apiURL: VITE_GLOB_API_URL,
     auth: {},
   };
-  if (VITE_GLOB_AUTH_DINGDING_CORP_ID && VITE_GLOB_AUTH_DINGDING_CLIENT_ID) {
+  if (
+    isConfiguredValue(VITE_GLOB_AUTH_DINGDING_CORP_ID) &&
+    isConfiguredValue(VITE_GLOB_AUTH_DINGDING_CLIENT_ID)
+  ) {
     applicationConfig.auth.dingding = {
       clientId: VITE_GLOB_AUTH_DINGDING_CLIENT_ID,
       corpId: VITE_GLOB_AUTH_DINGDING_CORP_ID,
     };
   }
+  if (isConfiguredValue(VITE_GLOB_AUTH_SSO_URL)) {
+    applicationConfig.auth.sso = {
+      name: isConfiguredValue(VITE_GLOB_AUTH_SSO_NAME)
+        ? VITE_GLOB_AUTH_SSO_NAME
+        : 'Enterprise SSO',
+      url: VITE_GLOB_AUTH_SSO_URL,
+    };
+  }
 
   return applicationConfig;
+}
+
+function isConfiguredValue(value?: string): value is string {
+  if (!value) {
+    return false;
+  }
+  const trimmed = value.trim();
+  return (
+    trimmed !== '' &&
+    !trimmed.startsWith('应用的') &&
+    !trimmed.startsWith('飞书应用') &&
+    !trimmed.toLowerCase().startsWith('your-')
+  );
 }

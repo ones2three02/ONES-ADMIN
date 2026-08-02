@@ -4,7 +4,6 @@ import com.ones.admin.auth.dto.LoginRequest;
 import com.ones.admin.auth.dto.LoginResponse;
 import com.ones.admin.auth.dto.UserProfile;
 import com.ones.admin.auth.model.AdminUser;
-import com.ones.admin.auth.repository.InMemoryUserRepository;
 import com.ones.admin.auth.repository.UserRepository;
 import com.ones.admin.common.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,27 +41,34 @@ public class AuthService {
         this.securityProperties = securityProperties;
     }
 
-    public static AuthService createForTest() {
-        return new AuthService(InMemoryUserRepository.forTest(), new BCryptPasswordEncoder());
-    }
-
     public LoginResponse login(LoginRequest request) {
         Optional<AdminUser> userOptional = userRepository.findByUsername(request.username().trim())
                 .filter(AdminUser::enabled);
         if (userOptional.isEmpty()) {
-            throw new BusinessException("用户名或密码错误");
+            throw new BusinessException(AuthErrorCode.INVALID_CREDENTIALS);
         }
 
         AdminUser user = userOptional.get();
         LocalDateTime now = LocalDateTime.now();
         if (user.lockedUntil() != null && user.lockedUntil().isAfter(now)) {
-            throw new BusinessException("账号已被临时锁定，请稍后再试");
+            throw new BusinessException(AuthErrorCode.ACCOUNT_LOCKED);
         }
         if (!passwordEncoder.matches(request.password(), user.passwordHash())) {
             recordLoginFailure(user, now);
-            throw new BusinessException("用户名或密码错误");
+            throw new BusinessException(AuthErrorCode.INVALID_CREDENTIALS);
         }
 
+        userRepository.recordLoginSuccess(user.id());
+        return new LoginResponse(null, toProfile(user), user.roles(), user.permissions());
+    }
+
+    public LoginResponse loginByUserId(Long userId) {
+        AdminUser user = userRepository.findById(userId)
+                .filter(AdminUser::enabled)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_AVAILABLE));
+        if (user.lockedUntil() != null && user.lockedUntil().isAfter(LocalDateTime.now())) {
+            throw new BusinessException(AuthErrorCode.ACCOUNT_LOCKED);
+        }
         userRepository.recordLoginSuccess(user.id());
         return new LoginResponse(null, toProfile(user), user.roles(), user.permissions());
     }
@@ -71,7 +77,7 @@ public class AuthService {
         return userRepository.findById(userId)
                 .filter(AdminUser::enabled)
                 .map(this::toProfile)
-                .orElseThrow(() -> new BusinessException(404, "用户不存在或已停用"));
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_AVAILABLE));
     }
 
     public List<String> getRoleList(Long userId) {
@@ -91,11 +97,7 @@ public class AuthService {
     }
 
     private void recordLoginFailure(AdminUser user, LocalDateTime now) {
-        int failedCount = user.failedLoginCount() == null ? 0 : user.failedLoginCount();
-        int nextFailedCount = failedCount + 1;
-        LocalDateTime lockedUntil = nextFailedCount >= securityProperties.getMaxFailedLoginCount()
-                ? now.plus(securityProperties.getLockDuration())
-                : null;
-        userRepository.recordLoginFailure(user.id(), nextFailedCount, lockedUntil);
+        LocalDateTime lockedUntil = now.plus(securityProperties.getLockDuration());
+        userRepository.recordLoginFailure(user.id(), securityProperties.getMaxFailedLoginCount(), lockedUntil);
     }
 }

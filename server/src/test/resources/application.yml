@@ -17,6 +17,12 @@ spring:
     username: guest
     password: guest
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
 sa-token:
   token-name: Authorization
   token-prefix: Bearer
@@ -28,3 +34,40 @@ sa-token:
   is-read-body: false
   is-read-cookie: false
   is-print: false
+
+ones:
+  bootstrap:
+    enabled: true
+    admin-username: admin
+    admin-display-name: 系统管理员
+    admin-password: admin123
+  security:
+    session:
+      storage: memory
+    public-endpoints:
+      api-docs-public: false
+      actuator-public: false
+    web:
+      allowed-origins:
+        - http://localhost:5173
+    login-rate-limit:
+      enabled: true
+      storage: memory
+      account-max-attempts: 5
+      ip-max-attempts: 50
+      window: 5m
+      block-duration: 15m
+    oauth:
+      storage: memory
+      state-ttl: 5m
+      ticket-ttl: 60s
+    repeat-submit:
+      storage: memory
+  file:
+    storage-type: local
+    upload-root: ${java.io.tmpdir}/ones-admin-test-uploads
+  events:
+    broker: none
+  auth:
+    feishu:
+      enabled: false

@@ -11,12 +11,18 @@ export interface VbenAdminProAppConfigRaw {
   VITE_GLOB_API_URL: string;
   VITE_GLOB_AUTH_DINGDING_CLIENT_ID: string;
   VITE_GLOB_AUTH_DINGDING_CORP_ID: string;
+  VITE_GLOB_AUTH_SSO_NAME?: string;
+  VITE_GLOB_AUTH_SSO_URL?: string;
 }
 
 interface AuthConfig {
   dingding?: {
     clientId: string;
     corpId: string;
+  };
+  sso?: {
+    name: string;
+    url: string;
   };
 }
 

@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import type { Recordable } from '@vben/types';
+import { useRouter } from 'vue-router';
+
 
 import type {
   OnActionClickParams,
@@ -19,6 +21,8 @@ import { $t } from '#/locales';
 import { useColumns, useGridFormSchema } from './data';
 import Form from './modules/form.vue';
 
+const router = useRouter();
+
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   connectedComponent: Form,
   destroyOnClose: true,
@@ -31,8 +35,9 @@ const [Grid, gridApi] = useVbenVxeGrid({
     submitOnChange: true,
   },
   gridOptions: {
+    autoResize: true,
     columns: useColumns(onActionClick, onStatusChange),
-    height: 'auto',
+    height: '100%',
     keepSource: true,
     proxyConfig: {
       ajax: {
@@ -67,6 +72,13 @@ function onActionClick(e: OnActionClickParams<SystemRoleApi.SystemRole>) {
     }
     case 'edit': {
       onEdit(e.row);
+      break;
+    }
+    case 'auth': {
+      router.push({
+        path: '/system/role-permission',
+        query: { roleId: e.row.id },
+      });
       break;
     }
   }
@@ -152,13 +164,15 @@ function onCreate() {
 <template>
   <Page auto-content-height>
     <FormDrawer @success="onRefresh" />
-    <Grid :table-title="$t('system.role.list')">
-      <template #toolbar-tools>
-        <Button type="primary" @click="onCreate">
-          <Plus class="size-5" />
-          {{ $t('ui.actionTitle.create', [$t('system.role.name')]) }}
-        </Button>
-      </template>
-    </Grid>
+    <div class="size-full min-h-0">
+      <Grid :table-title="$t('system.role.list')">
+        <template #toolbar-tools>
+          <Button type="primary" @click="onCreate">
+            <Plus class="size-5" />
+            {{ $t('ui.actionTitle.create', [$t('system.role.name')]) }}
+          </Button>
+        </template>
+      </Grid>
+    </div>
   </Page>
 </template>

@@ -14,6 +14,6 @@ public interface UserRepository {
     default void recordLoginSuccess(Long userId) {
     }
 
-    default void recordLoginFailure(Long userId, int failedLoginCount, LocalDateTime lockedUntil) {
+    default void recordLoginFailure(Long userId, int maxFailedLoginCount, LocalDateTime lockedUntil) {
     }
 }
