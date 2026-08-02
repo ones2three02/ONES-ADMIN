@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_JAVA_HOME="${DEFAULT_JAVA_HOME:-/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home}"
+DEFAULT_JAVA_HOME="${DEFAULT_JAVA_HOME:-/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home}"
 DEFAULT_NODE_HOME="${DEFAULT_NODE_HOME:-/opt/homebrew/opt/node@22}"
 
 if [ -z "${JAVA_HOME:-}" ] && [ -d "$DEFAULT_JAVA_HOME" ]; then

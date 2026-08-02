@@ -66,5 +66,14 @@ agents:
       - "integration-testing"
       - "bug-tracking"
     manager_id: "project-manager-01"
+
+  - id: "frontend-engineer-01"
+    name: "Pixel-FE"
+    role: "Frontend Engineer"
+    department: "engineering"
+    status: "active"
+    capabilities:
+      - "frontend-development"
+    manager_id: "project-manager-01"
 # 备注：其他岗位如 Solution Architect 等，目前编制空缺或处于未启用状态，
 # 运行“开发企业人力系统”时将通过招聘流程动态录用并追加注册于此。

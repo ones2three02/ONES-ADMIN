@@ -34,6 +34,9 @@ export const overridesPreferences = defineOverridesPreferences({
     source: ONES_BRAND_LOGO_LIGHT,
     sourceDark: ONES_BRAND_LOGO_DARK,
   },
+  theme: {
+    mode: 'light',
+  },
 });
 
 export function migrateBrandPreferences() {

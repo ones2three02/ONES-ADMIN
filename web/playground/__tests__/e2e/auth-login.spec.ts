@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
 
-import { authLogin, completeSliderCaptcha } from './common/auth';
+import { authLogin } from './common/auth';
 
 test.beforeEach(async ({ page }) => {
+  await page.setViewportSize({ width: 1536, height: 1024 });
   await page.goto('/');
 });
 
@@ -13,18 +14,40 @@ test.describe('Auth Login Page Tests', () => {
     expect(title).toContain('ONES-ADMIN');
   });
 
-  test('should present enterprise login surface', async ({ page }) => {
-    await expect(page.locator('.enterprise-login-brand')).toContainText(
-      'ONES-ADMIN',
-    );
-    await expect(page.getByRole('heading', { name: '安全登录' })).toBeVisible();
-    await expect(page.getByText('统一认证', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('锁定保护', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('审计追踪', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('连续失败将触发临时锁定')).toHaveCount(0);
-    await expect(page.getByText('快速选择账号', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('创建账号', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('其他登录方式', { exact: true })).toHaveCount(0);
+  test('should present the reference login composition', async ({ page }) => {
+    await expect(page.getByTestId('login-shell')).toBeVisible();
+    await expect(page.getByTestId('brand-visual')).toBeVisible();
+    await expect(page.getByTestId('login-card')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '欢迎回来' })).toBeVisible();
+    await expect(page.getByText('新一代企业协同管理平台')).toBeVisible();
+
+    for (const capability of [
+      '高效协同',
+      '流程驱动',
+      '数据洞察',
+      '安全可靠',
+    ]) {
+      await expect(page.getByText(capability, { exact: true })).toBeVisible();
+    }
+    for (const metric of ['20+', '100+', '10W+', '99.9%']) {
+      await expect(page.getByText(metric, { exact: true })).toBeVisible();
+    }
+
+    const socialLoginList = page.getByTestId('social-login-list');
+    await expect(socialLoginList.getByRole('button')).toHaveCount(3);
+    for (const provider of ['飞书', '企业微信', 'Google']) {
+      await expect(
+        socialLoginList.getByText(provider, { exact: true }),
+      ).toBeVisible();
+    }
+    await expect(
+      page.getByText('安全加密登录，保障数据安全'),
+    ).toBeVisible();
+
+    await expect(page.locator(`div[name='captcha']`)).toHaveCount(0);
+    await expect(
+      page.locator('.enterprise-login-qrcode-corner'),
+    ).toHaveCount(0);
     await expect(page.locator(`input[name='username']`)).toHaveAttribute(
       'autocomplete',
       'username',
@@ -33,86 +56,78 @@ test.describe('Auth Login Page Tests', () => {
       'autocomplete',
       'current-password',
     );
+
+    const visualState = await page.evaluate(() => {
+      const readRgb = (
+        element: Element,
+        property: 'backgroundColor' | 'color',
+      ) => {
+        return (getComputedStyle(element)[property].match(/\d+(?:\.\d+)?/g) ?? [])
+          .slice(0, 3)
+          .map(Number);
+      };
+      const shell = document.querySelector('[data-testid="login-shell"]');
+      const card = document.querySelector('[data-testid="login-card"]');
+      const heading = Array.from(document.querySelectorAll('h1')).find(
+        (element) => element.textContent === '新一代企业协同管理平台',
+      );
+      if (!shell || !card || !heading) {
+        throw new Error('登录页浅色视觉结构缺失');
+      }
+      return {
+        cardBackground: readRgb(card, 'backgroundColor'),
+        headingColor: readRgb(heading, 'color'),
+        isDark:
+          document.documentElement.classList.contains('dark') ||
+          document.documentElement.getAttribute('data-theme') === 'dark',
+        shellBackground: readRgb(shell, 'backgroundColor'),
+      };
+    });
+    expect(visualState.isDark).toBe(false);
+    expect(visualState.shellBackground).toHaveLength(3);
+    expect(
+      visualState.shellBackground.every((channel) => channel >= 180),
+    ).toBe(true);
+    expect(visualState.cardBackground).toHaveLength(3);
+    expect(
+      visualState.cardBackground.every((channel) => channel >= 180),
+    ).toBe(true);
+    expect(visualState.headingColor).toHaveLength(3);
+    expect(
+      visualState.headingColor.every((channel) => channel <= 120),
+    ).toBe(true);
+
+    const cardRadius = await page.getByTestId('login-card').evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).borderRadius),
+    );
+    expect(cardRadius).toBeGreaterThanOrEqual(20);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(1536);
   });
 
-  test('should present compact icon-only login methods', async ({ page }) => {
-    const qrcodeCorner = page.locator('.enterprise-login-qrcode-corner');
-    await expect(qrcodeCorner).toHaveAttribute(
-      'href',
-      /#?\/auth\/qrcode-login/,
-    );
-    await expect(qrcodeCorner).toHaveAttribute(
-      'aria-label',
-      /Switch to QR code login|切换到扫码登录/,
-    );
-
-    const methodEntries = page.locator(
-      '.enterprise-login-methods .enterprise-login-icon-button',
-    );
-    await expect(methodEntries).toHaveCount(3);
-    await expect(page.getByText('飞书', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('扫码', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('手机', { exact: true })).toHaveCount(0);
-
-    for (let index = 0; index < 3; index += 1) {
-      const radius = await methodEntries
-        .nth(index)
-        .evaluate((element) => getComputedStyle(element).borderRadius);
-      expect(Number.parseFloat(radius)).toBeGreaterThanOrEqual(20);
-      await expect(methodEntries.nth(index)).toHaveAttribute(
-        'aria-label',
-        /Enabled after admin configuration|管理员配置后启用/,
-      );
-      await expect(methodEntries.nth(index)).toHaveAttribute(
-        'data-ready',
-        'false',
-      );
-    }
-  });
-
-  test('should guide unavailable mobile login without fake verification', async ({
+  test('should remember only the username without automatically submitting', async ({
     page,
   }) => {
-    await page
-      .locator('.enterprise-login-methods .enterprise-login-icon-button')
-      .nth(2)
-      .click();
-    await expect(page).toHaveURL(/code-login/);
+    let loginRequests = 0;
+    await page.route('**/api/auth/login', async (route) => {
+      loginRequests += 1;
+      await route.abort('failed');
+    });
 
-    await expect(
-      page.getByRole('heading', { name: /Mobile Login|手机号登录/ }),
-    ).toBeVisible();
-    await expect(
-      page.getByText(
-        /SMS authentication requires backend SMS integration|短信认证需后端短信服务接入/,
-      ),
-    ).toBeVisible();
+    await page.locator(`input[name='username']`).fill('remembered-user');
+    await page.locator(`input[name='password']`).fill('remember-password');
+    await page.getByRole('checkbox', { name: '记住账号' }).check();
+    await page.getByRole('button', { name: 'login' }).click();
+    await expect.poll(() => loginRequests).toBe(1);
 
-    const phoneInput = page.locator(`input[name='phoneNumber']`);
-    await expect(phoneInput).toHaveAttribute('autocomplete', 'tel');
-    await expect(phoneInput).toHaveAttribute('inputmode', 'numeric');
-    await expect(phoneInput).toHaveAttribute('maxlength', '11');
-    await phoneInput.fill('13800138000');
-    await page.getByText(/Get Security code|获取验证码/).click();
-    await expect(page.locator('.ant-message')).toContainText(
-      /SMS authentication is not configured|短信认证尚未配置/,
+    await page.reload();
+
+    await expect(page.locator(`input[name='username']`)).toHaveValue(
+      'remembered-user',
     );
-    await expect(page.getByText(/60秒后重新获取|Resend in 60s/)).toHaveCount(0);
-  });
-
-  test('should present enterprise QR login entry state', async ({ page }) => {
-    await page.locator('.enterprise-login-qrcode-corner').click();
-    await expect(page).toHaveURL(/qrcode-login/);
-
-    await expect(
-      page.getByRole('heading', { name: /QR Code Login|扫码登录/ }),
-    ).toBeVisible();
-    await expect(page.getByAltText(/QR Code Login|扫码登录/)).toBeVisible();
-    await expect(
-      page.getByText(
-        /QR login is enabled after Feishu|扫码能力需飞书或企业 SSO 回调完成后启用/,
-      ),
-    ).toBeVisible();
+    await expect(page.locator(`input[name='password']`)).toHaveValue('');
+    await expect.poll(() => loginRequests, { timeout: 1000 }).toBe(1);
   });
 
   // 测试用例: 成功登录
@@ -123,9 +138,6 @@ test.describe('Auth Login Page Tests', () => {
   test('should show trace id when login fails', async ({ page }) => {
     await page.locator(`input[name='username']`).fill('admin');
     await page.locator(`input[name='password']`).fill('wrong-password');
-    await completeSliderCaptcha(page);
-
-    await page.waitForTimeout(300);
     await page.getByRole('button', { name: 'login' }).click();
 
     await expect(page.locator('.ant-message')).toContainText('用户名或密码错误');
