@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
@@ -12,7 +12,8 @@ import {
   Input,
   message,
   Modal,
-  Radio,
+  RadioButton,
+  RadioGroup,
   Spin,
 } from 'antdv-next';
 
@@ -569,11 +570,11 @@ function getRoleMemberCount(code?: string): number {
               </template>
             </Input>
 
-            <Radio.Group v-model:value="authFilter" button-style="solid" class="shrink-0 flex">
-              <Radio.Button value="all" class="text-xs px-3">全部</Radio.Button>
-              <Radio.Button value="authorized" class="text-xs px-3">已授权</Radio.Button>
-              <Radio.Button value="unauthorized" class="text-xs px-3">未授权</Radio.Button>
-            </Radio.Group>
+            <RadioGroup v-model:value="authFilter" button-style="solid" class="shrink-0 flex">
+              <RadioButton value="all" class="text-xs px-3">全部</RadioButton>
+              <RadioButton value="authorized" class="text-xs px-3">已授权</RadioButton>
+              <RadioButton value="unauthorized" class="text-xs px-3">未授权</RadioButton>
+            </RadioGroup>
           </div>
 
           <div class="flex items-center gap-3">
